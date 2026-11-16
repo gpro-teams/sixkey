@@ -1,0 +1,500 @@
+{
+  "add": {
+    "message": "Add"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "saved": {
+    "message": "Saved"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "retry": {
+    "message": "Retry"
+  },
+  "gotIt": {
+    "message": "Got it"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "lock": {
+    "message": "Lock"
+  },
+  "unlock": {
+    "message": "Unlock"
+  },
+  "restore": {
+    "message": "Restore"
+  },
+  "generate": {
+    "message": "Generate for me"
+  },
+  "showPassword": {
+    "message": "Show"
+  },
+  "minutes": {
+    "message": "minutes"
+  },
+  "localOnly": {
+    "message": "local"
+  },
+  "count": {
+    "message": "$1 accounts"
+  },
+  "lostTitle": {
+    "message": "Stored data could not be read"
+  },
+  "lostBody": {
+    "message": "Sixkey could not read your saved accounts, and no usable copy was found. Restore from a backup file."
+  },
+  "newerTitle": {
+    "message": "Update needed"
+  },
+  "newerBody": {
+    "message": "This data was saved by a newer version of Sixkey. Update the extension to open it. Nothing has been changed."
+  },
+  "errorTitle": {
+    "message": "Something unexpected went wrong"
+  },
+  "errorBody": {
+    "message": "Something unexpected went wrong. Try again. If it keeps failing, save diagnostics under Settings › Advanced."
+  },
+  "lockedTitle": {
+    "message": "Enter master password"
+  },
+  "passwordLabel": {
+    "message": "Master password"
+  },
+  "recoveryLabel": {
+    "message": "Recovery key"
+  },
+  "newPasswordLabel": {
+    "message": "New password"
+  },
+  "wrongPassword": {
+    "message": "Wrong password"
+  },
+  "badRecoveryFormat": {
+    "message": "That does not look like a recovery key"
+  },
+  "weakPassword": {
+    "message": "That password is too weak"
+  },
+  "addTitle": {
+    "message": "Add account"
+  },
+  "optionsLead": {
+    "message": "Settings, backups and importing. Everything stays on this computer."
+  },
+  "secTitle": {
+    "message": "Security"
+  },
+  "deviceOnlyTitle": {
+    "message": "No master password yet"
+  },
+  "passwordLossWarning": {
+    "message": "If you forget the master password and lose the recovery key, your data cannot be recovered. We cannot help either."
+  },
+  "confirmPasswordLabel": {
+    "message": "Repeat password"
+  },
+  "passwordsDiffer": {
+    "message": "The two passwords differ"
+  },
+  "strengthHint": {
+    "message": "At least $1 bits estimated strength. Longer is better; a random phrase works."
+  },
+  "strengthOk": {
+    "message": "Strong enough"
+  },
+  "strengthLow": {
+    "message": "Estimated $1 of $2 bits: $3 bits short. Make it longer or less predictable."
+  },
+  "oldPasswordLabel": {
+    "message": "Current password"
+  },
+  "changePassword": {
+    "message": "Change password"
+  },
+  "passwordChanged": {
+    "message": "Password changed"
+  },
+  "unlockToManage": {
+    "message": "Unlock to manage this."
+  },
+  "recoveryShownTitle": {
+    "message": "Save your recovery key"
+  },
+  "recoveryShownBody": {
+    "message": "If you forget the master password, this key is the only way back in. It is shown once. Keep it where it stays safe even if this computer is lost, such as a printout or a password manager on another device."
+  },
+  "saveAsFile": {
+    "message": "Save as file"
+  },
+  "recoverySavedCheck": {
+    "message": "I have saved my recovery key"
+  },
+  "lockOnScreenLock": {
+    "message": "Also lock when the computer's screen locks"
+  },
+  "addedN": {
+    "message": "Added $1 account(s)"
+  },
+  "backupTitle": {
+    "message": "Backup"
+  },
+  "exportEncrypted": {
+    "message": "Save encrypted backup"
+  },
+  "restoreTitle": {
+    "message": "Restore from backup"
+  },
+  "restoreBody": {
+    "message": "Choose a Sixkey backup file. Your accounts come back exactly as they were."
+  },
+  "chooseFile": {
+    "message": "Choose file"
+  },
+  "backupPasswordLabel": {
+    "message": "Backup password"
+  },
+  "openBackup": {
+    "message": "Open backup"
+  },
+  "backupContains": {
+    "message": "Backup with $1 account(s), saved $2"
+  },
+  "backupWrongOrDamaged": {
+    "message": "Wrong password, or the file is damaged"
+  },
+  "backupInvalid": {
+    "message": "This is not a Sixkey backup file"
+  },
+  "newerFormat": {
+    "message": "This backup was made by a newer version of Sixkey"
+  },
+  "trashTitle": {
+    "message": "Trash"
+  },
+  "clipTitle": {
+    "message": "Clear clipboard"
+  },
+  "clipBody": {
+    "message": "After you copy a code, clear it from the clipboard 30 seconds later, but only if the clipboard still holds that code. This asks the browser for permission to read and change the clipboard."
+  },
+  "clipEnable": {
+    "message": "Turn on"
+  },
+  "clipOn": {
+    "message": "On"
+  },
+  "advancedTitle": {
+    "message": "Advanced"
+  },
+  "invalidData": {
+    "message": "That data is too long or not valid, so it was not saved"
+  },
+  "languageLabel": {
+    "message": "Language"
+  },
+  "langAuto": {
+    "message": "Automatic (follow the browser)"
+  },
+  "needUnlock": {
+    "message": "Sixkey is locked"
+  },
+  "badState": {
+    "message": "Not possible right now"
+  },
+  "alreadyProtected": {
+    "message": "A master password is already set"
+  },
+  "protectionLabel": {
+    "message": "Protection"
+  },
+  "protDevice": {
+    "message": "Device key only"
+  },
+  "protLocked": {
+    "message": "Locked"
+  },
+  "protNone": {
+    "message": "No vault yet"
+  },
+  "accountsLabel": {
+    "message": "Accounts"
+  },
+  "backupLabel": {
+    "message": "Last backup"
+  },
+  "backupNever": {
+    "message": "Never"
+  },
+  "backupToday": {
+    "message": "Today"
+  },
+  "backupDaysAgo": {
+    "message": "$1 days ago"
+  },
+  "stepPassword": {
+    "message": "Set a password"
+  },
+  "stepRecovery": {
+    "message": "Save the recovery key"
+  },
+  "navMenu": {
+    "message": "Sections"
+  },
+  "syncLabel": {
+    "message": "Sync"
+  },
+  "syncOff": {
+    "message": "Off · this device"
+  },
+  "frSoloTitle": {
+    "message": "Only me (standard)"
+  },
+  "frSoloBody": {
+    "message": "Locks after 15 idle minutes or when the screen locks."
+  },
+  "frSharedTitle": {
+    "message": "Shared, cloud-synced or script-controlled"
+  },
+  "frSharedBody": {
+    "message": "Locks every time you close Sixkey, and codes are hidden by default. Do not turn on sync in such a profile."
+  },
+  "frRailLink": {
+    "message": "Set a master password now"
+  },
+  "resetDone": {
+    "message": "Your master password was reset. Use the new password and the new recovery key from now on."
+  },
+  "resetDoneLocked": {
+    "message": "Your master password was reset. Unlock with the new password."
+  },
+  "afsTitle": {
+    "message": "Autofill"
+  },
+  "instTitle": {
+    "message": "Not from the Chrome Web Store"
+  },
+  "instDetails": {
+    "message": "Details"
+  },
+  "instLong": {
+    "message": "This copy does not update itself, so check for new versions by hand. Install Sixkey only from its Chrome Web Store listing, or from a file you made yourself from that listing. Never install a file someone sends you."
+  },
+  "instThisId": {
+    "message": "This copy's extension ID"
+  },
+  "instStoreId": {
+    "message": "Sixkey's ID in the Chrome Web Store"
+  },
+  "instNoStoreYet": {
+    "message": "Sixkey is not in the Chrome Web Store yet, so there is no official ID to compare with yet."
+  },
+  "instLimit": {
+    "message": "This check finds old copies that never update. It cannot catch a modified copy: such a copy can simply remove the check."
+  },
+  "lookTitle": {
+    "message": "Appearance"
+  },
+  "lookCodes": {
+    "message": "Codes"
+  },
+  "lookHide": {
+    "message": "Hide codes in the popup and the side panel"
+  },
+  "lookShortcutNone": {
+    "message": "not set"
+  },
+  "lookShortcutOpen": {
+    "message": "Change shortcut"
+  },
+  "expPwLead": {
+    "message": "Every export asks for your master password again, even while Sixkey is unlocked."
+  },
+  "secLogTitle": {
+    "message": "Security record"
+  },
+  "errLine": {
+    "message": "$1. $2"
+  },
+  "errRead": {
+    "message": "Sixkey could not read its data on this computer"
+  },
+  "errSave": {
+    "message": "This change could not be saved, and your accounts are as they were"
+  },
+  "errSpace": {
+    "message": "There is not enough free disk space to save"
+  },
+  "errNextRetry": {
+    "message": "Try again. If it keeps failing, save diagnostics under $1."
+  },
+  "errNextRestore": {
+    "message": "Try again. If it keeps failing, restore from a backup file under $1."
+  },
+  "errNextSpace": {
+    "message": "Free up some disk space on this computer, then try again."
+  },
+  "errNextCheck": {
+    "message": "Check it and try again."
+  },
+  "errNextWeak": {
+    "message": "Make it longer: a few random words work well, or use “$1”."
+  },
+  "errNextReload": {
+    "message": "Reload this page and try again."
+  },
+  "errNextUnlock": {
+    "message": "Unlock it with your master password, then try again."
+  },
+  "errNextBackupPw": {
+    "message": "Enter the password this backup was saved with. It can differ from your master password."
+  },
+  "errNextBackupFile": {
+    "message": "Choose a file saved with “$1”."
+  },
+  "errNextUpdate": {
+    "message": "Update Sixkey, then try again. Nothing has been changed."
+  },
+  "errSyncOn": {
+    "message": "Sync is on in this profile, so this change has to go through sync"
+  },
+  "errNextSyncOn": {
+    "message": "Make it from the sync settings, so that every device gets it. Nothing was changed."
+  },
+  "errCleanupPending": {
+    "message": "An earlier key change is still being finished on this computer"
+  },
+  "errNextCleanupPending": {
+    "message": "Lock Sixkey and unlock it again, then try again. Nothing was changed."
+  },
+  "strengthHintOwn": {
+    "message": "At least $1 characters. $2 bits or more is best: a few random words work well."
+  },
+  "strengthLowOwn": {
+    "message": "Estimated $1 bits, below the $2 we recommend."
+  },
+  "strengthShort": {
+    "message": "Too short: at least $1 characters."
+  },
+  "strengthCommon": {
+    "message": "Too easy to guess: too close to a common password."
+  },
+  "pwWeakWhy": {
+    "message": "Someone who copies this browser profile can guess offline, with no limit on tries: one graphics card finds a password this strong in about $1, and more cards are faster."
+  },
+  "pwUseAnyway": {
+    "message": "Use anyway"
+  },
+  "pwGroup": {
+    "message": "$1, group $2 of $3"
+  },
+  "pwPlainField": {
+    "message": "Use a plain password field"
+  },
+  "pwWordsHint": {
+    "message": "Type the 5 words; spaces or hyphens both work."
+  },
+  "pwOwn": {
+    "message": "Choose my own"
+  },
+  "strengthGenerated": {
+    "message": "Generated: $1 bits. Strong enough."
+  },
+  "strengthFloor": {
+    "message": "Too predictable: avoid keyboard runs, sequences and repeats."
+  },
+  "pwWhyChars": {
+    "message": "$1 random characters: about $2 bits, well above the $3-bit bar."
+  },
+  "pwWhyWords": {
+    "message": "$1 random words: about $2 bits, above the $3-bit bar."
+  },
+  "pwSaveMaster": {
+    "message": "Save it in your password manager or write it on paper."
+  },
+  "pwSaveFile": {
+    "message": "Save it in your password manager or write it on paper: the file cannot be opened without it."
+  },
+  "pwUseWords": {
+    "message": "Easier to type: words"
+  },
+  "pwUseChars": {
+    "message": "Use characters instead"
+  },
+  "pwUseGenerated": {
+    "message": "Use a generated password instead"
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinFormat": {
+    "message": "Use 4 to 8 digits."
+  },
+  "eraseNeedsPassword": {
+    "message": "Deleting for good cannot be undone, so it asks for your master password."
+  },
+  "railCsb": {
+    "message": "Chrome Sync"
+  },
+  "railCsbBrowser": {
+    "message": "browser sync"
+  },
+  "railCsbOff": {
+    "message": "Off"
+  },
+  "railCsbOn": {
+    "message": "On"
+  },
+  "railCsbSaving": {
+    "message": "Handing over…"
+  },
+  "railCsbOk": {
+    "message": "Handed over · $1"
+  },
+  "railCsbSoon": {
+    "message": "Handing over soon"
+  },
+  "railCsbFailed": {
+    "message": "Not handed over · will retry"
+  },
+  "railCsbStopped": {
+    "message": "Backup stopped"
+  },
+  "sharesInsteadLink": {
+    "message": "I have shares instead"
+  },
+  "sharesStopWarn": {
+    "message": "Shares made of the current recovery key stop working too."
+  },
+  "sharesSwitched": {
+    "message": "Switched to your shares. Keep the old recovery key until “Check my shares” passes after a browser restart."
+  },
+  "grpAccounts": {
+    "message": "Accounts"
+  },
+  "secLockTab": {
+    "message": "Locking"
+  },
+  "secKeysTab": {
+    "message": "Password & recovery"
+  }
+}

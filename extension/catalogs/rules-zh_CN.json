@@ -1,0 +1,26 @@
+{
+  "ruTitle": {
+    "message": "获取最新的网站规则"
+  },
+  "ruLead": {
+    "message": "Sixkey 每天向 $1 查询一次有没有更新的网站规则（经 Sixkey 签名），用来更准确地找到验证码输入框。对方能看到你的 IP 地址、浏览器版本和查询时间，看不到你的账户和网站。"
+  },
+  "ruBuiltIn": {
+    "message": "网站规则：自带，版本 $1"
+  },
+  "ruUpdated": {
+    "message": "网站规则：已于 $1 更新（版本 $2）"
+  },
+  "ruWaiting": {
+    "message": "正在等待比版本 $1 更新的规则"
+  },
+  "ruChecking": {
+    "message": "正在检查有没有更新的网站规则…"
+  },
+  "ruFailed": {
+    "message": "没能完成，请再试一次。"
+  },
+  "ruUnread": {
+    "message": "暂时读不到这项设置，请刷新页面后再试。"
+  }
+}

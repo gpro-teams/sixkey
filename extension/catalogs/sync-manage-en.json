@@ -1,0 +1,455 @@
+{
+  "syncClose": {
+    "message": "Close"
+  },
+  "syncActRestoreCloud": {
+    "message": "Restore from the synced vault"
+  },
+  "syncActStartOver": {
+    "message": "Start over"
+  },
+  "syncActRepair": {
+    "message": "Repair the cloud from this device"
+  },
+  "syncActRejoin": {
+    "message": "Rejoin the synced vault"
+  },
+  "syncDoneRestored": {
+    "message": "Restored from the synced vault."
+  },
+  "syncRejoinTitle": {
+    "message": "Rejoin the synced vault?"
+  },
+  "syncRejoinBody": {
+    "message": "This device leaves sync first: your master password signs it off on the server, and your accounts stay here. Then join the synced vault again; this profile's accounts are added to it."
+  },
+  "syncDoneRejoinNext": {
+    "message": "This device left sync. Now join the synced vault again below."
+  },
+  "syncDevicesTitle": {
+    "message": "Devices"
+  },
+  "syncThisDeviceTag": {
+    "message": "This device"
+  },
+  "syncDeviceUnnamed": {
+    "message": "A device"
+  },
+  "syncDeviceNameLocked": {
+    "message": "Name hidden while locked"
+  },
+  "syncDeviceLastSeen": {
+    "message": "Last synced $1"
+  },
+  "syncDeviceNeverSeen": {
+    "message": "Not synced yet"
+  },
+  "syncDeviceRevokedAt": {
+    "message": "Revoked $1"
+  },
+  "syncDeviceStale": {
+    "message": "no sync for 90 days"
+  },
+  "syncDeviceWrongPasswords": {
+    "message": "$1 wrong master passwords"
+  },
+  "syncRename": {
+    "message": "Rename"
+  },
+  "syncRenameGo": {
+    "message": "Save the name"
+  },
+  "syncDoneRenamed": {
+    "message": "The name was changed."
+  },
+  "syncRevoke": {
+    "message": "Revoke"
+  },
+  "syncRejectAll": {
+    "message": "Reject waiting requests ($1)"
+  },
+  "syncRejectAllTitle": {
+    "message": "Reject every waiting request?"
+  },
+  "syncRejectAllBody": {
+    "message": "Every device waiting to join is refused. If one of them is yours, ask for approval again from it."
+  },
+  "syncRejectAllGo": {
+    "message": "Reject all"
+  },
+  "syncDoneRejectedAll": {
+    "message": "Rejected: $1."
+  },
+  "syncUnlockToManage": {
+    "message": "Unlock Sixkey on this page to manage devices and keys."
+  },
+  "syncApproveOpen": {
+    "message": "Approve a new device"
+  },
+  "syncApproveTitle": {
+    "message": "Approve a new device"
+  },
+  "syncApprovePasswordBody": {
+    "message": "Your master password, to let this device hand the vault's key to the new one."
+  },
+  "syncApproveMany": {
+    "message": "More than one device is waiting. Approve only the one you are setting up right now."
+  },
+  "syncApproveNone": {
+    "message": "No device is waiting. Start the join on the new device, then look again."
+  },
+  "syncApproveRefresh": {
+    "message": "Look again"
+  },
+  "syncRequestMadeAt": {
+    "message": "Asked at $1"
+  },
+  "syncRequestMade": {
+    "message": "Asked a moment ago"
+  },
+  "syncRequestHandled": {
+    "message": "being answered on another device"
+  },
+  "syncApproveThis": {
+    "message": "Approve this one"
+  },
+  "syncRejectThis": {
+    "message": "Reject"
+  },
+  "syncApproveWaiting": {
+    "message": "Answering the new device's request…"
+  },
+  "syncApproveSasBody": {
+    "message": "Type the six digits the new device shows."
+  },
+  "syncApproveClaims": {
+    "message": "It says it is: $1"
+  },
+  "syncApproveSasLabel": {
+    "message": "The six digits from the new device"
+  },
+  "syncSasWrong": {
+    "message": "Those digits don't match. Tries left: $1."
+  },
+  "syncApproveGo": {
+    "message": "Approve"
+  },
+  "syncApproveDone": {
+    "message": "Approved. The new device is finishing joining."
+  },
+  "syncApproveRejected": {
+    "message": "The request was rejected."
+  },
+  "syncKeysTitle": {
+    "message": "Master password and keys"
+  },
+  "syncKeysBody": {
+    "message": "Changes made here reach every device. Each needs the internet."
+  },
+  "syncKeysBlocked": {
+    "message": "Paused until the cloud is repaired: the server's keys are older than this device's."
+  },
+  "syncKeyPasswordTitle": {
+    "message": "Change the master password"
+  },
+  "syncKeyPasswordBody": {
+    "message": "Your current master password, then the new one."
+  },
+  "syncKeyAlsoRotate": {
+    "message": "I'm worried the old password leaked: rotate the keys too"
+  },
+  "syncKeyRecoveryTitle": {
+    "message": "Make a new recovery key"
+  },
+  "syncKeyRecoveryBody": {
+    "message": "Your master password. The new key replaces the old one on every device once Sixkey confirms the change."
+  },
+  "syncKeyRotateTitle": {
+    "message": "Rotate the keys"
+  },
+  "syncKeyRotateBody": {
+    "message": "Your master password. New keys lock out any device that is no longer in the list; you also get a new recovery key."
+  },
+  "syncKeyResetTitle": {
+    "message": "Set a new master password"
+  },
+  "syncKeyResetBody": {
+    "message": "Your recovery key, then the new master password. You also get a new recovery key. Keep the one you type now until Sixkey says the change is done."
+  },
+  "syncKeyRecoveryNote": {
+    "message": "Write this key down. Once you confirm it, it replaces your old recovery key on every device. Keep the old one too until Sixkey says the change is done."
+  },
+  "syncKeyRotateNote": {
+    "message": "Write this key down. Once you confirm it, the keys change and this becomes your recovery key. Keep the old one too until Sixkey says the change is done."
+  },
+  "syncKeyResetNote": {
+    "message": "Write this key down. Once you confirm it, your new master password and this key replace the old ones. Keep the old key too until Sixkey says the change is done."
+  },
+  "syncCodeConfirmGo": {
+    "message": "Confirm and save"
+  },
+  "syncKeyDonePassword": {
+    "message": "The master password was changed. Your other devices ask for it once."
+  },
+  "syncKeyDoneCode": {
+    "message": "The new recovery key is in effect."
+  },
+  "syncKeyDoneRotated": {
+    "message": "The keys were rotated. Your other devices ask for your master password once."
+  },
+  "syncKeyDoneBoth": {
+    "message": "The master password and the keys were changed. Your other devices ask for the new password once."
+  },
+  "syncKeyUnconfirmed": {
+    "message": "The server's answer didn't arrive. Keep both the old and the new recovery key until Sixkey confirms which one works; it checks again shortly."
+  },
+  "syncKeyPasswordChangedAnyway": {
+    "message": "The master password was changed; what came after it did not finish."
+  },
+  "syncFollowNewCodeTitle": {
+    "message": "Make a new recovery key (recommended)"
+  },
+  "syncFollowNewCodeBody": {
+    "message": "The key you just used has been typed in; a new one is safer."
+  },
+  "syncFollowNewPasswordTitle": {
+    "message": "Forgot your master password?"
+  },
+  "syncFollowNewPasswordBody": {
+    "message": "Set a new one with your recovery key."
+  },
+  "syncFollowLater": {
+    "message": "Later"
+  },
+  "syncRevokeTitle": {
+    "message": "Revoke $1"
+  },
+  "syncRevokeWhy": {
+    "message": "Why are you revoking it?"
+  },
+  "syncRevokeRetired": {
+    "message": "I still have this device; I no longer use it"
+  },
+  "syncRevokeLost": {
+    "message": "It is lost or stolen, or I'm not sure (also rotates the keys)"
+  },
+  "syncRevokeProtectOnly": {
+    "message": "This device wrote the current keys, so only the second choice is safe."
+  },
+  "syncRevokeApproved": {
+    "message": "Devices it approved, revoked with it:"
+  },
+  "syncRevokeGo": {
+    "message": "Revoke"
+  },
+  "syncRevoking": {
+    "message": "Revoking…"
+  },
+  "syncRevokeRotateNote": {
+    "message": "Nothing is revoked yet. Write this key down: once you confirm it, the device is revoked, the keys change and this becomes your recovery key. Keep the old one too until Sixkey says the change is done."
+  },
+  "syncRevokeDone": {
+    "message": "Revoked: $1 device(s)."
+  },
+  "syncRevokeDoneLost": {
+    "message": "Revoked $1 device(s), and the keys were rotated."
+  },
+  "syncRevokeAfter1": {
+    "message": "If that device was unlocked in someone's hands, the 2FA secrets it saw are known to them: set up 2FA again on those sites."
+  },
+  "syncRevokeAfter2": {
+    "message": "Change your master password too if it may be known."
+  },
+  "syncRevokeAfter3": {
+    "message": "Revoking can't take back what that device has already seen."
+  },
+  "syncRevokeRotationUnconfirmed": {
+    "message": "Revoked $1 device(s). The key rotation's answer didn't arrive: keep both recovery keys until Sixkey confirms; it checks again shortly."
+  },
+  "syncRevokePartly": {
+    "message": "Revoked before this stopped: $1 device(s)."
+  },
+  "syncRepairTitle": {
+    "message": "Repair the cloud from this device"
+  },
+  "syncRepairBody": {
+    "message": "The server's keys are older than this device's (a backup restored on the server, or a device that fell behind). This device publishes its keys again, so every device takes them."
+  },
+  "syncRepairOldLabel": {
+    "message": "Master password the server's keys use, if different"
+  },
+  "syncRepairOldHint": {
+    "message": "Leave it empty if your master password did not change."
+  },
+  "syncRepairGo": {
+    "message": "Repair"
+  },
+  "syncRepairDone": {
+    "message": "The cloud has this device's keys again."
+  },
+  "syncRepairUnconfirmed": {
+    "message": "The server's answer didn't arrive. Sixkey checks again shortly."
+  },
+  "syncForkOpen": {
+    "message": "Make this profile a separate device"
+  },
+  "syncForkTitle": {
+    "message": "Make this profile a separate device"
+  },
+  "syncForkBody": {
+    "message": "This profile becomes a device of its own, with its own name. The other copy keeps the device it was. If you don't recognise the other copy, revoke it afterwards from the device list (lost or stolen)."
+  },
+  "syncForkGo": {
+    "message": "Make it separate"
+  },
+  "syncForkDone": {
+    "message": "This profile is now a device of its own."
+  },
+  "syncClearHistory": {
+    "message": "Clear the server's history"
+  },
+  "syncClearHistoryTitle": {
+    "message": "Clear the server's history?"
+  },
+  "syncClearHistoryBody": {
+    "message": "The server deletes its earlier versions of your vault. The current one stays, and so do the copies on your devices."
+  },
+  "syncDoneHistoryCleared": {
+    "message": "The server's history was cleared ($1 versions)."
+  },
+  "syncDeleteTitle": {
+    "message": "Delete the sync account"
+  },
+  "syncDeleteBody": {
+    "message": "The synced vault, its history and the device list are deleted from the server, for every device. The accounts on each device stay there. You'll confirm with a code sent to your email and your master password."
+  },
+  "syncDeleteSignIn": {
+    "message": "First, the code sent to your email."
+  },
+  "syncDeleteFinal": {
+    "message": "Last step: this can't be undone."
+  },
+  "syncDeleteGo": {
+    "message": "Delete the sync account"
+  },
+  "syncDeleting": {
+    "message": "Deleting…"
+  },
+  "syncDeleteDone": {
+    "message": "The sync account was deleted. Sync is off here; your accounts stay."
+  },
+  "syncDeleteDoneLocalLeft": {
+    "message": "The sync account was deleted. Remove this device's sync identity below to finish here."
+  },
+  "syncFailChooseReason": {
+    "message": "Choose why you are revoking it."
+  },
+  "syncFailDeleteUnconfirmed": {
+    "message": "The server's answer didn't arrive, so the account may be deleted already. Check with Sync now."
+  },
+  "syncFailNotSynced": {
+    "message": "Sync first (Sync now), then try again."
+  },
+  "syncFailChangedElsewhere": {
+    "message": "Another device changed the keys at the same time. The recovery key shown is void; start again."
+  },
+  "syncFailWeakPassword": {
+    "message": "Choose a stronger master password."
+  },
+  "syncFailCleanupPending": {
+    "message": "Sixkey is still finishing an earlier key change here. Try again in a minute."
+  },
+  "syncFailPasswordElsewhere": {
+    "message": "The master password was changed on another device. Enter the new one first (the card above)."
+  },
+  "syncFailOldPassword": {
+    "message": "The server's keys still use an older master password: type it in the second field."
+  },
+  "syncFailNotBehind": {
+    "message": "The server's keys are not behind any more: nothing to repair."
+  },
+  "syncFailSasMismatch": {
+    "message": "The digits did not match three times, so the request was rejected. Start again on the new device."
+  },
+  "syncFailKeysChanged": {
+    "message": "The keys changed while this was open. Sync, then start again."
+  },
+  "syncFailNotEnrolled": {
+    "message": "This device is not in sync any more."
+  },
+  "syncRevokeLostNext": {
+    "message": "Continue"
+  },
+  "syncRevokeAndRotate": {
+    "message": "Revoke and rotate the keys"
+  },
+  "syncFailRotationOwed": {
+    "message": "The device is revoked, but the keys were not rotated. Until they are, a recovery key it may have planted still works, and it can still read anything it already saw. Rotate the keys now."
+  },
+  "syncRotationOwedTitle": {
+    "message": "The keys still need rotating"
+  },
+  "syncRotationOwedBody": {
+    "message": "A device was revoked as lost or stolen, but the keys were not rotated after it. Until they are, a recovery key it may have planted still works."
+  },
+  "syncLockedPendingBody": {
+    "message": "A change of the master password or recovery key made on this page may not have reached this device's own keys. If your password doesn't unlock it, unlock with the master password the server has."
+  },
+  "syncActAdoptPending": {
+    "message": "Unlock with the server's password"
+  },
+  "syncKeptTitle": {
+    "message": "Vaults kept from before a join ($1)"
+  },
+  "syncKeptBody": {
+    "message": "When this profile joined a synced vault, it kept its own vault aside, encrypted, on this computer only. Its accounts went into the synced vault then."
+  },
+  "syncKeptItem": {
+    "message": "Kept on $1"
+  },
+  "syncKeptItemUnreadable": {
+    "message": "An entry that can't be read"
+  },
+  "syncKeptDeleteOpen": {
+    "message": "Delete the kept vaults"
+  },
+  "syncKeptDeleteTitle": {
+    "message": "Delete $1 kept vault(s)?"
+  },
+  "syncKeptDeleteBody": {
+    "message": "They are deleted from this computer for good. An account that was only in them, and that you have since deleted from your vault, can't be brought back."
+  },
+  "syncKeptDeleteGo": {
+    "message": "Delete for good"
+  },
+  "syncDoneKeptDeleted": {
+    "message": "The kept vaults were deleted."
+  },
+  "syncTurnOffLast": {
+    "message": "This is the only device left in your sync account. The synced vault stays on the server, and to join it again you will need your recovery key."
+  },
+  "syncKeysBlockedUpdate": {
+    "message": "Paused until Sixkey is updated: the server needs a newer version for changes to the keys."
+  },
+  "syncTurnOffRotationOwed": {
+    "message": "A device was revoked as lost or stolen and the keys were not rotated yet. Doing this here forgets that reminder on this device."
+  },
+  "syncRevokeOwed": {
+    "message": "Revoked: $1 device(s). The keys could not be rotated now, so the rotation is owed: the Sync card reminds you until it is done."
+  },
+  "syncRotationOwedUnsure": {
+    "message": "A device was being revoked as lost or stolen, and that may not have finished. Check the device list and revoke it if it is still there, then rotate the keys."
+  },
+  "syncRotationOwedWaits": {
+    "message": "Why the rotation waits:"
+  },
+  "syncFailRotationOwedFirst": {
+    "message": "A key rotation is still owed after a device was revoked as lost. Rotate the keys first, or tick the box to go on anyway."
+  },
+  "syncOwedDrop": {
+    "message": "Go on anyway: I will rotate the keys from another device"
+  },
+  "syncFailKeptFull": {
+    "message": "This profile already keeps as many vaults from earlier joins as it can. Delete some under Sync › Vaults kept from before a join, then join again."
+  }
+}

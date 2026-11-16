@@ -1,0 +1,977 @@
+{
+  "syncPairTitle": {
+    "message": "Type the pairing code"
+  },
+  "syncPairBody": {
+    "message": "The other device now shows a pairing code of 28 characters. Type it here, or paste it."
+  },
+  "syncPairLabel": {
+    "message": "Pairing code"
+  },
+  "syncPairMalformed": {
+    "message": "That is not a pairing code: it has 28 letters and digits, in 7 groups of 4."
+  },
+  "syncPairWrong": {
+    "message": "This code has an error. Check it against the code on the other device."
+  },
+  "syncFailJoinEnded": {
+    "message": "The request has ended. If the pairing code was mistyped, start again."
+  },
+  "syncApprovePairBody": {
+    "message": "On the new device, type this pairing code:"
+  },
+  "syncApprovePairWaiting": {
+    "message": "Waiting for the code to be entered on the new device…"
+  },
+  "syncPairCopyNote": {
+    "message": "Copying goes through the system clipboard. If your clipboard is shared with other devices (such as Universal Clipboard on macOS or the cloud clipboard on Windows), the code can leave this computer: type it by hand instead. If clearing the clipboard is on, Sixkey clears it after 30 seconds, or sooner if this step ends first."
+  },
+  "syncApproveMismatch": {
+    "message": "The pairing code did not match: the new device used a different code, or the request was changed on the way. This request is over: start again on the new device."
+  },
+  "syncSasMalformed": {
+    "message": "Enter the 6 digits shown on the other device."
+  },
+  "syncCodeTooLong": {
+    "message": "Too long: it has 28 letters and digits. Check it for an extra character."
+  },
+  "syncLead": {
+    "message": "Your accounts on all your browser profiles, end-to-end encrypted."
+  },
+  "syncOffTitle": {
+    "message": "Keep your accounts the same everywhere"
+  },
+  "syncOffBody": {
+    "message": "Sync keeps an encrypted copy of your vault on Sixkey's server, so every profile you add sees the same accounts. Only your own devices can open it."
+  },
+  "syncJoinOnlyTitle": {
+    "message": "Join a vault you already sync"
+  },
+  "syncJoinOnlyBody": {
+    "message": "Use the accounts of a profile that already syncs. You need the email you sync with, and either that other device or the vault's recovery key."
+  },
+  "syncSeesSummary": {
+    "message": "What the server can and can't see"
+  },
+  "syncSeesCan": {
+    "message": "It can see"
+  },
+  "syncSeesCan1": {
+    "message": "your email address"
+  },
+  "syncSeesCan2": {
+    "message": "when your devices sync (it keeps only the hour or the day)"
+  },
+  "syncSeesCan3": {
+    "message": "how many devices you have, and when each joined"
+  },
+  "syncSeesCan4": {
+    "message": "roughly how big your vault is"
+  },
+  "syncSeesCannot": {
+    "message": "It can't see"
+  },
+  "syncSeesCannot1": {
+    "message": "your accounts, their names or their codes"
+  },
+  "syncSeesCannot2": {
+    "message": "your master password or your recovery key"
+  },
+  "syncSeesCannot3": {
+    "message": "your device names"
+  },
+  "syncSeesMore": {
+    "message": "Everything is encrypted on this device before it leaves. The server keeps no IP addresses and doesn't record your browser's details."
+  },
+  "syncPreLabel": {
+    "message": "Needed first"
+  },
+  "syncPreHasPassword": {
+    "message": "A master password protects this vault"
+  },
+  "syncPreNoPassword": {
+    "message": "Sync needs a master password, and this vault has none yet."
+  },
+  "syncPreSetPassword": {
+    "message": "Set one in Security"
+  },
+  "syncSharedWarning": {
+    "message": "Don't turn sync on in a profile that other people use, or that a browser vendor syncs or copies: anyone who opens it and knows the master password sees every account, and its copies become hidden sync devices."
+  },
+  "syncPermissionNote": {
+    "message": "Chrome will ask you to let Sixkey connect to $1, its own server. Sixkey connects only while sync is on, and removes that access when you turn sync off."
+  },
+  "syncUnlockFirst": {
+    "message": "Unlock Sixkey above to turn on sync or join."
+  },
+  "syncTurnOn": {
+    "message": "Turn on sync"
+  },
+  "syncJoinStart": {
+    "message": "Join a synced vault"
+  },
+  "syncAsking": {
+    "message": "Chrome is asking whether Sixkey may connect to its server…"
+  },
+  "syncDeclinedTitle": {
+    "message": "Sync needs that permission"
+  },
+  "syncDeclinedBody": {
+    "message": "Without it Sixkey can't reach its server. Nothing changed, and Sixkey works on this device as before."
+  },
+  "syncAskAgain": {
+    "message": "Ask again"
+  },
+  "syncStepsLabel": {
+    "message": "Steps"
+  },
+  "syncStepPassword": {
+    "message": "Password"
+  },
+  "syncStepSignIn": {
+    "message": "Email"
+  },
+  "syncStepName": {
+    "message": "Device name"
+  },
+  "syncStepRecovery": {
+    "message": "Recovery key"
+  },
+  "syncStepUpload": {
+    "message": "Turn on"
+  },
+  "syncStepChoose": {
+    "message": "Check"
+  },
+  "syncStepJoin": {
+    "message": "Join"
+  },
+  "syncStepSummary": {
+    "message": "Finish"
+  },
+  "syncChecking": {
+    "message": "Checking…"
+  },
+  "syncStartAgain": {
+    "message": "Start again"
+  },
+  "syncPasswordTitle": {
+    "message": "Enter your master password"
+  },
+  "syncPasswordBody": {
+    "message": "Once, to confirm it's you. Your other devices will use the same master password."
+  },
+  "syncSignInTitle": {
+    "message": "Sign in with your email"
+  },
+  "syncSignInBody": {
+    "message": "Sixkey emails you a 6-digit code. Your email is how your devices find each other; it never sees your accounts."
+  },
+  "syncEmailLabel": {
+    "message": "Email"
+  },
+  "syncSendCode": {
+    "message": "Send code"
+  },
+  "syncSending": {
+    "message": "Sending…"
+  },
+  "syncCodeTitle": {
+    "message": "Enter the code"
+  },
+  "syncCodeBody": {
+    "message": "We sent a 6-digit code to $1. It works for a few minutes."
+  },
+  "syncCodeLabel": {
+    "message": "Code from the email"
+  },
+  "syncVerify": {
+    "message": "Sign in"
+  },
+  "syncVerifying": {
+    "message": "Signing in…"
+  },
+  "syncResendIn": {
+    "message": "New code in $1"
+  },
+  "syncResend": {
+    "message": "Send a new code"
+  },
+  "syncOtherEmail": {
+    "message": "Use another email"
+  },
+  "syncExistsTitle": {
+    "message": "This email already syncs a vault"
+  },
+  "syncExistsSince": {
+    "message": "It has had a synced vault since $1, with $2 device(s). Join it to use its accounts here; this profile's own accounts are added to it."
+  },
+  "syncExistsBody": {
+    "message": "Join it to use its accounts here; this profile's own accounts are added to it."
+  },
+  "syncNotYouWarning": {
+    "message": "If you never turned on Sixkey sync anywhere, someone else may control your email: stop here."
+  },
+  "syncJoinIt": {
+    "message": "Join that vault"
+  },
+  "syncNameTitle": {
+    "message": "Name this device"
+  },
+  "syncNameLabel": {
+    "message": "Device name"
+  },
+  "syncNameHint": {
+    "message": "1 to 40 characters, shown in your device list. No control, text-direction or zero-width characters; joined emoji (several emoji drawn as one) contain one, so use a single emoji or words."
+  },
+  "syncDefaultName": {
+    "message": "Chrome profile"
+  },
+  "syncNameEmpty": {
+    "message": "Enter a name."
+  },
+  "syncNameTooLong": {
+    "message": "Use 40 characters or fewer."
+  },
+  "syncNameControl": {
+    "message": "Remove the control characters."
+  },
+  "syncNameBidi": {
+    "message": "Remove the text-direction characters."
+  },
+  "syncNameZeroWidth": {
+    "message": "Remove the zero-width characters, such as the ones inside joined emoji."
+  },
+  "syncNameNotWellFormed": {
+    "message": "This name contains characters that can't be used."
+  },
+  "syncNameInvalid": {
+    "message": "Choose another device name."
+  },
+  "syncRecoveryTitle": {
+    "message": "Your recovery key"
+  },
+  "syncRecoveryBody": {
+    "message": "Sync needs your recovery key once: it is how you get back in on any device if you forget the master password. Sixkey never stores it."
+  },
+  "syncHaveCode": {
+    "message": "I have my recovery key"
+  },
+  "syncMakeNewCode": {
+    "message": "Make a new one"
+  },
+  "syncPreparing": {
+    "message": "Preparing…"
+  },
+  "syncEnterCodeTitle": {
+    "message": "Enter your recovery key"
+  },
+  "syncRecoveryHint": {
+    "message": "7 groups of 4. The letters O, I and L are read as 0, 1 and 1."
+  },
+  "syncTurnOnNow": {
+    "message": "Turn on sync"
+  },
+  "syncNewCodeNote": {
+    "message": "Nothing has changed yet. Once you confirm this key, it replaces your current recovery key in this profile, and the old one stops working, even if you stop before sync is on."
+  },
+  "syncCodeSaved": {
+    "message": "I've saved it"
+  },
+  "syncConfirmCodeTitle": {
+    "message": "Type back two groups"
+  },
+  "syncConfirmCodeBody": {
+    "message": "To make sure the key is saved, type group $1 and group $2."
+  },
+  "syncGroupLabel": {
+    "message": "Group $1"
+  },
+  "syncGroupsWrong": {
+    "message": "Those groups don't match. Check the saved key, or show it again."
+  },
+  "syncSaving": {
+    "message": "Saving…"
+  },
+  "syncShowCodeAgain": {
+    "message": "Show the key again"
+  },
+  "syncUploading": {
+    "message": "Turning sync on… This takes a few seconds."
+  },
+  "syncOnDone": {
+    "message": "Sync is on."
+  },
+  "syncOnUnconfirmed": {
+    "message": "Sync is being turned on. The server's answer didn't arrive; Sixkey checks again shortly. Nothing is lost."
+  },
+  "syncRaceTitle": {
+    "message": "Another device turned sync on first"
+  },
+  "syncRaceBody": {
+    "message": "This email has a synced vault now. Join it to use its accounts here; this profile's accounts are added to it."
+  },
+  "syncRaceNewCode": {
+    "message": "The recovery key you just made works only for this profile's own vault, not for the synced one. Once you join, the synced vault's recovery key is the one to keep."
+  },
+  "syncOnFailedTitle": {
+    "message": "Sync wasn't turned on"
+  },
+  "syncNoVaultTitle": {
+    "message": "No synced vault for this email yet"
+  },
+  "syncNoVaultBody": {
+    "message": "Turn sync on with this profile's vault instead, then join from your other profiles."
+  },
+  "syncJoinWarnTitle": {
+    "message": "Check before you join"
+  },
+  "syncJoinSince": {
+    "message": "This email has had a synced vault since $1, with $2 device(s)."
+  },
+  "syncJoinSinceUnknown": {
+    "message": "This email has a synced vault."
+  },
+  "syncJoinByApproval": {
+    "message": "Approve from another device"
+  },
+  "syncJoinByCode": {
+    "message": "Use the recovery key"
+  },
+  "syncJoinCodeTitle": {
+    "message": "Enter the vault's recovery key"
+  },
+  "syncJoinCodeBody": {
+    "message": "The recovery key of the synced vault, as you saved it."
+  },
+  "syncConfirmLost": {
+    "message": "This profile's own data can't be read. Replace it with the synced vault."
+  },
+  "syncStartingRequest": {
+    "message": "Asking the server…"
+  },
+  "syncWaitingTitle": {
+    "message": "Approve this device on one you already sync"
+  },
+  "syncWaitingStep1": {
+    "message": "On a device that already syncs, open Sixkey's settings."
+  },
+  "syncWaitingStep2": {
+    "message": "Go to Sync and choose Approve a new device."
+  },
+  "syncWaitingStep3": {
+    "message": "It then shows a pairing code: type it here."
+  },
+  "syncRequestLeft": {
+    "message": "Time left: $1"
+  },
+  "syncSasTitle": {
+    "message": "Type these digits on the other device"
+  },
+  "syncSasBody": {
+    "message": "Enter them on the device that showed the pairing code. They prove that the two devices reached each other, with no one in between."
+  },
+  "syncScamWarning": {
+    "message": "Only ever copy these two codes between your own two devices. Anyone who asks you to type them anywhere else, or to read them out to them, is trying to scam you."
+  },
+  "syncWaitingForApprover": {
+    "message": "Waiting for the other device…"
+  },
+  "syncSummaryTitle": {
+    "message": "Ready to join"
+  },
+  "syncSummaryAdded": {
+    "message": "This profile's $1 account(s) will be added to the synced vault ($2 already there are skipped)."
+  },
+  "syncSummaryAddedLater": {
+    "message": "This profile's $1 account(s) will be added to the synced vault. After the first sync, this profile's copy of any account the synced vault already has goes to the trash."
+  },
+  "syncSummaryKeptAside": {
+    "message": "This profile's own vault is also kept aside, encrypted, in case you need it later."
+  },
+  "syncSummaryMerged": {
+    "message": "This profile's vault is the synced one already; the two are merged."
+  },
+  "syncSummaryLost": {
+    "message": "This profile's unreadable data will be replaced by the synced vault."
+  },
+  "syncSummaryEmpty": {
+    "message": "The synced vault's accounts will appear here."
+  },
+  "syncShareWarning": {
+    "message": "Is this profile used by other people, or synced or copied by a browser vendor? Then don't let it join: anyone who opens it and knows the master password sees every account, and its copies become hidden sync devices. Export only the accounts it needs instead (Backup, Export selected accounts)."
+  },
+  "syncJoining": {
+    "message": "Joining…"
+  },
+  "syncJoined": {
+    "message": "This device joined. Its accounts sync from now on."
+  },
+  "syncJoinedByCode": {
+    "message": "This device joined with the recovery key. Your other devices will show that it did."
+  },
+  "syncJoinUnconfirmed": {
+    "message": "This device is joining. The server's answer didn't arrive; Sixkey checks again shortly."
+  },
+  "syncJoinFailedTitle": {
+    "message": "This device didn't join"
+  },
+  "syncStarting": {
+    "message": "Getting ready to sync"
+  },
+  "syncStartingBody": {
+    "message": "The first sync runs in a moment."
+  },
+  "syncOkTitle": {
+    "message": "In sync"
+  },
+  "syncLastOk": {
+    "message": "Last synced $1."
+  },
+  "syncWhenNever": {
+    "message": "never"
+  },
+  "syncWhenNow": {
+    "message": "just now"
+  },
+  "syncWhenMinutes": {
+    "message": "$1 min ago"
+  },
+  "syncWhenAt": {
+    "message": "$1"
+  },
+  "syncPendingLine": {
+    "message": "Devices waiting for approval: $1."
+  },
+  "syncOfflineTitle": {
+    "message": "Offline"
+  },
+  "syncOfflineBody": {
+    "message": "Changes made here are kept, and go up when Sixkey reaches its server again."
+  },
+  "syncNextSoon": {
+    "message": "Next try in a moment."
+  },
+  "syncNextMinutes": {
+    "message": "Next try in $1 min."
+  },
+  "syncNextAt": {
+    "message": "Next try at $1."
+  },
+  "syncLockedTitle": {
+    "message": "Locked"
+  },
+  "syncLockedBody": {
+    "message": "Unlock Sixkey on this page to sync. Changes made while locked are still sent in the background."
+  },
+  "syncErrorTitle": {
+    "message": "Sync didn't go through"
+  },
+  "syncErrUnknown": {
+    "message": "Sixkey tries again by itself."
+  },
+  "syncErrBusy": {
+    "message": "The server is busy. Sixkey tries again by itself."
+  },
+  "syncErrServer": {
+    "message": "The server has a problem right now. Sixkey tries again by itself."
+  },
+  "syncErrConflict": {
+    "message": "Other devices kept changing the vault at the same moment. Sixkey tries again by itself."
+  },
+  "syncErrMalformed": {
+    "message": "The server sent an answer Sixkey can't read. Sixkey tries again by itself."
+  },
+  "syncErrDenied": {
+    "message": "The server refused the change. Sixkey tries again by itself."
+  },
+  "syncErrInternal": {
+    "message": "Something went wrong on this device. Saving diagnostics (Settings › Advanced) helps find out why."
+  },
+  "syncErrCode": {
+    "message": "The server answered: $1. Sixkey tries again by itself."
+  },
+  "syncBusyTitle": {
+    "message": "Syncing…"
+  },
+  "syncNeedsPasswordTitle": {
+    "message": "Enter your master password to keep syncing"
+  },
+  "syncNeedsPasswordBody": {
+    "message": "The keys were changed on another device. Your codes keep working here meanwhile."
+  },
+  "syncReviewTitle": {
+    "message": "A change needs your OK"
+  },
+  "syncReviewBody": {
+    "message": "Another device's change would erase or change accounts that are still on this one. Nothing is applied until you choose."
+  },
+  "syncUnreadableTitle": {
+    "message": "The synced vault can't be read"
+  },
+  "syncUnreadableBody": {
+    "message": "No version on the server opens with this device's keys. Nothing here was changed. Another device may be newer, or the server's data damaged."
+  },
+  "syncOlderKeyTitle": {
+    "message": "The server went back to older keys"
+  },
+  "syncOlderKeyBody": {
+    "message": "Maybe the server restored a backup. This device keeps its newer keys and its data."
+  },
+  "syncRepairPending": {
+    "message": "Sync stays paused here until the server is repaired from a device with the newer keys."
+  },
+  "syncUpdateTitle": {
+    "message": "Update Sixkey to keep syncing"
+  },
+  "syncUpdateBody": {
+    "message": "The server needs a newer version. Chrome updates extensions by itself; in chrome://extensions, Update does it now. Nothing is lost meanwhile."
+  },
+  "syncTooLargeTitle": {
+    "message": "Your vault is too big to sync"
+  },
+  "syncTooLargeBody": {
+    "message": "Changes are saved here but not uploaded. Delete accounts you no longer need and empty the trash: that is always allowed, and uploading resumes once the vault fits."
+  },
+  "syncNewerTitle": {
+    "message": "Another device uses a newer Sixkey"
+  },
+  "syncNewerBody": {
+    "message": "Update Sixkey here to keep syncing. Nothing is lost meanwhile."
+  },
+  "syncDifferentTitle": {
+    "message": "This device's vault isn't the synced one"
+  },
+  "syncDifferentBody": {
+    "message": "Its data differs from the cloud's in a way that can't be merged. Your accounts here are kept."
+  },
+  "syncPausedHere": {
+    "message": "Sync is paused on this device."
+  },
+  "syncRejectedTitle": {
+    "message": "The server no longer accepts this device"
+  },
+  "syncRejectedBody": {
+    "message": "It may have been removed from sync on another device. Your accounts stay here. Sixkey asks the server again once a day."
+  },
+  "syncUninstallNote": {
+    "message": "To erase Sixkey's data from this profile, uninstall the extension. Copies held by a browser vendor's cloud, or in copied profiles, don't go away with it."
+  },
+  "syncUploadUnfinishedTitle": {
+    "message": "Turning sync on didn't finish"
+  },
+  "syncJoinUnfinishedTitle": {
+    "message": "Joining didn't finish"
+  },
+  "syncUnfinishedBody": {
+    "message": "The server's answer never arrived. Check again to find out whether it went through; nothing is lost either way."
+  },
+  "syncIdentityMissingTitle": {
+    "message": "Sync is waiting for an unlock"
+  },
+  "syncIdentityMissingBody": {
+    "message": "This browser lost this device's sync identity from its storage (some browsers clear it). Unlock Sixkey to restore it from its encrypted copy."
+  },
+  "syncIdentityMissingRestoring": {
+    "message": "Restoring this device's sync identity from its encrypted copy…"
+  },
+  "syncVaultLostTitle": {
+    "message": "This profile's vault can't be read"
+  },
+  "syncVaultLostBody": {
+    "message": "Restore it from a backup file. Sync stays paused until then."
+  },
+  "syncDamagedTitle": {
+    "message": "Sync data on this device is damaged"
+  },
+  "syncDamagedBody": {
+    "message": "Remove the sync identity on this device, then join again. Your accounts stay here."
+  },
+  "syncWrongOriginTitle": {
+    "message": "This device was set up for another server"
+  },
+  "syncWrongOriginBody": {
+    "message": "Remove the sync identity on this device, then turn sync on or join again. Your accounts stay here."
+  },
+  "syncPausedTitle": {
+    "message": "Sync is paused"
+  },
+  "syncPausedBody": {
+    "message": "Sixkey's access to $1 was removed in Chrome. Nothing is sent and nothing is lost. Allow it again to resume."
+  },
+  "syncResumingTitle": {
+    "message": "Resuming…"
+  },
+  "syncResumingBody": {
+    "message": "Access is back. The next sync picks up where it stopped."
+  },
+  "syncFinishingOffTitle": {
+    "message": "Finishing turning sync off"
+  },
+  "syncFinishingOffBody": {
+    "message": "An earlier turn-off didn't finish. Sixkey finishes it on this device; nothing is sent."
+  },
+  "syncKeysBehindTitle": {
+    "message": "The server's keys are older than this device's"
+  },
+  "syncKeysBehindBody": {
+    "message": "Maybe the server restored a backup, or another device is behind. This device keeps its keys."
+  },
+  "syncKeysBehindPaused": {
+    "message": "Until it is repaired, changing the master password or recovery key, replacing keys and approving devices are paused. Removing devices still works."
+  },
+  "syncNewPasswordTitle": {
+    "message": "Your master password was changed on another device"
+  },
+  "syncNewPasswordBody": {
+    "message": "Enter the new one to update this device. Until then this device keeps working with the old one."
+  },
+  "syncKeysRejectedTitle": {
+    "message": "The server's keys couldn't be checked"
+  },
+  "syncKeysRejectedBody": {
+    "message": "This device didn't take them over and keeps its own. If this keeps happening, don't change your keys from this device."
+  },
+  "syncActSyncNow": {
+    "message": "Sync now"
+  },
+  "syncSyncing": {
+    "message": "Syncing…"
+  },
+  "syncActGrant": {
+    "message": "Allow again"
+  },
+  "syncActUnlock": {
+    "message": "Unlock"
+  },
+  "syncActAdopt": {
+    "message": "Update this device"
+  },
+  "syncActReview": {
+    "message": "Review"
+  },
+  "syncActRemoveIdentity": {
+    "message": "Remove sync identity"
+  },
+  "syncActCheckAgain": {
+    "message": "Check again"
+  },
+  "syncActJoinAgain": {
+    "message": "Join again"
+  },
+  "syncActBackup": {
+    "message": "Restore from a backup"
+  },
+  "syncOlderTitle": {
+    "message": "This password opens only an older key state"
+  },
+  "syncOlderBody": {
+    "message": "Taking it over would take this device back to the old master password and recovery key."
+  },
+  "syncOlderKeep": {
+    "message": "Use my current password"
+  },
+  "syncOlderAdopt": {
+    "message": "Take it over anyway"
+  },
+  "syncDoneAdopted": {
+    "message": "This device now uses the keys from your other device."
+  },
+  "syncDoneUnlocked": {
+    "message": "Unlocked. Sync continues."
+  },
+  "syncDoneOff": {
+    "message": "Sync is off on this device. Your accounts stay here."
+  },
+  "syncDoneRemoved": {
+    "message": "The sync identity was removed from this device. Your accounts stay here."
+  },
+  "syncDoneNotCreated": {
+    "message": "Turning sync on didn't reach the server. Nothing changed; you can start again."
+  },
+  "syncDoneDiscarded": {
+    "message": "The saves were deleted."
+  },
+  "syncDoneOn": {
+    "message": "Sync is on. Join from your other profiles with the same email."
+  },
+  "syncDoneJoined": {
+    "message": "This device joined."
+  },
+  "syncDoneIdentityRestored": {
+    "message": "This device's sync identity was restored from its encrypted copy."
+  },
+  "syncNoticeRollback": {
+    "message": "The server's data went back to an older version. Sixkey merged everything again; nothing is lost."
+  },
+  "syncNoticeKeysAdoptedBack": {
+    "message": "This device took back keys it had committed earlier. If you changed the master password or recovery key on this device since then, check which one opens it now."
+  },
+  "syncNoticeKeysChanged": {
+    "message": "Keys changed on another device were taken over here."
+  },
+  "syncNoticeForked": {
+    "message": "This profile seems to be a copy of another one (cloned, or synced by a browser vendor)."
+  },
+  "syncNoticeDeviceJoined": {
+    "message": "A new device joined your sync."
+  },
+  "syncNoticeDeviceRevoked": {
+    "message": "A device was removed from your sync."
+  },
+  "syncNoticeAuthFailures": {
+    "message": "A device entered a wrong master password several times."
+  },
+  "syncNoticeDeleted": {
+    "message": "Another device deleted $1 accounts."
+  },
+  "syncNoticeDeletedDanger": {
+    "message": "Another device deleted $1 accounts and then erased them for good. If that wasn't you, check your other devices, and bring the accounts back with Find accounts, or from a backup if you have one."
+  },
+  "syncSeeTrash": {
+    "message": "See the trash"
+  },
+  "syncNoticeRecoveryOk": {
+    "message": "The new recovery key made on this device is in effect."
+  },
+  "syncNoticeRecoveryVoid": {
+    "message": "The new recovery key made on this device didn't take effect. Keep using the old one, and make a new one again."
+  },
+  "syncNoticeRevMismatch": {
+    "message": "The server reported a different version number than its data. Sixkey merged it anyway."
+  },
+  "syncNoticeOrphanGone": {
+    "message": "$1 save(s) kept on this device could not be recovered: the key they need is gone."
+  },
+  "syncNoticeClock": {
+    "message": "Your computer's clock is more than 15 seconds off the server's. Codes may be rejected; check the system time."
+  },
+  "syncParkedTitle": {
+    "message": "$1 save(s) on this device can't be read here yet, and are kept"
+  },
+  "syncParkedSchema": {
+    "message": "Some were saved by a newer Sixkey: update Sixkey."
+  },
+  "syncParkedKey": {
+    "message": "Some are under keys changed on another device: unlock with your newer master password."
+  },
+  "syncParkedTooLarge": {
+    "message": "Some would take the vault past its account limit: delete accounts you no longer need."
+  },
+  "syncParkedVault": {
+    "message": "Some belong to another vault than the one this profile syncs now: they can't be opened here, and are kept until you delete them."
+  },
+  "syncAdvanced": {
+    "message": "Advanced"
+  },
+  "syncParkedDelete": {
+    "message": "Delete these saves"
+  },
+  "syncParkedDeleteTitle": {
+    "message": "Delete $1 save(s) for good?"
+  },
+  "syncParkedDeleteBody": {
+    "message": "What is in them is lost if no other device has it. This can't be undone."
+  },
+  "syncRemoveTitle": {
+    "message": "Remove this device's sync identity?"
+  },
+  "syncRemoveBody": {
+    "message": "Sync stops on this device, and nothing is sent. Your accounts stay here. The server still lists this device until you remove it from another device. To sync again, join again."
+  },
+  "syncThisDevice": {
+    "message": "This device"
+  },
+  "syncTurnOff": {
+    "message": "Turn off sync"
+  },
+  "syncTurningOff": {
+    "message": "Turning off…"
+  },
+  "syncTurnOffTitle": {
+    "message": "Turn off sync on this device?"
+  },
+  "syncTurnOffBody": {
+    "message": "This device leaves your sync. Your accounts stay here, and your other devices keep syncing. Sixkey then removes its access to the server."
+  },
+  "syncTurnOffNoNetwork": {
+    "message": "Removing this device from sync needs Sixkey's server, and the access was declined. You can still remove the sync identity on this device only."
+  },
+  "syncFailNetwork": {
+    "message": "Sixkey can't reach its server. Check the connection and try again."
+  },
+  "syncFailPassword": {
+    "message": "That's not the master password."
+  },
+  "syncFailCode": {
+    "message": "That code is wrong or has expired. Check it, or send a new one."
+  },
+  "syncFailCodeFormat": {
+    "message": "Enter the 6 digits from the email."
+  },
+  "syncFailEmail": {
+    "message": "That doesn't look like an email address."
+  },
+  "syncFailTooMany": {
+    "message": "Too many tries. Wait a little and try again."
+  },
+  "syncFailTooManySeconds": {
+    "message": "Too many tries. Try again in $1 seconds."
+  },
+  "syncFailTooManyMinutes": {
+    "message": "Too many tries. Try again in $1 minutes."
+  },
+  "syncFailSession": {
+    "message": "Your sign-in expired. Get a new code."
+  },
+  "syncFailRecoveryMismatch": {
+    "message": "That recovery key doesn't open the synced vault."
+  },
+  "syncFailRecoveryFormat": {
+    "message": "That isn't a valid recovery key. Check it for typos."
+  },
+  "syncFailRecoveryNotLocal": {
+    "message": "That key doesn't open this profile's vault. Check it, or make a new one."
+  },
+  "syncFailConfirmLost": {
+    "message": "Tick the box to confirm that the synced vault replaces this profile's unreadable data."
+  },
+  "syncFailLocked": {
+    "message": "Unlock Sixkey on this page first, then try again."
+  },
+  "syncFailLockedOut": {
+    "message": "Sixkey locked, so this stopped. Unlock, then start again, or cancel to see where sync stands."
+  },
+  "syncNewCodeInEffect": {
+    "message": "The new recovery key was saved before Sixkey locked: it is the one that works now. Keep it."
+  },
+  "syncFailVaultLost": {
+    "message": "This profile's vault can't be read. Restore it from a backup first."
+  },
+  "syncFailUnfinishedWait": {
+    "message": "An earlier attempt may still go through. Try again in $1 minutes."
+  },
+  "syncFailAlreadyOn": {
+    "message": "This profile already syncs."
+  },
+  "syncFailBundle": {
+    "message": "The synced vault can't be opened. Nothing here was changed."
+  },
+  "syncFailKeyringChanged": {
+    "message": "Your keys changed in another tab meanwhile. Start again."
+  },
+  "syncFailOnePerSession": {
+    "message": "A request from this sign-in is still open. Sign in again to start over."
+  },
+  "syncFailGone": {
+    "message": "The request expired or was declined. Start again."
+  },
+  "syncFailTampered": {
+    "message": "The request was changed on the way, so it was cancelled for safety. Start again. If it happens again, don't join."
+  },
+  "syncFailCancelled": {
+    "message": "The request was cancelled."
+  },
+  "syncFailTooManyDevices": {
+    "message": "This vault already has as many devices as it can. Remove one first."
+  },
+  "syncFailBusy": {
+    "message": "Another sync is running. Try again in a moment."
+  },
+  "syncFailUnconfirmed": {
+    "message": "The server's answer didn't arrive. Try again."
+  },
+  "syncFailDeclined": {
+    "message": "Chrome's request was declined, so Sixkey can't reach its server. Nothing changed."
+  },
+  "syncFailChanged": {
+    "message": "Something changed meanwhile. Try again."
+  },
+  "syncFailOther": {
+    "message": "That didn't work ($1). Try again."
+  },
+  "syncRailOk": {
+    "message": "On · synced $1"
+  },
+  "syncRailBusy": {
+    "message": "On · syncing"
+  },
+  "syncRailOffline": {
+    "message": "On · offline"
+  },
+  "syncRailPaused": {
+    "message": "Paused"
+  },
+  "syncRailLocked": {
+    "message": "On · locked"
+  },
+  "syncRailAttention": {
+    "message": "Needs attention"
+  },
+  "syncReviewLead": {
+    "message": "$1 account(s) on this device would be affected:"
+  },
+  "syncReviewUnnamed": {
+    "message": "An account"
+  },
+  "syncReviewErased": {
+    "message": "erased by the other device"
+  },
+  "syncReviewSecret": {
+    "message": "secret changed by the other device"
+  },
+  "syncReviewHow": {
+    "message": "Keep mine keeps this device's version, which then wins on every device. Apply takes the other device's change."
+  },
+  "syncReviewKeep": {
+    "message": "Keep mine"
+  },
+  "syncReviewApply": {
+    "message": "Apply"
+  },
+  "syncFindTitle": {
+    "message": "Find accounts"
+  },
+  "syncFindBody": {
+    "message": "Bring back accounts that were in an earlier version of the vault and are not in it now."
+  },
+  "syncFindServer": {
+    "message": "On the server"
+  },
+  "syncFindLocal": {
+    "message": "On this device"
+  },
+  "syncFindPick": {
+    "message": "In this version, not in the vault now:"
+  },
+  "syncFindNone": {
+    "message": "Every account in this version is in the vault now."
+  },
+  "syncFindGo": {
+    "message": "Bring back ($1)"
+  },
+  "syncFindDone": {
+    "message": "$1 account(s) are back in the vault."
+  },
+  "syncFindUnreadable": {
+    "message": "This version can't be opened on this device."
+  },
+  "syncNoticeDuplicates": {
+    "message": "$1 account(s) this profile added when it joined were in the synced vault already: the extra copies are in the trash."
+  },
+  "syncFindOlderKey": {
+    "message": "older keys"
+  },
+  "syncFindSameKey": {
+    "message": "its key is in the vault now, under another name"
+  },
+  "syncFindSameName": {
+    "message": "an account with this name is in the vault now, with another key"
+  },
+  "syncFindNoVersions": {
+    "message": "None."
+  },
+  "syncRepairRevokeAgain": {
+    "message": "Devices removed before the server's data went back are removed again first: $1. If one is missing here (removed from another device), cancel and remove it under Devices first."
+  }
+}

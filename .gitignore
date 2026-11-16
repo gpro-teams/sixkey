@@ -1,0 +1,66 @@
+# Dependencies and build output
+node_modules/
+dist/
+dist-e2e/
+dist-dev/
+dist-id-draft/
+release/
+*.tsbuildinfo
+
+# Test output and tool caches
+test-results/
+playwright-report/
+coverage/
+.nyc_output/
+.vite/
+.vitest-cache/
+.eslintcache
+.prettiercache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Python environments and the local test database (api/server/.pg holds a whole PostgreSQL cluster and the
+# development server's one-time-code inbox)
+.venv/
+venv/
+.pg/
+
+# Secrets and signing material. Chrome's "Pack extension" writes the extension's private signing key (.pem) next to
+# the packed folder.
+.env
+.env.*
+*.pem
+# ...but the site rules' two TEST signing keys, published on purpose: the tests and the dev and e2e builds use them,
+# and check-dist refuses them in a store build (extension/scripts/rules-keys.mjs)
+!extension/test/fixtures/rules-keys/test-only-current.pem
+!extension/test/fixtures/rules-keys/test-only-next.pem
+*.key
+*.p12
+*.pfx
+*.p8
+*.mobileprovision
+*.provisionprofile
+*.crx
+
+# Packages, archives, logs, generated bills of materials
+*.zip
+*.tgz
+*.log
+npm-debug.log*
+*.cdx.json
+*.spdx.json
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

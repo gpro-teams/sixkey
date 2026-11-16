@@ -1,0 +1,86 @@
+{
+  "deleteForever": {
+    "message": "永久删除"
+  },
+  "trashLead": {
+    "message": "删除的账户会一直留在这里，直到你永久清除。不会自动清除。"
+  },
+  "trashEmpty": {
+    "message": "回收站是空的。"
+  },
+  "purgedNote": {
+    "message": "有些账户已被永久清除，只留下一个标记，保证删除能同步。"
+  },
+  "clipHistoryNote": {
+    "message": "剪贴板历史工具（如 Windows 的 Win+V）可能保留自己的副本，Sixkey 无法删除。"
+  },
+  "clipDisable": {
+    "message": "关闭"
+  },
+  "clipOff": {
+    "message": "未开启"
+  },
+  "clockTitle": {
+    "message": "检查电脑时间"
+  },
+  "clockBody": {
+    "message": "验证码取决于时间。如果你的时钟偏差超过约 15 秒，验证码会失效。请在系统设置里开启自动校时。Sixkey 不发起任何网络请求，所以无法自己检测。"
+  },
+  "diagTitle": {
+    "message": "诊断信息"
+  },
+  "diagBody": {
+    "message": "本地记录的恢复事件和非致命问题，不含密钥、验证码或账户名。不会发送到任何地方；需要帮助时再自行保存并发给我们。"
+  },
+  "diagExport": {
+    "message": "保存诊断信息"
+  },
+  "startOverTitle": {
+    "message": "清空并重新开始"
+  },
+  "startOverBody": {
+    "message": "仅在你没有备份时使用。这会永久丢弃剩下的无法读取的数据。"
+  },
+  "startOverType": {
+    "message": "输入 $1 确认"
+  },
+  "startOverAction": {
+    "message": "清除并重新开始"
+  },
+  "trashClearOld": {
+    "message": "永久清除 $1 个超过 $2 天的账户"
+  },
+  "advLead": {
+    "message": "时钟、诊断信息和恢复工具。"
+  },
+  "clipRowTitle": {
+    "message": "复制 30 秒后自动清空"
+  },
+  "afsLead": {
+    "message": "你开启了验证码提示的网站。在这些网站上，Chrome 允许 Sixkey 读取和更改网页；Sixkey 只查找验证码输入框，不向任何地方发送数据。仅限安全（https）网页。"
+  },
+  "afsNone": {
+    "message": "还没有网站。在 https 网站上填写验证码后，Sixkey 会提示你为该网站开启。"
+  },
+  "afsOff": {
+    "message": "已在 Chrome 中关闭"
+  },
+  "afsAgain": {
+    "message": "重新开启"
+  },
+  "afsRemove": {
+    "message": "移除"
+  },
+  "afsChrome": {
+    "message": "Chrome 会把这些网站的列表以未加密的形式保存在它自己的设置中。移除时也会交还 Chrome 对该网站的访问权限；Chrome 会记得你曾经允许过，所以再次开启时不会再询问。"
+  },
+  "afsOld": {
+    "message": "验证码提示需要 Chrome 140 或更高版本。"
+  },
+  "trashKeptUnchecked": {
+    "message": "本配置文件在加入同步库之前保留的 $1 个保险库无法在这里检查，你永久删除的账户可能仍在其中。如果它必须从所有地方消失，请到“设置 › 同步”删除它们。"
+  },
+  "startOverKept": {
+    "message": "本配置文件还保留着加入同步库之前的 $1 个保险库。重新开始不会删除它们；如果不想保留，请到“设置 › 同步”删除。"
+  }
+}

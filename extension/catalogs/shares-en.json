@@ -1,0 +1,149 @@
+{
+  "shEntryLead": {
+    "message": "Type your shares one at a time, from the paper."
+  },
+  "shEntryLabel": {
+    "message": "Share $1"
+  },
+  "shEntryAdd": {
+    "message": "Add share"
+  },
+  "shEntryTyped": {
+    "message": "Share $1 of set $2"
+  },
+  "shEntryProgress": {
+    "message": "$1 of $2 shares typed (set $3)."
+  },
+  "shEntryRebuilt": {
+    "message": "Recovery key rebuilt from $1 shares."
+  },
+  "shEntryClear": {
+    "message": "Start again"
+  },
+  "shEntryToCode": {
+    "message": "Type the recovery key instead"
+  },
+  "shEntryOther": {
+    "message": "This is share $1. Type share $2."
+  },
+  "shEntryOtherSet": {
+    "message": "This share is from set $1. Type the shares of set $2."
+  },
+  "shWrongCheck": {
+    "message": "This share has a typo. Compare it with the paper."
+  },
+  "shLength": {
+    "message": "A share has 36 characters, in 9 groups of 4."
+  },
+  "shNewer": {
+    "message": "This share was made by a newer Sixkey. Update Sixkey first."
+  },
+  "shDifferentSets": {
+    "message": "These shares are from different sets."
+  },
+  "shSame": {
+    "message": "You typed this share already."
+  },
+  "shNoFit": {
+    "message": "These shares do not fit together. Check each one against its paper."
+  },
+  "shStale": {
+    "message": "These shares rebuild a recovery key that does not open this vault. They may belong to an older recovery key, or to another Sixkey vault (set $1)."
+  },
+  "shIntro": {
+    "message": "Make $1 shares. Any $2 of them rebuild your recovery key; fewer reveal nothing. Keep them in different places."
+  },
+  "shPick23": {
+    "message": "Any 2 of 3 (recommended)"
+  },
+  "shPick35": {
+    "message": "Any 3 of 5"
+  },
+  "shReplace": {
+    "message": "Make a new recovery key, shown only as shares (recommended)"
+  },
+  "shReplaceNote": {
+    "message": "Your current recovery key, and any shares of it, stop working once you finish. Until then nothing changes."
+  },
+  "shSplitCurrent": {
+    "message": "Split my current recovery key"
+  },
+  "shSplitNote": {
+    "message": "Your current recovery key keeps working. The shares are one more way to it."
+  },
+  "shWrongCode": {
+    "message": "That recovery key does not open this vault."
+  },
+  "shMake": {
+    "message": "Make shares"
+  },
+  "shCheckMine": {
+    "message": "Check my shares"
+  },
+  "shCheckLead": {
+    "message": "Type the shares you have. Nothing is changed."
+  },
+  "shCheckOk": {
+    "message": "These shares work: they rebuild the recovery key that opens your vault now."
+  },
+  "shCheckRestart": {
+    "message": "The browser has not restarted since you switched to these shares. Check them once more after you restart it, and destroy the old recovery key only then."
+  },
+  "shSwitchLost": {
+    "message": "If these are the shares you switched to last, that switch did not complete: your old recovery key still opens your vault. Keep it, and make the shares again."
+  },
+  "shSheetTitle": {
+    "message": "Share $1 of $2"
+  },
+  "shSheetSet": {
+    "message": "Set $1 · $2"
+  },
+  "shPrint": {
+    "message": "Print share $1"
+  },
+  "shSaveFile": {
+    "message": "Save as a text file"
+  },
+  "shSaveWarn": {
+    "message": "A download folder that syncs (iCloud Drive, OneDrive, Dropbox) puts the file in the cloud. Print it or move it to a USB stick, then delete it."
+  },
+  "shKept": {
+    "message": "Share $1 is printed or written down"
+  },
+  "shNotYet": {
+    "message": "Nothing has changed yet: these shares open nothing until the check at the end."
+  },
+  "shTestTitle": {
+    "message": "Check $1 shares before we switch"
+  },
+  "shTestTitleSplit": {
+    "message": "Check $1 shares"
+  },
+  "shTestLead": {
+    "message": "Type shares $1 back from your paper, to be sure each was kept right."
+  },
+  "shSwitch": {
+    "message": "Switch to these shares"
+  },
+  "shDone": {
+    "message": "Done. Any $1 of your $2 shares now rebuild your recovery key. Keep the old recovery key for now: after the next browser restart, use “Check my shares” once, and destroy the old key only when they pass."
+  },
+  "shDoneSplit": {
+    "message": "Done. Any $1 of your $2 shares rebuild your recovery key. Your recovery key paper still works too."
+  },
+  "shLost": {
+    "message": "Lost a share? Make new shares with “Make a new recovery key”: the old key and every old share then stop working."
+  },
+  "shPaperTitle": {
+    "message": "Sixkey recovery key share $1 of $2"
+  },
+  "shPaperAny": {
+    "message": "Any $1 of the $2 shares rebuild your recovery key."
+  },
+  "shPaperWhere": {
+    "message": "Use it only in Sixkey, on its restore screen (I have shares instead). Sixkey never asks for a share by email, chat or phone. This is not a crypto-wallet phrase. Never photograph it."
+  },
+  "shPaperHeld": {
+    "message": "Held by:"
+  }
+}

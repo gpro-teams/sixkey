@@ -1,0 +1,4 @@
+{
+  "groups": [{ "f": ["old.alias.test"], "t": ["new.alias.test"] }],
+  "note": "The e2e build's test \"same sign-in\" group, one way as Apple writes twitter.com to x.com: an account registered for old.alias.test is offered on new.alias.test (and www.new.alias.test), never on m.new.alias.test, and one registered for new.alias.test never on old.alias.test"
+}

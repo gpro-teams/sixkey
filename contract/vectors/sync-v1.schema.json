@@ -1,0 +1,498 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sixkey.app/contract/vectors/sync-v1.schema.json",
+  "title": "Sixkey sync known-answer vectors, format v1",
+  "$comment": "Uses only the keyword subset implemented by extension/test/helpers/contract.ts and contract/py/sixkey_contract.py; both validators reject any other keyword.",
+  "type": "object",
+  "required": ["format", "v", "title", "source", "generator", "warning", "verifier_ids", "fixed_inputs", "groups"],
+  "additionalProperties": false,
+  "properties": {
+    "format": { "const": "sixkey-contract-vectors" },
+    "v": { "const": 1 },
+    "title": { "type": "string" },
+    "source": { "type": "string" },
+    "generator": { "type": "string" },
+    "warning": { "type": "string", "minLength": 20 },
+    "verifier_ids": {
+      "type": "object",
+      "required": ["node-webcrypto", "ts-phase0", "python-stdlib", "python-cryptography"],
+      "additionalProperties": false,
+      "properties": {
+        "node-webcrypto": { "type": "string" },
+        "ts-phase0": { "type": "string" },
+        "python-stdlib": { "type": "string" },
+        "python-cryptography": { "type": "string" }
+      }
+    },
+    "fixed_inputs": {
+      "type": "object",
+      "required": ["vk1_hex", "vk2_hex", "vk0_hex", "vault_id", "dev_n", "dev_a", "dev_s", "rid", "sub", "now_ms", "at_ms", "email"],
+      "additionalProperties": false,
+      "properties": {
+        "vk1_hex": { "$ref": "#/$defs/hex32" },
+        "vk2_hex": { "$ref": "#/$defs/hex32" },
+        "vk0_hex": { "$ref": "#/$defs/hex32" },
+        "vault_id": { "$ref": "#/$defs/vault_id" },
+        "dev_n": { "$ref": "#/$defs/device_id" },
+        "dev_a": { "$ref": "#/$defs/device_id" },
+        "dev_s": { "$ref": "#/$defs/device_id" },
+        "rid": { "$ref": "#/$defs/uuid" },
+        "sub": { "$ref": "#/$defs/uuid" },
+        "now_ms": { "type": "integer", "minimum": 0 },
+        "at_ms": { "type": "integer", "minimum": 0, "multipleOf": 3600000 },
+        "email": { "type": "string", "pattern": "@example\\.invalid$" }
+      }
+    },
+    "groups": {
+      "type": "object",
+      "required": ["labels", "base64url", "base64", "canonical_json", "time_truncation", "padding", "vk_subkeys", "envelope", "write_proof", "recovery_auth", "password_auth", "keybundle", "number_tokens", "device_name", "device_backup", "public_keys", "enrollment", "sas", "pairing_code", "request_signature", "fork_signature", "rotate_repair", "keys_repair", "kver_rules", "wire_examples"],
+      "additionalProperties": false,
+      "properties": {
+        "labels": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["hkdf_info", "domain_tags", "assertions"],
+          "properties": {
+            "hkdf_info": {
+              "type": "array", "minItems": 12,
+              "items": {
+                "type": "object", "required": ["label", "status", "ikm", "salt", "bits", "use", "section"], "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string", "pattern": "^sixkey/v[0-9]+/[a-z-]+$" },
+                  "status": { "enum": ["existing", "new"] },
+                  "ikm": { "type": "string" }, "salt": { "type": "string" },
+                  "bits": { "enum": [64, 256] }, "use": { "type": "string" }, "section": { "type": "string" }
+                }
+              }
+            },
+            "domain_tags": {
+              "type": "array", "minItems": 16,
+              "items": {
+                "type": "object", "required": ["tag", "kind", "status", "section"], "additionalProperties": false,
+                "properties": {
+                  "tag": { "type": "string", "pattern": "\\|$" },
+                  "kind": { "enum": ["aes-gcm-aad", "hmac-input-prefix", "sha256-prefix", "ecdsa-input-prefix"] },
+                  "status": { "enum": ["existing", "new"] },
+                  "section": { "type": "string" }
+                }
+              }
+            },
+            "assertions": {
+              "type": "object", "required": ["hkdf_info_pairwise_distinct", "labels_and_tags_globally_distinct", "domain_tags_prefix_free"], "additionalProperties": false,
+              "properties": {
+                "hkdf_info_pairwise_distinct": { "const": true },
+                "labels_and_tags_globally_distinct": { "const": true },
+                "domain_tags_prefix_free": { "const": true }
+              }
+            }
+          }
+        },
+        "base64url": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "encode", "decode_reject"],
+          "properties": {
+            "encode": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["hex", "b64u"], "additionalProperties": false, "properties": { "hex": { "$ref": "#/$defs/hex" }, "b64u": { "$ref": "#/$defs/b64u" } } } },
+            "decode_reject": { "$ref": "#/$defs/reject_list" }
+          }
+        },
+        "base64": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "encode", "decode_reject", "decode_accept_noncanonical"],
+          "properties": {
+            "encode": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["hex", "b64"], "additionalProperties": false, "properties": { "hex": { "$ref": "#/$defs/hex" }, "b64": { "$ref": "#/$defs/b64" } } } },
+            "decode_reject": { "$ref": "#/$defs/reject_list" },
+            "decode_accept_noncanonical": { "type": "array", "items": { "type": "object", "required": ["input", "hex", "why"], "properties": { "input": { "type": "string" }, "hex": { "$ref": "#/$defs/hex" }, "why": { "type": "string" } } } }
+          }
+        },
+        "canonical_json": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "cases"],
+          "properties": {
+            "cases": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["name", "input", "canonical"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "input": { "type": "string" }, "canonical": { "type": "string" } } } }
+          }
+        },
+        "time_truncation": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "cases"],
+          "properties": {
+            "cases": {
+              "type": "array", "minItems": 5,
+              "items": {
+                "type": "object", "required": ["ms", "hour", "day", "minute", "hour_aligned"], "additionalProperties": false,
+                "properties": {
+                  "ms": { "type": "integer", "minimum": 0 },
+                  "hour": { "type": "integer", "minimum": 0, "multipleOf": 3600000 },
+                  "day": { "type": "integer", "minimum": 0, "multipleOf": 86400000 },
+                  "minute": { "type": "integer", "minimum": 0, "multipleOf": 60000 },
+                  "hour_aligned": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "padding": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "bucket_bytes", "lengths", "concrete"],
+          "properties": {
+            "bucket_bytes": { "const": 16384 },
+            "lengths": { "type": "array", "minItems": 4, "items": { "type": "object", "required": ["utf8_len", "padded_len"], "additionalProperties": false, "properties": { "utf8_len": { "type": "integer", "minimum": 1 }, "padded_len": { "type": "integer", "minimum": 16384, "multipleOf": 16384 } } } },
+            "concrete": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["plaintext", "utf8_len", "padded_len", "padded_sha256_b64"], "additionalProperties": false, "properties": { "plaintext": { "type": "string" }, "utf8_len": { "type": "integer" }, "padded_len": { "type": "integer", "multipleOf": 16384 }, "padded_sha256_b64": { "$ref": "#/$defs/b64_32" } } } }
+          }
+        },
+        "vk_subkeys": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "keys", "webcrypto_hazard"],
+          "properties": {
+            "keys": {
+              "type": "array", "minItems": 2,
+              "items": {
+                "type": "object", "required": ["vk", "vk_hex", "vk_id", "subkeys"], "additionalProperties": false,
+                "properties": {
+                  "vk": { "enum": ["VK0", "VK1", "VK2"] },
+                  "vk_hex": { "$ref": "#/$defs/hex32" },
+                  "vk_id": { "$ref": "#/$defs/vk_id" },
+                  "subkeys": { "type": "array", "minItems": 7, "items": { "type": "object", "required": ["label", "bits", "hex"], "additionalProperties": false, "properties": { "label": { "type": "string" }, "bits": { "enum": [64, 256] }, "hex": { "$ref": "#/$defs/hex" } } } }
+                }
+              }
+            },
+            "webcrypto_hazard": {
+              "type": "object", "required": ["note", "cases"],
+              "properties": { "cases": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["label", "derive_bits_256_hex", "derive_key_aes256_export_hex", "equal"], "properties": { "derive_bits_256_hex": { "$ref": "#/$defs/hex32" }, "derive_key_aes256_export_hex": { "$ref": "#/$defs/hex32" }, "equal": { "const": true } } } } }
+            }
+          }
+        },
+        "envelope": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["vk", "vault_id", "rev", "iv_b64", "plaintext", "aad", "envelope", "envelope_text", "checksum_b64", "head_b64", "head_of_reserialized_text", "must_not_open"],
+          "properties": {
+            "must_not_open": { "type": "array", "minItems": 7, "items": { "type": "object", "required": ["name", "iv_b64", "ciphertext_b64", "aad", "opens"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "iv_b64": { "$ref": "#/$defs/b64" }, "ciphertext_b64": { "$ref": "#/$defs/b64" }, "aad": { "type": "string", "pattern": "^sixkey-vault\\|1\\|" }, "opens": { "const": false } } } },
+            "aad": { "type": "string", "pattern": "^sixkey-vault\\|1\\|" },
+            "envelope": { "type": "object", "required": ["format", "formatVersion", "cipher", "vaultId", "vkId", "rev", "iv", "ciphertext", "checksum"] },
+            "checksum_b64": { "$ref": "#/$defs/b64_32" },
+            "head_b64": { "$ref": "#/$defs/b64_32" }
+          }
+        },
+        "write_proof": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "vk", "write_key_b64", "new_write_key_b64_vk2", "vault_id", "if_version", "envelope_rev", "checksum_b64", "input", "write_proof_b64", "verify"],
+          "properties": {
+            "write_key_b64": { "$ref": "#/$defs/b64_32" },
+            "new_write_key_b64_vk2": { "$ref": "#/$defs/b64_32" },
+            "input": { "type": "string", "pattern": "^sixkey-write\\|1\\|" },
+            "write_proof_b64": { "$ref": "#/$defs/b64_32" },
+            "verify": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["name", "vault_id", "if_version", "checksum_b64", "proof_b64", "valid"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "vault_id": { "$ref": "#/$defs/vault_id" }, "if_version": { "type": "integer", "minimum": 1 }, "checksum_b64": { "$ref": "#/$defs/b64_32" }, "proof_b64": { "$ref": "#/$defs/b64_32" }, "valid": { "type": "boolean" } } } }
+          }
+        },
+        "recovery_auth": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "secret_hex", "code", "equivalent_inputs", "rejected_inputs", "recovery_auth_b64", "recovery_verifier_b64", "contrast"],
+          "properties": {
+            "secret_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+            "code": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){6}$" },
+            "equivalent_inputs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "rejected_inputs": { "type": "array", "minItems": 3, "items": { "type": "object", "required": ["input", "error"], "additionalProperties": false, "properties": { "input": { "type": "string" }, "error": { "enum": ["recovery_checksum", "recovery_length", "recovery_char"] } } } },
+            "recovery_auth_b64": { "$ref": "#/$defs/b64_32" },
+            "recovery_verifier_b64": { "$ref": "#/$defs/b64_32" }
+          }
+        },
+        "password_auth": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "kdf", "cases", "kdf_params"],
+          "properties": {
+            "cases": {
+              "type": "array", "minItems": 2,
+              "items": {
+                "type": "object", "required": ["name", "password", "nfkc", "pbkdf2_hex", "password_auth_b64", "password_verifier_b64"], "additionalProperties": false,
+                "properties": { "name": { "type": "string" }, "password": { "type": "string" }, "nfkc": { "type": "string" }, "pbkdf2_hex": { "$ref": "#/$defs/hex32" }, "password_auth_b64": { "$ref": "#/$defs/b64_32" }, "password_verifier_b64": { "$ref": "#/$defs/b64_32" } }
+              }
+            },
+            "kdf_params": { "type": "object", "required": ["note", "accept", "reject"], "properties": { "accept": { "type": "array", "minItems": 1 }, "reject": { "type": "array", "minItems": 3 } } }
+          }
+        },
+        "keybundle": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "vk", "password", "recovery_secret_hex", "vk0_hex", "aad", "kek_hex", "bundle", "raw", "mac_input", "mac_b64", "k_mac_hex", "mac_cases", "shape_cases"],
+          "properties": {
+            "mac_input": { "type": "string", "pattern": "^sixkey-keybundle\\|1\\|\\{" },
+            "mac_b64": { "$ref": "#/$defs/b64_32" },
+            "k_mac_hex": { "$ref": "#/$defs/hex32" },
+            "mac_cases": { "type": "array", "minItems": 10, "items": { "type": "object", "required": ["name", "raw", "mac_valid"], "properties": { "name": { "type": "string" }, "raw": { "type": "string" }, "mac_valid": { "type": "boolean" }, "why": { "type": "string" } } } },
+            "shape_cases": { "type": "array", "minItems": 14, "items": { "type": "object", "required": ["name", "rule", "raw", "shape_valid", "schema_expressible"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "rule": { "type": "string" }, "raw": { "type": "string" }, "shape_valid": { "type": "boolean" }, "schema_expressible": { "type": "boolean" } } } }
+          }
+        },
+        "number_tokens": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "cases"],
+          "properties": {
+            "cases": {
+              "type": "array", "minItems": 10,
+              "items": {
+                "type": "object", "required": ["name", "text", "integer_only"], "additionalProperties": false,
+                "properties": { "name": { "type": "string" }, "text": { "type": "string" }, "integer_only": { "type": "boolean" }, "same_value_after_json_parse": { "type": "boolean" } }
+              }
+            }
+          }
+        },
+        "device_name": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "padded_bytes", "max_code_points", "cases", "encrypt"],
+          "properties": {
+            "padded_bytes": { "const": 160 },
+            "max_code_points": { "const": 40 },
+            "cases": {
+              "type": "array", "minItems": 30,
+              "items": {
+                "type": "object", "required": ["name", "input", "valid"], "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }, "input": { "type": "string" }, "valid": { "type": "boolean" },
+                  "reason": { "enum": ["not_well_formed", "empty", "too_long", "control_char", "bidi_control", "zero_width"] },
+                  "normalized": { "type": "string" }, "code_points": { "type": "integer" }, "utf16_units": { "type": "integer" }, "utf8_len": { "type": "integer", "maximum": 160 },
+                  "padded_b64": { "type": "string", "pattern": "^[A-Za-z0-9+/]{214}==$" }, "decoded": { "type": "string" }
+                }
+              }
+            },
+            "encrypt": {
+              "type": "object", "required": ["vk", "k_name_hex", "cases", "must_not_open"],
+              "properties": { "must_not_open": { "type": "array", "minItems": 6, "items": { "type": "object", "required": ["name", "key", "iv_b64", "ct_b64", "aad", "opens"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "key": { "enum": ["VK1", "VK2"] }, "iv_b64": { "$ref": "#/$defs/b64" }, "ct_b64": { "$ref": "#/$defs/b64" }, "aad": { "type": "string" }, "opens": { "const": false } } } } }
+            }
+          }
+        },
+        "device_backup": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["vk", "device_id", "aad", "plaintext", "enc"],
+          "properties": { "aad": { "type": "string", "pattern": "^sixkey-devkey\\|1\\|" } }
+        },
+        "public_keys": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["spki_p256_prefix_hex", "keys", "epk_reject", "dpk_reject"],
+          "properties": {
+            "spki_p256_prefix_hex": { "const": "3059301306072a8648ce3d020106082a8648ce3d030107034200" },
+            "keys": {
+              "type": "array", "minItems": 7,
+              "items": {
+                "type": "object", "required": ["name", "d_hex", "point_b64u", "point_b64", "x_hex", "y_hex", "spki_b64", "spki_b64u"], "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }, "d_hex": { "$ref": "#/$defs/hex32" }, "point_b64u": { "type": "string", "pattern": "^B[A-Za-z0-9_-]{86}$" },
+                  "point_b64": { "type": "string", "pattern": "^B[A-Za-z0-9+/]{86}=$" }, "x_hex": { "$ref": "#/$defs/hex32" }, "y_hex": { "$ref": "#/$defs/hex32" },
+                  "spki_b64": { "type": "string", "pattern": "^MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE[A-Za-z0-9+/]{86}==$" }, "spki_b64u": { "$ref": "#/$defs/b64u" }
+                }
+              }
+            },
+            "epk_reject": { "type": "array", "minItems": 4, "items": { "type": "object", "required": ["name", "b64"], "properties": { "name": { "type": "string" }, "b64": { "$ref": "#/$defs/b64" } } } },
+            "dpk_reject": { "type": "array", "minItems": 3, "items": { "type": "object", "required": ["name", "b64"], "properties": { "name": { "type": "string" }, "b64": { "$ref": "#/$defs/b64" } } } }
+          }
+        },
+        "enrollment": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "additionalProperties": false,
+          "required": ["rule", "inputs", "commit_input", "commit_b64", "transcript", "h_hex", "h_b64", "h_b64u", "z_hex", "k_enroll_hex", "sas", "sas_u32", "sig_pubkey_sha256_b64", "reveal_name", "payload", "substitutions", "mitm", "commit_checks", "must_not_open", "label_swap"],
+          "properties": {
+            "section": { "type": "string" },
+            "verified_by": { "type": "array" },
+            "rule": { "type": "string" },
+            "note": { "type": "string" },
+            "h_b64u": { "$ref": "#/$defs/b64u" },
+            "sig_pubkey_sha256_b64": { "$ref": "#/$defs/b64_32" },
+            "payload": { "type": "object" },
+            "inputs": {
+              "type": "object",
+              "required": ["rid", "dev_n", "dev_a", "dpk_n_spki_b64", "epk_n_b64", "epk_a_b64", "n_n_b64", "esk_n", "esk_a", "dsk_n", "pairing_secret_hex", "pairing_code", "ikm_hex"],
+              "additionalProperties": false,
+              "properties": {
+                "rid": { "$ref": "#/$defs/uuid" },
+                "dev_n": { "$ref": "#/$defs/device_id" },
+                "dev_a": { "$ref": "#/$defs/device_id" },
+                "dpk_n_spki_b64": { "$ref": "#/$defs/b64" },
+                "epk_n_b64": { "$ref": "#/$defs/b64" },
+                "epk_a_b64": { "$ref": "#/$defs/b64" },
+                "n_n_b64": { "$ref": "#/$defs/b64_32" },
+                "esk_n": { "type": "string" },
+                "esk_a": { "type": "string" },
+                "dsk_n": { "type": "string" },
+                "pairing_secret_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+                "pairing_code": { "$ref": "#/$defs/code28" },
+                "ikm_hex": { "type": "string", "pattern": "^[0-9a-f]{96}$" }
+              }
+            },
+            "commit_input": { "type": "string", "pattern": "^sixkey-enroll-commit\\|2\\|" },
+            "commit_b64": { "$ref": "#/$defs/b64_32" },
+            "transcript": { "type": "string", "pattern": "^sixkey-enroll\\|2\\|" },
+            "h_hex": { "$ref": "#/$defs/hex32" },
+            "h_b64": { "$ref": "#/$defs/b64_32" },
+            "z_hex": { "$ref": "#/$defs/hex32" },
+            "k_enroll_hex": { "$ref": "#/$defs/hex32" },
+            "sas": { "$ref": "#/$defs/six" },
+            "sas_u32": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+            "substitutions": { "type": "array", "minItems": 7, "items": { "type": "object", "required": ["field", "value_b64u", "transcript", "h_hex", "sas"], "additionalProperties": false, "properties": { "field": { "enum": ["rid", "devN", "devA", "dpkN", "epkN", "epkA", "nN"] }, "value_b64u": { "type": "string" }, "transcript": { "type": "string", "pattern": "^sixkey-enroll\\|2\\|" }, "h_hex": { "$ref": "#/$defs/hex32" }, "sas": { "$ref": "#/$defs/six" } } } },
+            "mitm": { "type": "object", "required": ["note", "commit_substituted_b64", "h1_hex", "h2_hex", "sas_shown_by_N", "sas_expected_by_A"], "additionalProperties": false, "properties": { "note": { "type": "string", "minLength": 20 }, "commit_substituted_b64": { "$ref": "#/$defs/b64_32" }, "h1_hex": { "$ref": "#/$defs/hex32" }, "h2_hex": { "$ref": "#/$defs/hex32" }, "sas_shown_by_N": { "$ref": "#/$defs/six" }, "sas_expected_by_A": { "$ref": "#/$defs/six" } } },
+            "label_swap": { "type": "object", "required": ["note", "secret_hex", "as_pairing_code", "as_recovery_code", "pairing_check_bits", "recovery_check_bits", "recovery_code_as_pairing_code", "pairing_code_as_recovery_code"], "additionalProperties": false, "properties": { "note": { "type": "string" }, "secret_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" }, "as_pairing_code": { "$ref": "#/$defs/code28" }, "as_recovery_code": { "$ref": "#/$defs/code28" }, "pairing_check_bits": { "type": "integer", "minimum": 0, "maximum": 4095 }, "recovery_check_bits": { "type": "integer", "minimum": 0, "maximum": 4095 }, "recovery_code_as_pairing_code": { "const": "pairing_checksum" }, "pairing_code_as_recovery_code": { "const": "recovery_checksum" } } },
+            "commit_checks": { "type": "array", "minItems": 4, "items": { "type": "object", "required": ["name", "dev_n", "dpk_n_b64", "epk_n_b64", "nonce_b64", "opens_pinned_commit"] } },
+            "reveal_name": { "type": "object", "required": ["plaintext_padded_b64", "aad", "iv_b64", "wire_b64", "wire_bytes"], "properties": { "wire_bytes": { "const": 188 }, "wire_b64": { "type": "string", "pattern": "^[A-Za-z0-9+/]{251}=$" } } },
+            "must_not_open": { "type": "array", "minItems": 16, "items": { "type": "object", "required": ["name", "target", "key_hex", "wire_b64", "aad", "opens"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "target": { "enum": ["payload", "reveal_name_ct"] }, "key_hex": { "$ref": "#/$defs/hex32" }, "wire_b64": { "$ref": "#/$defs/b64" }, "aad": { "type": "string" }, "opens": { "const": false } } } }
+          }
+        },
+        "sas": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "cases"],
+          "properties": {
+            "cases": { "type": "array", "minItems": 6, "items": { "type": "object", "required": ["name", "h_hex", "sas_u32", "sas"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "h_hex": { "$ref": "#/$defs/hex32" }, "sas_u32": { "type": "integer", "minimum": 0, "maximum": 4294967295 }, "sas": { "$ref": "#/$defs/six" } } } }
+          }
+        },
+        "pairing_code": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "cases", "code", "equivalent_inputs", "rejected_inputs"],
+          "properties": {
+            "cases": { "type": "array", "minItems": 4, "items": { "type": "object", "required": ["name", "secret_hex", "code", "check_bits"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "secret_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" }, "code": { "$ref": "#/$defs/code28" }, "check_bits": { "type": "integer", "minimum": 0, "maximum": 4095 } } } },
+            "code": { "$ref": "#/$defs/code28" },
+            "equivalent_inputs": { "type": "array", "minItems": 5, "items": { "type": "string" } },
+            "rejected_inputs": { "type": "array", "minItems": 7, "items": { "type": "object", "required": ["input", "error", "why"], "additionalProperties": false, "properties": { "input": { "type": "string" }, "error": { "enum": ["pairing_checksum", "pairing_length", "pairing_char"] }, "why": { "type": "string" } } } }
+          }
+        },
+        "request_signature": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "empty_body_sha256_b64u", "cases", "verify", "signature_format_reject", "p1363_to_der", "signing_input_reject"],
+          "properties": {
+            "empty_body_sha256_b64u": { "const": "47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU" },
+            "cases": {
+              "type": "array", "minItems": 5,
+              "items": {
+                "type": "object",
+                "required": ["name", "signer_key", "signer_key_spki_b64", "host", "method", "target", "signer", "sub", "ts", "body", "body_sha256_b64u", "signing_input", "sig_p1363_b64u", "sig_der_hex"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }, "signer_key": { "type": "string" }, "signer_key_spki_b64": { "$ref": "#/$defs/b64" },
+                  "host": { "type": "string" }, "method": { "type": "string", "pattern": "^[A-Z]+$" }, "target": { "type": "string", "pattern": "^/" },
+                  "signer": { "type": "string" }, "sub": { "type": "string" }, "ts": { "type": "integer" }, "body": { "type": "string" },
+                  "body_sha256_b64u": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }, "signing_input": { "type": "string", "pattern": "^sixkey-req\\|1\\|" },
+                  "sig_p1363_b64u": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }, "sig_der_hex": { "type": "string", "pattern": "^30[0-9a-f]+$" }
+                }
+              }
+            },
+            "verify": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["name", "signing_input", "sig_p1363_b64u", "key_spki_b64", "valid"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "signing_input": { "type": "string" }, "sig_p1363_b64u": { "$ref": "#/$defs/b64u" }, "key_spki_b64": { "$ref": "#/$defs/b64" }, "valid": { "type": "boolean" } } } },
+            "signature_format_reject": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["name", "sig_b64u"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "sig_b64u": { "$ref": "#/$defs/b64u" } } } },
+            "p1363_to_der": { "type": "array", "minItems": 3, "items": { "type": "object", "required": ["name", "p1363_hex", "der_hex"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "p1363_hex": { "type": "string", "pattern": "^[0-9a-f]{128}$" }, "der_hex": { "type": "string", "pattern": "^30[0-9a-f]+$" } } } },
+            "signing_input_reject": { "type": "array", "minItems": 3, "items": { "type": "object", "required": ["name", "host", "method", "target", "signer", "sub", "ts"] } }
+          }
+        },
+        "fork_signature": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "signer_device", "new_device_id", "old_key_spki_b64", "new_key_spki_b64", "name", "host", "method", "target", "signer", "sub", "ts", "body", "body_sha256_b64u", "signing_input", "sixkey_sig_b64u", "sixkey_new_sig_b64u", "verify"],
+          "properties": {
+            "method": { "const": "POST" },
+            "target": { "const": "/v1/devices/fork" },
+            "signing_input": { "type": "string", "pattern": "^sixkey-req\\|1\\|" },
+            "sixkey_sig_b64u": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" },
+            "sixkey_new_sig_b64u": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" },
+            "verify": { "type": "array", "minItems": 4, "items": { "type": "object", "required": ["name", "signing_input", "sig_p1363_b64u", "key_spki_b64", "valid"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "signing_input": { "type": "string" }, "sig_p1363_b64u": { "$ref": "#/$defs/b64u" }, "key_spki_b64": { "$ref": "#/$defs/b64" }, "valid": { "type": "boolean" } } } }
+          }
+        },
+        "rotate_repair": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "password", "server", "device", "recovery_secret2_hex", "recovery_code2", "plaintext", "write_input", "aad", "request"],
+          "properties": {
+            "server": { "type": "object", "required": ["version", "kver", "vk_id", "head_b64"], "additionalProperties": false, "properties": { "version": { "type": "integer" }, "kver": { "type": "integer" }, "vk_id": { "$ref": "#/$defs/vk_id" }, "head_b64": { "$ref": "#/$defs/b64_32" } } },
+            "device": { "type": "object", "required": ["max_seen_kver"], "additionalProperties": false, "properties": { "max_seen_kver": { "type": "integer", "minimum": 0 } } },
+            "recovery_secret2_hex": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+            "write_input": { "type": "string", "pattern": "^sixkey-write\\|1\\|" },
+            "request": { "type": "object", "required": ["if_version", "if_kver", "envelope", "write_proof", "new_write_key", "bundle", "password_auth", "recovery_verifier", "password_verifier", "device_names"] }
+          }
+        },
+        "keys_repair": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "password", "server", "device", "recovery_secret3_hex", "recovery_code3", "aad", "request", "p4_rule", "p4_cases"],
+          "properties": {
+            "p4_rule": { "type": "string", "minLength": 10 },
+            "p4_cases": {
+              "type": "array", "minItems": 5,
+              "items": {
+                "type": "object", "required": ["name", "bundle", "expect"], "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }, "bundle": { "type": "string" },
+                  "expect": { "oneOf": [
+                    { "type": "object", "required": ["recovery_verifier", "password_verifier"], "additionalProperties": false, "properties": { "recovery_verifier": { "type": "boolean" }, "password_verifier": { "type": "boolean" } } },
+                    { "const": "422 invalid_request" }
+                  ] }
+                }
+              }
+            },
+            "server": { "type": "object", "required": ["kver", "vk_id"], "additionalProperties": false, "properties": { "kver": { "type": "integer", "minimum": 1 }, "vk_id": { "$ref": "#/$defs/vk_id" } } },
+            "device": { "type": "object", "required": ["max_seen_kver"], "additionalProperties": false, "properties": { "max_seen_kver": { "type": "integer", "minimum": 0 } } },
+            "request": { "type": "object", "required": ["if_kver", "bundle", "password_auth", "recovery_verifier", "password_verifier"] }
+          }
+        },
+        "kver_rules": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["rule", "kver_max_jump", "keybundle_reordered_text", "publish", "server_accept", "adoption"],
+          "properties": {
+            "kver_max_jump": { "const": 65536 },
+            "publish": {
+              "type": "array", "minItems": 4,
+              "items": {
+                "type": "object", "required": ["server_kver", "max_seen_kver"], "additionalProperties": false,
+                "properties": { "server_kver": { "type": "integer" }, "max_seen_kver": { "type": "integer" }, "publish_kver": { "type": "integer" }, "error": { "const": "kver_overflow" } },
+                "oneOf": [{ "required": ["publish_kver"], "not": { "required": ["error"] } }, { "required": ["error"], "not": { "required": ["publish_kver"] } }]
+              }
+            },
+            "server_accept": { "type": "array", "minItems": 5, "items": { "type": "object", "required": ["name", "server_kver", "if_kver", "kver", "raw_equals_stored", "expect"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "server_kver": { "type": "integer" }, "if_kver": { "type": "integer" }, "kver": { "type": "integer" }, "raw_equals_stored": { "type": "boolean" }, "expect": { "enum": ["200 applied", "200 idempotent", "409 keys_conflict", "422 invalid_request"] } } } },
+            "adoption": {
+              "type": "array", "minItems": 6,
+              "items": {
+                "type": "object", "required": ["name", "max_seen_kver", "bundle", "bundle_kver", "local_keyring", "same_keyring", "outcome"], "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }, "facts_only": { "const": true }, "max_seen_kver": { "type": "integer", "minimum": 0 },
+                  "bundle": { "enum": ["keybundle", "keys_repair"] }, "bundle_kver": { "type": "integer" },
+                  "local_keyring": { "enum": ["keybundle", "keys_repair", "keybundle_reordered"] }, "same_keyring": { "type": "boolean" },
+                  "outcome": { "enum": ["adopt_candidate", "in_sync", "keys_behind"] },
+                  "max_seen_after": { "type": "integer" }, "max_seen_after_adoption": { "type": "integer" }, "r3_unlock_needs_confirmation": { "const": true }
+                }
+              }
+            }
+          }
+        },
+        "wire_examples": {
+          "allOf": [{ "$ref": "#/$defs/group" }],
+          "required": ["note", "examples"],
+          "properties": {
+            "examples": {
+              "type": "array", "minItems": 10,
+              "items": {
+                "type": "object", "required": ["operation", "kind", "body"], "additionalProperties": false,
+                "properties": {
+                  "operation": { "type": "string", "pattern": "^(GET|POST|PUT|PATCH|DELETE) /" },
+                  "kind": { "enum": ["request", "response"] },
+                  "status": { "type": "string", "pattern": "^[1-5][0-9]{2}$" },
+                  "body": { "type": "object" },
+                  "expect_valid": { "type": "boolean" },
+                  "why": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "group": {
+      "type": "object",
+      "required": ["section", "verified_by"],
+      "properties": {
+        "section": { "type": "string", "minLength": 2 },
+        "verified_by": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["node-webcrypto", "ts-phase0", "python-stdlib", "python-cryptography"] } },
+        "rule": { "type": "string", "minLength": 10 },
+        "note": { "type": "string" }
+      }
+    },
+    "hex": { "type": "string", "pattern": "^(?:[0-9a-f]{2})*$" },
+    "hex32": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "b64": { "type": "string", "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$" },
+    "b64_32": { "type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$" },
+    "b64u": { "type": "string", "pattern": "^[A-Za-z0-9_-]*$" },
+    "six": { "type": "string", "pattern": "^[0-9]{6}$" },
+    "code28": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){6}$" },
+    "vk_id": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "vault_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{8,64}$" },
+    "device_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22}$" },
+    "uuid": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+    "reject_list": { "type": "array", "minItems": 3, "items": { "type": "object", "required": ["input", "why"], "additionalProperties": false, "properties": { "input": { "type": "string" }, "why": { "type": "string" } } } }
+  }
+}

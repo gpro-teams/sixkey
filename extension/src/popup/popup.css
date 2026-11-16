@@ -1,0 +1,1111 @@
+/* Popup. 376px wide, at most 600px tall (Chrome's limit); the list scrolls. */
+body.popup {
+  width: 376px;
+  min-height: 440px;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+}
+#app {
+  display: contents;
+}
+
+/* header. The header, the search field, the notices and the footer keep their size (flex: none): only the list gives way
+   when the accounts do not fit. Chrome caps the popup at 600 px of the screen, which is fewer CSS pixels at a zoom above
+   100% or on a short screen; the whole popup then scrolls, and the list's header and footer stay in view (sticky; only
+   there, where no hero glow reaches up behind the header). */
+.ph {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 10px 10px 14px;
+  min-height: 54px;
+}
+.ph:has(~ .pf) {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: 4px;
+}
+.brand b {
+  font-weight: 600;
+  font-size: 16.5px;
+  letter-spacing: -0.02em;
+}
+.loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px 3px 6px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-width: 0;
+}
+/* the backup in Chrome sync's pill in a narrow header (a side panel at 320 px): the brand's word gives way first, so
+   the pill's words stay whole; their ellipsis is only the last resort (src/popup/main/CsbPop.tsx) */
+.loc > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 359px) {
+  .ph:has(#csb-pill) .brand b {
+    display: none;
+  }
+}
+/* the backup in Chrome sync stopped */
+.loc.stop {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.tb.lang {
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+.ph .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px 0 4px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.ph .title {
+  font-weight: 600;
+  font-size: 15px;
+  margin-left: 4px;
+}
+
+/* search. The field shows its focus ring while the text field has the focus, not the View button inside it (main/View.tsx). */
+.search {
+  flex: none;
+  margin: 0 12px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 8px 0 11px;
+  border-radius: 11px;
+  background: var(--sunken);
+  color: var(--muted);
+  border: 1px solid transparent;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.search:has(input:focus) {
+  background: var(--surface);
+  border-color: var(--focus);
+  box-shadow: var(--ring-focus);
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 13.5px;
+}
+.search input:focus {
+  outline: none;
+}
+.search input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.search .clear {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+.search .clear:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+/* notices */
+.note {
+  flex: none;
+  margin: 0 12px 10px;
+  padding: 9px 9px 9px 10px;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 12.5px;
+  line-height: 1.4;
+  animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.note.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 18%, transparent);
+}
+.note.good {
+  background: var(--good-soft);
+  color: var(--good);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good) 20%, transparent);
+}
+.ni {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+}
+.nt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--ink-2);
+  min-width: 0;
+}
+.nt b {
+  color: var(--ink);
+  font-weight: 600;
+}
+:lang(zh-CN) .note {
+  line-height: 1.5;
+}
+
+/* list */
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 6px 10px;
+  min-height: 120px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+.sect + .sect {
+  margin-top: 4px;
+}
+.sect.site {
+  background: var(--brass-soft);
+  border-radius: 14px;
+  padding: 0 0 4px;
+  margin-bottom: 8px;
+  box-shadow: inset 0 0 0 1px var(--brass-line);
+}
+.glabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 10px 5px 12px;
+  font-family: var(--f-num);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+:lang(zh-CN) .glabel {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.glabel b {
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.glabel .n {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--f-num);
+  color: var(--muted);
+}
+.sect.site .glabel {
+  color: var(--brass-ink);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  padding-top: 9px;
+}
+.sect.site .glabel b {
+  color: var(--brass-ink);
+  font-weight: 500;
+}
+.sect.site .glabel em {
+  font-style: normal;
+  font-family: var(--f-ui);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brass) 18%, transparent);
+  color: var(--brass-ink);
+  letter-spacing: 0.01em;
+}
+.sect.site .glabel .n {
+  color: var(--brass-ink);
+}
+/* "Possibly related": name guesses for the current page (PHASE0X-PLAN B2). Set apart from "This site", and never in its
+   brass: nothing here says the page is the account's site. Each row offers to remember the page for its account. */
+.sect.related {
+  border-radius: 14px;
+  padding: 0 0 4px;
+  margin-bottom: 8px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sect.related .row {
+  margin: 0 4px;
+}
+.row .remember {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 5px;
+  max-width: calc(100% - 44px);
+  margin: -6px 0 7px 44px;
+  padding: 3px 8px 3px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+}
+.row .remember .ic {
+  margin-top: 1.5px;
+  color: var(--brass-ink);
+}
+.row .remember span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+} /* wraps, never cut: the host is what to check */
+.row .remember:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+.row .remember:focus-visible {
+  outline-offset: -2px;
+}
+.list.compact .sect:not(.site) .row .remember {
+  margin: -2px 0 5px 35px;
+  max-width: calc(100% - 35px);
+}
+/* "Which account for <host>?" (AFMATCH-NOTES.md): one line above the sections, with a section header's weight, on a
+   page no account is registered for. Its button shows "Remember" on every row. The question wraps, never cut, as the
+   Remember line does: the host's end, the part one could register, is what to check. */
+.glabel.ask {
+  padding: 4px 0 2px 12px;
+  font-family: var(--f-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.glabel.ask b {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.glabel.ask .btn {
+  margin-left: auto;
+  flex: none;
+}
+
+/* A row is a list item holding two buttons: .copy (avatar, name, code, ring) fills it, .more (edit) sits at the end.
+   content-visibility skips the rendering of rows that are off screen (PHASE0X-PLAN O1). It also clips painting to the
+   row, so nothing in a row may draw outside it: focus outlines are inset and the drop marker sits inside the top edge. */
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 0 0;
+  min-height: 54px;
+  border-radius: 12px;
+  transition:
+    background-color 0.12s,
+    box-shadow 0.12s,
+    opacity 0.12s;
+  animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--n, 0) * 18ms);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 54px;
+}
+.row .copy {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  align-self: stretch;
+  min-width: 0;
+  padding: 8px 0 8px 10px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.row .copy[aria-disabled] {
+  cursor: default;
+}
+.row .copy:focus-visible,
+.row .more:focus-visible {
+  outline-offset: -2px;
+}
+.sect.site .row {
+  margin: 0 4px;
+}
+.sect.site .row .copy {
+  padding-left: 6px;
+}
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.row.sel {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sect.site .row.sel {
+  background: var(--surface);
+  box-shadow:
+    var(--sh-1),
+    inset 0 0 0 1px var(--brass-line);
+}
+/* dark, chosen or following the system (the two forms: src/ui/styles.css) */
+:where(:root[data-theme="dark"]) .row.sel {
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+:where(:root[data-theme="dark"]) .sect.site .row.sel {
+  background: color-mix(in srgb, var(--brass) 10%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--brass-line);
+}
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) .row.sel {
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--line-2);
+  }
+  :where(:root:not([data-theme="light"])) .sect.site .row.sel {
+    background: color-mix(in srgb, var(--brass) 10%, var(--surface));
+    box-shadow: inset 0 0 0 1px var(--brass-line);
+  }
+}
+.row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: color-mix(in srgb, var(--brass) 16%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--brass);
+}
+.row.flash::after {
+  animation: copied 0.55s ease-out;
+}
+.row.dragging {
+  opacity: 0.4;
+}
+.row.drop::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 0;
+  height: 6px;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 3px 50%, var(--brass) 2.6px, transparent 3.2px),
+    linear-gradient(var(--brass), var(--brass)) 6px 50% / calc(100% - 6px) 2px no-repeat;
+}
+.who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.who b {
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.who i {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.who i:empty {
+  display: none;
+}
+.otp {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.code {
+  display: inline-flex;
+  font: 500 19px/1.1 var(--f-num);
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+.code .gap {
+  width: 0.38em;
+}
+.code .dg {
+  display: inline-block;
+  animation: roll 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 24ms);
+}
+.code.wait {
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.code.hid {
+  align-items: center;
+  gap: 0.3em;
+  height: 1.1em;
+  color: var(--muted);
+}
+.code.hid i {
+  width: 0.3em;
+  height: 0.3em;
+  border-radius: 50%;
+  background: currentColor;
+}
+.code.hid .gap {
+  width: 0.25em;
+}
+.sect.site .code {
+  font-size: 21px;
+}
+/* the last seconds: only the ring and its number turn red; the code keeps its colour */
+.row.low .ring .fil {
+  stroke: var(--danger);
+}
+.row.low .ring .sec {
+  fill: var(--danger);
+  animation: blink 1s steps(1) infinite;
+}
+.otp.hotp {
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.otp:empty {
+  display: none;
+}
+.more {
+  width: 22px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    background-color 0.12s;
+}
+.row:hover .more,
+.row.sel .more,
+.more:focus-visible {
+  opacity: 1;
+}
+.more:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+/* compact: one line per account, about 12 visible; the current site's accounts keep the full size */
+.list.compact .sect:not(.site) .row {
+  min-height: 38px;
+  contain-intrinsic-size: auto 38px;
+  grid-template-columns: minmax(0, 1fr) 20px;
+}
+.list.compact .sect:not(.site) .row .copy {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 9px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.list.compact .sect:not(.site) .who {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+}
+.list.compact .sect:not(.site) .who b {
+  font-size: 13px;
+}
+.list.compact .sect:not(.site) .who i {
+  font-size: 11px;
+}
+.list.compact .sect:not(.site) .otp {
+  gap: 8px;
+}
+.list.compact .sect:not(.site) .code {
+  font-size: 15.5px;
+}
+.list.compact .sect:not(.site) .ring {
+  width: 20px;
+  height: 20px;
+}
+.list.compact .sect:not(.site) .ring .sec {
+  display: none;
+}
+.list.compact .sect:not(.site) .more {
+  width: 20px;
+  height: 26px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 22px 20px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  animation: rise 0.3s both;
+}
+.empty b {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+/* the two buttons under the empty list's picture (PHASE0X-PLAN B3) */
+.empty-acts {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.empty.slim {
+  padding-top: 30px;
+}
+.empty.slim b {
+  margin-top: 4px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.empty-art .ghost {
+  fill: var(--surface);
+  stroke: var(--line-2);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+.empty-art .ghost.back {
+  opacity: 0.55;
+}
+.empty-art .g-av {
+  fill: var(--sunken);
+}
+.empty-art .g-ln {
+  fill: var(--line);
+}
+.empty-art .g-ln.soft {
+  opacity: 0.7;
+}
+.empty-art .g-code {
+  font: 500 13px var(--f-num);
+  fill: var(--faint);
+}
+.empty-art .g-ring {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.empty-art .g-plus-bg {
+  fill: var(--accent);
+}
+.empty-art .g-plus {
+  stroke: var(--on-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* clipboard countdown and footer */
+.clip {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 6px 10px 7px;
+  border-radius: 9px;
+  background: var(--brass-soft);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--brass-ink);
+  animation: rise 0.2s both;
+}
+.clip i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: calc(var(--p) * 100%);
+  background: var(--brass);
+  transition: width 1s linear;
+}
+.pf {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.bk {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 6px;
+}
+.bk .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 3px var(--good-soft);
+  flex: none;
+}
+.bk.old .dot {
+  background: var(--warn);
+  box-shadow: 0 0 0 3px var(--warn-soft);
+}
+.bk.old u {
+  color: var(--warn);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+.bk.old:hover u {
+  text-decoration-color: currentColor;
+}
+.btn.add {
+  padding-left: 9px;
+  padding-right: 13px;
+}
+
+/* toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 62px;
+  z-index: 5;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  width: max-content;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  background: #14171d;
+  color: #f4f5f7;
+  box-shadow: var(--sh-3);
+  animation: toast-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.toast .tk {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: #2fa36b;
+  color: #fff;
+}
+.toast.bad .tk {
+  background: #d9443a;
+}
+.toast.info .tk {
+  background: #3a414d;
+}
+:where(:root[data-theme="dark"]) .toast {
+  background: #2a2f38;
+  color: #f4f5f7;
+  box-shadow:
+    var(--sh-3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+:where(:root[data-theme="dark"]) .toast .tk {
+  background: #4fc68c;
+  color: #0b1a12;
+}
+:where(:root[data-theme="dark"]) .toast.info .tk {
+  background: #4a525e;
+  color: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) .toast {
+    background: #2a2f38;
+    color: #f4f5f7;
+    box-shadow:
+      var(--sh-3),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+  :where(:root:not([data-theme="light"])) .toast .tk {
+    background: #4fc68c;
+    color: #0b1a12;
+  }
+  :where(:root:not([data-theme="light"])) .toast.info .tk {
+    background: #4a525e;
+    color: #fff;
+  }
+}
+
+/* centred screens: welcome, lock, lost, errors */
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 22px 20px;
+}
+.hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 6px 0 8px;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--brass) 20%, transparent) 0%, transparent 62%);
+  pointer-events: none;
+}
+.hero > * {
+  position: relative;
+}
+.hero-ic {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  box-shadow: inset 0 0 0 1px var(--brass-line);
+}
+.hero-ic.bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+  box-shadow: none;
+}
+.hero-ic.good {
+  background: var(--good-soft);
+  color: var(--good);
+  box-shadow: none;
+}
+.prompt {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  text-align: center;
+}
+.center > p {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  text-wrap: pretty;
+}
+.trust {
+  list-style: none;
+  margin: 6px 0 2px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.trust li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px 9px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+.trust .ic {
+  color: var(--brass-ink);
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.stack .btn {
+  width: 100%;
+  min-height: 40px;
+}
+.duo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 8px;
+}
+.duo .btn {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.center > p.hint {
+  text-align: left;
+}
+.hint {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 4px 0 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.hint .ic {
+  margin-top: 1px;
+}
+.inp-ic {
+  position: relative;
+}
+.inp-ic > .ic {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.inp-ic input {
+  padding-left: 38px;
+}
+.field input.mono {
+  font-family: var(--f-num);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.field input[aria-invalid] {
+  border-color: var(--danger);
+}
+/* the lock screen's input of a generated password: four groups of four (ui/PasswordGroups.tsx; as options.css has it) */
+.pw-groups {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.field .pw-groups input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 4px;
+  text-align: center;
+  font-family: var(--f-num);
+  letter-spacing: 0.08em;
+}
+.pw-groups i {
+  font-style: normal;
+  color: var(--faint);
+}
+.field .show {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.field .show input {
+  /* undo the text-field rule `.field input` (full width, 38px high, padded): this is a checkbox */
+  flex: none;
+  width: 16px;
+  min-height: 0;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--brass);
+}
+.lock .prompt {
+  margin-bottom: 2px;
+}
+.lock .lockfill {
+  color: var(--ink-2); /* the page a pending fill is for (AUTOFILL2 patch 1) */
+  font-weight: 600;
+}
+.lock .field > p {
+  margin: 0; /* the PIN's tries-left line: the field's own gap, as the other ways in have */
+}
+
+/* edit sheet */
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(10, 12, 15, 0.34);
+  backdrop-filter: blur(1.5px);
+  animation: fade 0.18s both;
+}
+.sheet {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 14px 14px;
+  border-radius: 18px 18px 0 0;
+  background: var(--surface);
+  box-shadow: var(--sh-3);
+  animation: sheet-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.sheet::before {
+  content: "";
+  align-self: center;
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.sheet-h {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 2px;
+}
+.sheet-h .who b {
+  font-size: 15px;
+}
+.sheet .field input {
+  min-height: 36px;
+  font-size: 13.5px;
+}
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.sheet .acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes roll {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5em);
+    filter: blur(1.5px);
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes copied {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(40%);
+    opacity: 0.4;
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.97);
+  }
+}

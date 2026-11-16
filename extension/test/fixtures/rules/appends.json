@@ -1,0 +1,4 @@
+{
+  "hosts": ["append.fix.test"],
+  "note": "The e2e build's test host whose sign-in wants the code typed right after the password, in the same box, as Apple's list says of a few sites: it and its subdomains (us.append.fix.test), never notappend.fix.test"
+}

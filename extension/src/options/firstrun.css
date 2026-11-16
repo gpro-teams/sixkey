@@ -1,0 +1,125 @@
+/* First run (FirstRun.tsx) and the side rail's "set a master password now" link. Built on options.css tokens and boxes. */
+.fr-steps li + li::before {
+  width: 22px;
+  margin: 0 10px;
+} /* four or five steps on one line */
+.fr-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fr-step [tabindex="-1"]:focus {
+  outline: none;
+}
+.fr-alt {
+  padding-top: 2px;
+}
+
+/* the H5 question: two answer cards, a real radio group underneath */
+.fr-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
+}
+.fr-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--line-2);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.fr-card:hover {
+  border-color: var(--faint);
+}
+.fr-card.on {
+  border-color: var(--accent);
+  box-shadow: var(--sh-1);
+}
+.fr-card:focus-within {
+  box-shadow: var(--ring-focus);
+}
+.fr-card span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.fr-card b {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.fr-card small {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.options .fr-card input[type="radio"] {
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-2);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.options .fr-card input[type="radio"]:checked {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 4px var(--surface),
+    inset 0 0 0 9px var(--accent);
+}
+.options .fr-card input[type="radio"]:focus {
+  outline: none;
+}
+
+.fr-ready {
+  scroll-margin-top: 24px;
+}
+
+/* side rail, Phase 0 device-key vault: the warning carries the way out (Z1) */
+.status .st-fix {
+  position: relative;
+  align-self: flex-start;
+  margin: -4px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warn);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.status .st-fix:hover {
+  color: var(--ink);
+}
+
+/* the last step's box for the backup in Chrome sync (csb/CsbFirstRun.tsx): the box, its hint, then what it costs */
+.fr-csb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.fr-csb > p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+/* a copy found in Chrome Sync, above the first step: its button on the line, wrapping under the text when narrow */
+#cs-found > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}

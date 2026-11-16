@@ -1,0 +1,29 @@
+{
+  "pxBadTag": {
+    "message": "Sixkey could not check its saved autofill setting. Turn autofill off and on again to save it anew."
+  },
+  "pxRecent": {
+    "message": "Recent requests"
+  },
+  "pxLogOk": {
+    "message": "Code given for the page"
+  },
+  "pxLogLocked": {
+    "message": "No code: Sixkey was locked"
+  },
+  "pxLogOff": {
+    "message": "No code: autofill was off"
+  },
+  "pxLogOther": {
+    "message": "No code"
+  },
+  "pxAfName": {
+    "message": "Autofill"
+  },
+  "pxAfOff": {
+    "message": "Off gives back Chrome's permission to run in pages and to each site. Your sites stay listed for when you turn it on again."
+  },
+  "pxTryAgain": {
+    "message": "Sixkey is still finishing a change. Try again in a moment."
+  }
+}

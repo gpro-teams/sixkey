@@ -1,0 +1,116 @@
+{
+  "dvNameMac": {
+    "message": "Touch ID"
+  },
+  "dvNameWin": {
+    "message": "Windows Hello"
+  },
+  "dvNameOther": {
+    "message": "this computer's sign-in"
+  },
+  "dvUnlock": {
+    "message": "Unlock with $1"
+  },
+  "dvWindowNote": {
+    "message": "Your computer will ask you to confirm it's you. The request may say “chrome-extension”: that is Sixkey."
+  },
+  "dvFailed": {
+    "message": "That didn't work. Use your master password."
+  },
+  "dvDue": {
+    "message": "Sixkey asks for the master password every 14 days, so that you don't forget it."
+  },
+  "dvPaused": {
+    "message": "Keys replaced: $1 is paused until you turn it back on in Settings."
+  },
+  "dvWaiting": {
+    "message": "$1 needs the master password once after a browser restart, and every 12 hours."
+  },
+  "dvLead": {
+    "message": "Open Sixkey with $1 instead of typing the master password."
+  },
+  "dvNone": {
+    "message": "This computer's sign-in cannot be used here. The PIN still works."
+  },
+  "dvAdd": {
+    "message": "Use $1"
+  },
+  "dvPick": {
+    "message": "In Chrome's dialog, iCloud Keychain or Google Password Manager (box ticked) work after restarts too; “This device only” until the browser closes."
+  },
+  "dvOptIn": {
+    "message": "Allow a passkey that syncs to Apple, Google or your password manager"
+  },
+  "dvOptInNotice": {
+    "message": "It is then kept in that company's cloud and on your other devices. Anyone who gets into that account and also has a copy of this browser profile could open Sixkey without your master password. If unsure, leave it off: $1 still works until the browser closes."
+  },
+  "dvOptInSync": {
+    "message": "With sync on, they could also act as one of your devices."
+  },
+  "dvRowPrf": {
+    "message": "Also after a restart. A copy of this browser profile still needs your master password."
+  },
+  "dvRowPrfSynced": {
+    "message": "Also after a restart. Synced: that account plus a copy of this browser profile can open Sixkey too."
+  },
+  "dvRowGate": {
+    "message": "Until the browser closes. It stops people at your computer, not programs on it or anyone who opens the browser's developer tools."
+  },
+  "dvRowGateShared": {
+    "message": "Not used in this security mode."
+  },
+  "dvSynced": {
+    "message": "Synced"
+  },
+  "dvRemove": {
+    "message": "Remove"
+  },
+  "dvTurnOn": {
+    "message": "Turn back on"
+  },
+  "dvNotWorking": {
+    "message": "Not working here, or lost this computer? Remove it: your master password and recovery key still open Sixkey."
+  },
+  "dvAlsoRestart": {
+    "message": "Also after a restart"
+  },
+  "dvKeyChanged": {
+    "message": "Keys replaced: turn $1 back on with one touch, no password."
+  },
+  "dvOn": {
+    "message": "Turned on."
+  },
+  "dvSyncedRefused": {
+    "message": "This passkey syncs, so it works only until the browser closes. For restarts too, choose “Also after a restart” beside it."
+  },
+  "dvNoPrf": {
+    "message": "This passkey has no key of its own for Sixkey: it works until the browser closes."
+  },
+  "dvRemoved": {
+    "message": "Removed. The passkey itself is still in $1: delete it there if you no longer need it."
+  },
+  "dvWhereIcloud": {
+    "message": "the Passwords app"
+  },
+  "dvWhereGoogle": {
+    "message": "Google Password Manager"
+  },
+  "dvWhereWindows": {
+    "message": "Windows Settings › Accounts › Passkeys"
+  },
+  "dvWhereUnknown": {
+    "message": "your passkey provider"
+  },
+  "dvCancelled": {
+    "message": "Nothing was saved."
+  },
+  "dvExists": {
+    "message": "Added already."
+  },
+  "dvRefused": {
+    "message": "Sixkey cannot use this passkey; nothing was saved."
+  },
+  "dvFull": {
+    "message": "At most 10. Remove one first."
+  }
+}

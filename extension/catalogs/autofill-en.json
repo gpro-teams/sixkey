@@ -1,0 +1,137 @@
+{
+  "afFill": {
+    "message": "Fill code into this page"
+  },
+  "afFillShort": {
+    "message": "Fill code"
+  },
+  "afFillOn": {
+    "message": "Fill code on $1"
+  },
+  "afAway": {
+    "message": "Open Sixkey again on this page to look at it."
+  },
+  "afComplex": {
+    "message": "This page has too many boxes for Sixkey to look through. Type the code yourself."
+  },
+  "afMoved": {
+    "message": "This is not the page Sixkey looked at. Open Sixkey again on it."
+  },
+  "afSlow": {
+    "message": "The page did not answer in time. The code may have been entered: check the page before you try again."
+  },
+  "afLookSlow": {
+    "message": "The page did not answer in time. Look again."
+  },
+  "afAfter": {
+    "message": "The code was entered, then the page changed. Check the page; if it did not continue, try again."
+  },
+  "afLeftTab": {
+    "message": "Not filled: you switched tabs while Sixkey waited for the new code."
+  },
+  "afLeftPage": {
+    "message": "Not filled: the page changed while Sixkey waited for the new code. Try again."
+  },
+  "afOld": {
+    "message": "Autofill needs Chrome 140 or later."
+  },
+  "afScanning": {
+    "message": "Looking for the code box…"
+  },
+  "afFound": {
+    "message": "Code box found on this page"
+  },
+  "afNone": {
+    "message": "No code box found on this page. Open the step that asks for the code, then try again."
+  },
+  "afBlocked": {
+    "message": "Sixkey cannot look at this kind of page (a browser page, the Web Store or a PDF)."
+  },
+  "afFrame": {
+    "message": "No code box found. It may be in a frame from another site, which Sixkey cannot look into."
+  },
+  "afWait": {
+    "message": "New code in $1 s…"
+  },
+  "afDone": {
+    "message": "Code filled. Continue on the page."
+  },
+  "afGone": {
+    "message": "The page changed. Try again."
+  },
+  "afDigits": {
+    "message": "This page's code box does not fit this account's $1-digit code."
+  },
+  "afRefused": {
+    "message": "The page did not keep the code. Type it yourself."
+  },
+  "afInsecure": {
+    "message": "This page is not secure (http). Fill anyway?"
+  },
+  "afAnyway": {
+    "message": "Fill anyway"
+  },
+  "afPick": {
+    "message": "Which box?"
+  },
+  "afBox": {
+    "message": "Box $1: $2"
+  },
+  "afBoxPlain": {
+    "message": "Box $1"
+  },
+  "afSegs": {
+    "message": "$1 separate boxes"
+  },
+  "afSent": {
+    "message": "This page may expect a code sent to you, not your authenticator code."
+  },
+  "afFocus": {
+    "message": "Fill the box that has focus"
+  },
+  "afAgain": {
+    "message": "Look again"
+  },
+  "afResumeTab": {
+    "message": "Not filled: this is not the tab you asked to fill. Press Fill to fill this one."
+  },
+  "afResumeOther": {
+    "message": "Not filled: the page changed, Sixkey locked, or a minute passed since you asked. Press Fill to fill this page."
+  },
+  "afResumeChoose": {
+    "message": "Choose the account to fill the code on $1."
+  },
+  "afResumeNone": {
+    "message": "Not filled: no account is registered for $1."
+  },
+  "afSiteAsk": {
+    "message": "Suggest codes automatically on $1?"
+  },
+  "afSiteBody": {
+    "message": "When you click or type in this site's verification-code box, Sixkey's toolbar icon shows 1: press the Fill shortcut to fill your code. It looks only for that box, and it sends nothing anywhere. The first time, Chrome asks you to let Sixkey \"read and change your data on $1\". Only on secure (https) pages. You can turn this off at any time in Settings › Security › Autofill. Chrome keeps the list of sites you turn on in its own settings."
+  },
+  "afSiteYes": {
+    "message": "Turn on for $1"
+  },
+  "afSiteNo": {
+    "message": "Not now"
+  },
+  "afSiteOn": {
+    "message": "Code suggestions are on for $1."
+  },
+  "afAppend": {
+    "message": "This site wants the code typed right after your password, in the same box."
+  },
+  "afAlias": {
+    "message": "Same sign-in as $1"
+  },
+  "afOffNow": {
+    "message": "Autofill is off. Turn it on in Settings › Security › Autofill."
+  },
+  "afLockedNow": {
+    "message": "Not filled: Sixkey locked while it waited for the new code."
+  },
+  "afAskNo": {
+    "message": "Chrome did not let Sixkey into this page. Click Fill code again."
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "listRevealHint": {
+    "message": "点击即复制，不显示数字；按住或按空格键可显示 5 秒。"
+  },
+  "lookTheme": {
+    "message": "主题"
+  },
+  "lookThemeLight": {
+    "message": "浅色"
+  },
+  "lookThemeDark": {
+    "message": "深色"
+  },
+  "lookDensity": {
+    "message": "密度"
+  },
+  "lookDensityStandard": {
+    "message": "标准"
+  },
+  "lookDensityCompact": {
+    "message": "紧凑"
+  },
+  "lookSort": {
+    "message": "排序"
+  },
+  "lookSortManual": {
+    "message": "手动"
+  },
+  "lookSortName": {
+    "message": "按名称"
+  },
+  "viewAuto": {
+    "message": "自动"
+  },
+  "viewHide": {
+    "message": "隐藏验证码"
+  }
+}

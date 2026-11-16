@@ -1,0 +1,1426 @@
+/* Settings page: a rail with the vault's state and the section list, and one scrolling column of panels. */
+body.options {
+  min-height: 100vh; /* the page's background reaches the bottom of the window, whatever the length of the page */
+  font-size: 14.5px;
+  line-height: 1.55;
+  background:
+    radial-gradient(900px 420px at 8% -8%, color-mix(in srgb, var(--brass) 9%, transparent), transparent 70%), var(--bg);
+  background-attachment: fixed;
+}
+:lang(zh-CN) body.options {
+  line-height: 1.7;
+}
+.options p {
+  margin: 0;
+}
+.options .err {
+  font-size: 13.5px;
+}
+
+.shell > * {
+  min-width: 0;
+}
+.shell {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 44px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 36px 28px 64px;
+  align-items: start;
+}
+
+/* ---------- rail ---------- */
+.rail {
+  position: sticky;
+  top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  /* a window or zoom too short for the whole rail: it scrolls by itself, so the last menu items and the language
+     menu stay reachable (the padding keeps the focus rings inside) */
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  margin: -4px;
+  padding: 4px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 2px;
+}
+.logo b {
+  display: block;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.logo small {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--f-num);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+:lang(zh-CN) .logo small {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.status {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 16px 6px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-2);
+}
+.status::before {
+  /* a ring of dial ticks, faint, in the corner */
+  content: "";
+  position: absolute;
+  right: -44px;
+  top: -44px;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: repeating-conic-gradient(from -1deg, var(--line-2) 0 2.4deg, transparent 2.4deg 12deg);
+  -webkit-mask: radial-gradient(circle, transparent 38px, #000 39px 47px, transparent 48px);
+  mask: radial-gradient(circle, transparent 38px, #000 39px 47px, transparent 48px);
+}
+.st-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  padding-right: 36px;
+}
+.st-ic {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+.status.good .st-ic {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.status.warn .st-ic {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.st-tx {
+  min-width: 0;
+}
+.st-tx small {
+  display: block;
+  font-family: var(--f-num);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+:lang(zh-CN) .st-tx small {
+  font-family: var(--f-ui);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+.st-tx b {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.lvl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.lvl i {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.lvl.l1 i:first-child {
+  background: var(--warn);
+  box-shadow: none;
+}
+.lvl.l3 i {
+  background: var(--good);
+  box-shadow: none;
+}
+.status dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.status dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.status dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.status dd {
+  margin: 0;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+}
+.status dd.num {
+  font-family: var(--f-num);
+  font-weight: 500;
+  font-size: 13px;
+}
+.fresh .bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sunken);
+  overflow: hidden;
+}
+.fresh .bar i {
+  display: block;
+  height: 100%;
+  width: calc(var(--p) * 100%);
+  border-radius: 2px;
+  background: var(--faint);
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.fresh.good .bar i {
+  background: var(--good);
+}
+.fresh.warn .bar i {
+  background: var(--warn);
+}
+.fresh.warn dd {
+  color: var(--warn);
+}
+.fresh.bad dd {
+  color: var(--danger);
+}
+.fresh.bad .bar {
+  background: repeating-linear-gradient(-45deg, var(--danger-soft) 0 4px, transparent 4px 8px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 25%, transparent);
+}
+.status .sync dd {
+  font-weight: 500;
+  color: var(--muted);
+}
+/* the backup in Chrome sync's line, where the build has no Sync section (Rail.tsx): its label keeps its width, and its
+   state, where a language's words are longer than the room beside it, goes on after a " ·", its parts kept whole */
+.status dl > .csb {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+.status .csb dd {
+  font-weight: 500;
+  color: var(--muted);
+}
+.status .csb dd span {
+  white-space: nowrap;
+}
+.status .csb.good dd {
+  color: var(--good);
+}
+.status .csb.warn dd {
+  color: var(--warn);
+}
+
+.rail nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rail nav a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+.rail nav a .ic {
+  color: var(--muted);
+  transition: color 0.15s;
+}
+.rail nav a:hover {
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  color: var(--ink);
+}
+.rail nav a.on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    var(--sh-1),
+    inset 0 0 0 1px var(--line);
+}
+.rail nav a.on .ic {
+  color: var(--brass);
+}
+.rail nav a em {
+  margin-left: auto;
+  font-style: normal;
+  font-family: var(--f-num);
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+/* the leaves of the group shown, under the page's title (Rail.tsx SubNav) */
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+.subnav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.subnav a:hover {
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  color: var(--ink);
+}
+.subnav a.on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    var(--sh-1),
+    inset 0 0 0 1px var(--brass-line);
+}
+.subnav a em {
+  font-style: normal;
+  font-family: var(--f-num);
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+.rail .lang {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 2px;
+}
+.rail .lang label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ---------- main column ---------- */
+.top {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 64px;
+  margin-bottom: 16px;
+}
+.top h1 {
+  margin: 0 0 6px;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+:lang(zh-CN) .top h1 {
+  letter-spacing: 0;
+}
+.top .intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  max-width: 56ch;
+}
+.top .deco {
+  flex: none;
+  margin: 0 18px -64px 0;
+}
+
+.panel {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 24px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-2);
+  scroll-margin-top: 24px;
+}
+.panel > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 26px 4px;
+}
+.pi {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  box-shadow: inset 0 0 0 1px var(--brass-line);
+}
+.panel > header h2 {
+  margin: 1px 0 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+.panel > header p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 68ch;
+}
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 26px 26px 84px;
+}
+
+/* boxes inside panels */
+.box {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.box > p {
+  max-width: 72ch;
+}
+.box form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.35;
+}
+.bt .ic {
+  color: var(--brass-ink);
+}
+/* a box that is one line until opened (shared.tsx Fold) */
+.box.fold {
+  gap: 8px;
+  padding: 8px 14px;
+}
+.box.fold.open {
+  gap: 12px;
+  padding: 14px 20px 18px;
+}
+.fold-b {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: start;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+.fold-b > .ic:first-child {
+  color: var(--brass-ink);
+}
+.fold-b > span {
+  flex: 1;
+  min-width: 0;
+}
+.fold-b > .ic:last-child {
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.fold.open .fold-b > .ic:last-child {
+  transform: rotate(90deg);
+}
+.fold-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.box.warn {
+  background: var(--warn-soft);
+  border-color: color-mix(in srgb, var(--warn) 24%, transparent);
+}
+.box.warn .bt .ic {
+  color: var(--warn);
+}
+.box.danger {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+}
+.box.danger .bt .ic {
+  color: var(--danger);
+}
+.box.banner {
+  margin-bottom: 20px;
+  box-shadow: var(--sh-1);
+  position: relative;
+  z-index: 1;
+}
+.box.unlock {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--surface);
+  border-color: var(--brass-line);
+  box-shadow: var(--sh-2);
+}
+.unlock-f {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.box.keycard {
+  background: var(--brass-soft);
+  border-color: var(--brass-line);
+  animation: rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.box.keycard .bt .ic {
+  color: var(--brass-ink);
+}
+.keycard .code-box {
+  font-size: 19px;
+  padding: 28px 22px;
+  margin: 4px 0;
+}
+
+.row2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+.row2 > label {
+  font-size: 13.5px;
+}
+.row2.grow {
+  align-items: flex-end;
+}
+.row2.grow .field {
+  flex: 1;
+  min-width: 220px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 12px 14px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--sunken);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  max-width: none !important;
+}
+.callout .ic {
+  margin-top: 2px;
+  color: var(--muted);
+}
+.callout.bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.callout.bad .ic {
+  color: var(--danger);
+}
+.callout.good {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.callout.good .ic {
+  color: var(--good);
+}
+.box .callout {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+.box .callout.bad {
+  background: var(--danger-soft);
+}
+.ok-msg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--good);
+  font-weight: 500;
+  font-size: 13.5px;
+}
+
+/* inputs */
+.options input[type="text"],
+.options input[type="password"],
+.options input[type="number"],
+.options select,
+.options textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.options input:hover,
+.options select:hover,
+.options textarea:hover {
+  border-color: var(--faint);
+}
+.options input:focus,
+.options select:focus,
+.options textarea:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: var(--ring-focus);
+}
+.options .row2 input[type="number"],
+.options .row2 select {
+  width: auto;
+}
+.options .grid3 select,
+.options .grid3 input {
+  width: 100%;
+}
+.options select {
+  appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C6573' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+}
+/* dark, chosen or following the system (the two forms: src/ui/styles.css) */
+:where(:root[data-theme="dark"]) .options select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23959EAB' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) .options select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23959EAB' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+.options textarea {
+  min-height: 128px;
+  resize: vertical;
+  font-family: var(--f-num);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.options input.mono,
+.options input.mono-pw[type="text"] {
+  font-family: var(--f-num);
+  font-size: 13px;
+}
+.options input[type="checkbox"] {
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 5px;
+  border: 1.5px solid var(--line-2);
+  background: var(--surface) center / 12px no-repeat;
+  cursor: pointer;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s;
+}
+.options input[type="checkbox"]:hover {
+  border-color: var(--muted);
+}
+.options input[type="checkbox"]:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+:where(:root[data-theme="dark"]) .options input[type="checkbox"]:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2315120B' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) .options input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2315120B' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  }
+}
+/* a 28-character code typed (the recovery code, the pairing code; shared.tsx CodeField): masked unless shown */
+.options input.code-in {
+  font-family: var(--f-num);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.options input.code-in::placeholder {
+  color: var(--faint);
+  letter-spacing: 0.04em;
+}
+.code-meter {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+.code-meter i {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+.code-meter i.part {
+  background: var(--brass-line);
+}
+.code-meter i.full {
+  background: var(--brass);
+}
+.code-field .vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.code-field .check {
+  margin-top: 6px;
+}
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.check.strong {
+  font-weight: 600;
+}
+/* a checkbox whose label has a hint: the label on its line, the hint under it (never run together), the box by the
+   label's first line */
+.check.hinted {
+  align-items: flex-start;
+}
+.check.hinted > input {
+  margin-top: 2px;
+}
+.check.hinted > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.check.hinted small {
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+/* the backup in Chrome sync's card (csb/CsbCard.tsx): a box of many short rows, set a little closer than the others; its
+   lines as wide as its callouts */
+#csb-card {
+  gap: 10px;
+}
+#csb-card > p {
+  max-width: none;
+}
+/* a problem that blocks nothing (the backup in Chrome sync's card): amber, as the master password's weak bar */
+.callout.warn,
+.box .callout.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.callout.warn .ic {
+  color: var(--warn);
+}
+.options .btn {
+  min-height: 38px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+}
+.options .btn.sm {
+  min-height: 32px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+.options label.btn {
+  cursor: pointer;
+}
+
+/* password strength */
+.strength {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.meter {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  width: 180px;
+  flex: none;
+}
+.meter i {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  transition: background-color 0.2s;
+}
+.meter.weak i.on {
+  background: var(--danger);
+}
+.meter.fair i.on {
+  background: var(--warn);
+}
+.meter.good i.on {
+  background: var(--good);
+}
+.sh {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.sh.weak {
+  color: var(--danger);
+}
+.sh.fair {
+  color: var(--warn);
+}
+.sh.good {
+  color: var(--good);
+  font-weight: 500;
+}
+/* a generated password: shown as page text (never in a text field), why it is strong enough, where to keep it, Copy and
+   the other style */
+.pw-made > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.pw-made p {
+  margin: 0;
+}
+.pw-made .pw-value,
+.pw-made .pw-save {
+  color: var(--ink-2);
+}
+.pw-made .pw-value code {
+  font: 500 15px/1.5 var(--f-num);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+/* the master password below the 50-bit bar (OWNER-DECISIONS/15): what it means, and "Use anyway" (a toggle) */
+.callout.pw-weak {
+  margin-top: 8px;
+  background: var(--warn-soft);
+  color: var(--ink-2);
+}
+.callout.pw-weak .ic {
+  color: var(--warn);
+}
+.pw-weak > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.pw-weak p {
+  margin: 0;
+}
+.pw-weak [aria-pressed="true"] {
+  border-color: var(--warn);
+  color: var(--ink);
+}
+.pw-weak [aria-pressed="true"] .ic {
+  color: var(--warn);
+}
+/* "Copied", for screen readers: the button's own text changes without being announced */
+.pw-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* two-step indicator */
+.steps {
+  list-style: none;
+  margin: 0 0 2px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 0;
+}
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.steps li + li::before {
+  content: "";
+  width: 44px;
+  height: 2px;
+  margin: 0 12px;
+  border-radius: 1px;
+  background: var(--line-2);
+}
+.steps li i {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font: 500 12px/1 var(--f-num);
+  font-style: normal;
+  background: var(--surface);
+  border: 1.5px solid var(--line-2);
+}
+.steps li.on {
+  color: var(--ink);
+}
+.steps li.on i {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brass) 22%, transparent);
+}
+.steps li.done i {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+.steps li.done + li::before {
+  background: var(--good);
+}
+:where(:root[data-theme="dark"]) .steps li.done i {
+  color: #0b1a12;
+}
+@media (prefers-color-scheme: dark) {
+  :where(:root:not([data-theme="light"])) .steps li.done i {
+    color: #0b1a12;
+  }
+}
+
+/* add accounts */
+.dropzone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px dashed var(--line-2);
+  background: var(--surface);
+  color: var(--muted);
+}
+.dz-ic {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+  animation: rise 0.25s both;
+}
+.preview.has {
+  border-color: var(--brass-line);
+  background: linear-gradient(180deg, var(--brass-soft), var(--surface) 80%);
+}
+.pv-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pv-n {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  font: 500 13px/1 var(--f-num);
+  background: var(--sunken);
+  color: var(--muted);
+}
+.preview.has .pv-n {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.pv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pv-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 11px 3px 3px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 13px;
+}
+.pv-list li i {
+  font-style: normal;
+  color: var(--muted);
+  margin-left: 5px;
+}
+.pv-list li.more-n {
+  padding: 3px 11px;
+  font-family: var(--f-num);
+  font-size: 12px;
+  color: var(--muted);
+}
+.pv-list .av {
+  border-radius: 50%;
+}
+.pv-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.gsteps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gsteps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.gsteps li i {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+  border-radius: 50%;
+  font: 500 11px/1 var(--f-num);
+  font-style: normal;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--muted);
+}
+
+/* trash */
+.tlist {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-2);
+  font-size: 14px;
+}
+.tlist td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.tlist tr:last-child td {
+  border-bottom: 0;
+}
+.tlist td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+.tlist td.num {
+  font-family: var(--f-num);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.tw {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tw > span:not(.av) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere; /* a long name or address without spaces wraps, and never pushes the buttons off the page */
+}
+.tw .muted {
+  font-size: 12.5px;
+}
+.nothing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--line-2);
+  color: var(--muted);
+}
+
+/* clipboard switch row */
+.switchrow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.sw-ic {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+.switchrow.is-on .sw-ic {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.sw-tx {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.sw-tx b {
+  font-weight: 600;
+}
+
+/* advanced */
+.clock {
+  font: 500 19px/1.3 var(--f-num);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  align-self: flex-start;
+}
+.opened {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* ---------- narrower windows ---------- */
+@media (max-width: 1040px) {
+  .panel-body {
+    padding-left: 26px;
+  }
+}
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px 16px 48px;
+  }
+  .rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+    margin: 0;
+    padding: 0;
+  }
+  .rail nav {
+    /* the groups wrap into rows: all of them are in view, nothing scrolls sideways */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px;
+    padding: 2px;
+  }
+  .rail nav a {
+    padding: 7px 12px;
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+    font-size: 13.5px;
+  }
+  .rail .lang {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  .rail .lang select {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+  .top {
+    min-height: 0;
+  }
+  .top .deco {
+    display: none;
+  }
+  .top h1 {
+    font-size: 28px;
+  }
+}
+/* a narrow window: the rail's status card is mostly chrome above the page's own content, so its three facts sit in a
+   row (the numbers and the freshness bar stay) and the card is about half as tall */
+@media (max-width: 560px) {
+  .status {
+    gap: 10px;
+    padding: 12px 14px 4px;
+  }
+  .status dl {
+    flex-direction: row;
+    gap: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .status dl > div,
+  .status dl > .csb {
+    flex: 1 1 0;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 8px 0 10px;
+    border-top: 0;
+  }
+  .status .csb dd span {
+    white-space: normal;
+  }
+  .status dt {
+    font-size: 12px;
+    gap: 5px;
+  }
+  .status dd {
+    text-align: start;
+    font-size: 12.5px;
+  }
+}
+
+/* a short window (or a zoomed one): the dial is only decoration, and the header gives its room to the section */
+@media (max-height: 700px) {
+  .top {
+    min-height: 0;
+  }
+  .top .deco {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .grid3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .panel > header {
+    padding: 18px 18px 2px;
+    gap: 12px;
+  }
+  .pi {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+  .panel-body {
+    padding: 14px 16px 20px;
+  }
+  .box {
+    padding: 16px;
+  }
+  .box.unlock {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .box.unlock .pi {
+    display: none;
+  }
+  .tlist tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .tlist tr:last-child {
+    border-bottom: 0;
+  }
+  .tlist td {
+    border-bottom: 0;
+  }
+  .tlist td.tw {
+    flex: 1 1 100%;
+    padding-bottom: 4px;
+  }
+  .tlist td.num {
+    padding: 0 0 10px 56px;
+  }
+  .tlist td:last-child {
+    flex: 1;
+    padding-top: 0;
+  }
+  .switchrow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .steps {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .steps li + li::before {
+    display: none;
+  }
+  .switchrow .btn {
+    grid-column: 1 / -1;
+  }
+}
+
+/* the input of a generated password: four groups of four (ui/PasswordGroups.tsx; the popup's in popup.css) */
+.pw-groups {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.field .pw-groups input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 4px;
+  text-align: center;
+  font-family: var(--f-num);
+  letter-spacing: 0.08em;
+}
+.pw-groups i {
+  font-style: normal;
+  color: var(--faint);
+}
+
+/* Settings › Security › Autofill: the request log's last lines under the switch (options/AutofillSwitch.tsx) */
+.af-log summary {
+  cursor: pointer;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.af-log ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+}

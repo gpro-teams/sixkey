@@ -1,0 +1,99 @@
+/* The Fill button (Fill.tsx; TOTP-AUTOFILL Stage 1). Loaded with its chunk, so it is not in the popup's counted style
+   sheet. Tokens only, so the dark theme needs no rules of its own. */
+.fillbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--sunken);
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.fillbar > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fillbar .ic {
+  flex: none;
+  color: var(--muted);
+}
+.fillbar.ok {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.fillbar.ok .ic {
+  color: var(--good);
+}
+.fillbar .btn {
+  flex: none;
+  min-height: 28px;
+  padding: 2px 8px;
+}
+/* under a card of "This site": a full-width line, as "Remember this site" is under a related card */
+.row .fill {
+  grid-column: 1 / -1;
+  margin: -2px 6px 9px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+}
+.list.compact .row .fill {
+  margin-left: 35px;
+}
+.fillacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 100%;
+}
+.fillacts .btn {
+  max-width: 100%;
+  text-align: left;
+}
+.fillnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0;
+  max-width: 100%;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+.fillnote > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fillnote .ic {
+  flex: none;
+  margin-top: 1px;
+  color: var(--muted);
+}
+.fillnote.ok,
+.fillnote.ok .ic {
+  color: var(--good);
+}
+.fillnote.bad,
+.fillnote.bad .ic {
+  color: var(--danger);
+}
+.fillnote.warn,
+.fillnote.warn .ic {
+  color: var(--warn);
+}
+/* the offer to suggest codes on this site (AUTOFILL2 patch 2): a quiet box under the card that was filled */
+.fillsite {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 100%;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: var(--sunken);
+}

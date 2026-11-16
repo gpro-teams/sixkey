@@ -1,0 +1,230 @@
+{
+  "fieldIssuer": {
+    "message": "Issuer"
+  },
+  "fieldLabel": {
+    "message": "Account"
+  },
+  "fieldSecret": {
+    "message": "Secret key"
+  },
+  "fieldAlgorithm": {
+    "message": "Algorithm"
+  },
+  "fieldDigits": {
+    "message": "Digits"
+  },
+  "fieldPeriod": {
+    "message": "Period (s)"
+  },
+  "optPaste": {
+    "message": "Paste otpauth:// links"
+  },
+  "optManual": {
+    "message": "Enter a key manually"
+  },
+  "pasteHelp": {
+    "message": "Paste otpauth:// links, Google Authenticator export links, or plain keys (a key alone, or name|key), one per line, or choose files below. Nothing is added until you confirm."
+  },
+  "chooseImages": {
+    "message": "Choose QR images"
+  },
+  "dropOrPasteImage": {
+    "message": "or drop files here: text, JSON or CSV exports (Aegis, 2FAS, andOTP, Raivo, Bitwarden) and QR images. Paste a screenshot with Ctrl+V."
+  },
+  "noQrIn": {
+    "message": "No QR code found in: $1"
+  },
+  "previewAdd": {
+    "message": "$1 to add"
+  },
+  "previewDup": {
+    "message": "$1 already in your list or repeated, skipped"
+  },
+  "previewFailed": {
+    "message": "Line $1 skipped: $2"
+  },
+  "previewIncomplete": {
+    "message": "Google export: $1 of $2 codes read. Still needed: $3."
+  },
+  "previewHotp": {
+    "message": "$1 counter-based account(s) will be kept but cannot generate codes yet."
+  },
+  "previewShort": {
+    "message": "$1 account(s) use a short key. They will work, but the service issued a weak key."
+  },
+  "addN": {
+    "message": "Add $1 account(s)"
+  },
+  "incompleteHint": {
+    "message": "Add the remaining codes first, or add what you have."
+  },
+  "rNotOtpauth": {
+    "message": "not a link or a key"
+  },
+  "rMalformed": {
+    "message": "could not be read"
+  },
+  "rType": {
+    "message": "unsupported type"
+  },
+  "rNoSecret": {
+    "message": "no secret key"
+  },
+  "rBadSecret": {
+    "message": "secret key is not valid"
+  },
+  "rAlg": {
+    "message": "unsupported algorithm"
+  },
+  "rDigits": {
+    "message": "unsupported number of digits"
+  },
+  "rPeriod": {
+    "message": "invalid period"
+  },
+  "rCounter": {
+    "message": "invalid counter"
+  },
+  "rTooLarge": {
+    "message": "too large"
+  },
+  "googleTitle": {
+    "message": "Moving from Google Authenticator"
+  },
+  "googleStep1": {
+    "message": "In Google Authenticator, choose Transfer accounts, then Export accounts. It shows one or more QR codes."
+  },
+  "googleStep2": {
+    "message": "Scan each code with the camera here, or take screenshots and choose or drop them above."
+  },
+  "googleStep3": {
+    "message": "Delete the screenshots and exported files afterwards: they contain your keys."
+  },
+  "addLead": {
+    "message": "Bring accounts in from links, files, QR images, the camera, or by typing a key. Nothing is added until you confirm."
+  },
+  "siteRemove": {
+    "message": "Remove $1"
+  },
+  "linesHelp": {
+    "message": "$1 line(s) have columns split by |. Only the key column and the name column are read. Every other column, such as a password, is dropped and never saved."
+  },
+  "linesKey": {
+    "message": "Key column"
+  },
+  "linesName": {
+    "message": "Name column"
+  },
+  "linesChoose": {
+    "message": "Choose a column"
+  },
+  "linesNoName": {
+    "message": "No name"
+  },
+  "linesColumn": {
+    "message": "Column $1 · $2 characters · a key in $3 of $4 lines"
+  },
+  "linesPending": {
+    "message": "Choose the key column: $1 line(s) are not added until you do."
+  },
+  "linesTag": {
+    "message": "text"
+  },
+  "linesFromText": {
+    "message": "$1 from plain text, set to 6 digits every 30 seconds, the usual setting. Check that each is a real 2FA key."
+  },
+  "linesUnnamed": {
+    "message": "$1 without a name. You can name them in the popup after adding."
+  },
+  "rNotKey": {
+    "message": "too short for a key (16 characters or more)"
+  },
+  "addNothing": {
+    "message": "Paste links, choose a file or scan a QR code first."
+  },
+  "camStart": {
+    "message": "Scan with camera"
+  },
+  "camStop": {
+    "message": "Stop camera"
+  },
+  "camSource": {
+    "message": "Camera"
+  },
+  "camHint": {
+    "message": "Hold the QR code up to the camera."
+  },
+  "camDenied": {
+    "message": "Sixkey is not allowed to use the camera. Allow it with the camera icon in the address bar or in this extension's site settings (on a Mac, also in System Settings › Privacy & Security › Camera)."
+  },
+  "camFailed": {
+    "message": "The camera could not be started: there is none, or another app is using it."
+  },
+  "camOther": {
+    "message": "This code is from another Google Authenticator export. Finish this one first, or add what you have."
+  },
+  "camNotOtp": {
+    "message": "Not a 2FA QR code."
+  },
+  "fileTooBig": {
+    "message": "Too large to import."
+  },
+  "fileNotText": {
+    "message": "Not a text, JSON, CSV or image file."
+  },
+  "fileZip": {
+    "message": "A ZIP archive. Unzip it, then choose the file inside."
+  },
+  "fileEncrypted": {
+    "message": "An encrypted $1 export, which Sixkey cannot open. Export it again without encryption, then choose that file."
+  },
+  "fileIsBackup": {
+    "message": "A Sixkey backup: import it under Backup."
+  },
+  "fileNothing": {
+    "message": "No accounts found in it."
+  },
+  "fileHtml": {
+    "message": "A web page export: its codes are only pictures. Scan them with the camera, or choose screenshots of them."
+  },
+  "fileSkipType": {
+    "message": "$1 skipped: Sixkey cannot make $2 codes."
+  },
+  "skipNamed": {
+    "message": "$1 skipped: $2"
+  },
+  "delAsk": {
+    "message": "$1 holds your secret keys in plain text. Delete it now?"
+  },
+  "delPlain": {
+    "message": "$1 holds your secret keys in plain text."
+  },
+  "delNote": {
+    "message": "Deleting does not guarantee it cannot be recovered."
+  },
+  "delLeft": {
+    "message": "Accounts in it not imported: $1. Deleting the file loses them."
+  },
+  "delHotp": {
+    "message": "Counter-based (HOTP) accounts from it: $1. Sixkey keeps them but cannot make their codes yet."
+  },
+  "delYes": {
+    "message": "Delete file"
+  },
+  "delKeep": {
+    "message": "Keep it"
+  },
+  "delDone": {
+    "message": "Deleted $1."
+  },
+  "delNot": {
+    "message": "$1 was not deleted."
+  },
+  "delChanged": {
+    "message": "$1 changed after Sixkey read it, so it was not deleted."
+  },
+  "delManual": {
+    "message": "Delete it yourself: move it to the Trash or Recycle Bin, then empty it."
+  }
+}

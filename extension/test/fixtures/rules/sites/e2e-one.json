@@ -1,0 +1,8 @@
+{
+  "id": "e2e-one",
+  "hosts": ["rules.fix.test"],
+  "pages": [{ "path": "/rule/", "field": "#code-box", "segments": 0, "fill": "auto" }],
+  "verified": "2026-11-05",
+  "fixtures": ["e2e-one/one.html"],
+  "note": "The e2e build's test rule: one box that says nothing of a code, which the heuristics do not offer"
+}

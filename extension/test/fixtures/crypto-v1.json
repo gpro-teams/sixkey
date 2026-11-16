@@ -1,0 +1,91 @@
+{
+  "note": "Format v1 sample. Do not regenerate: it proves old data stays readable.",
+  "password": "fixture password 2026",
+  "recoveryCode": "ZDXY-QX0C-0NHK-2ZR9-2Y4A-AGSX-FCCP",
+  "plaintext": "{\"schemaVersion\":1,\"entries\":[{\"id\":\"e1\",\"issuer\":\"Example\",\"label\":\"alice\",\"secret\":\"JBSWY3DPEHPK3PXP\"}]}",
+  "device": {
+    "keyring": {
+      "format": "sixkey-keyring",
+      "v": 1,
+      "vaultId": "9QKD1hEnrJ_2h_f7_rcmAw",
+      "vkId": "2f2b65d8e1189634",
+      "wraps": [
+        {
+          "method": "device",
+          "vkId": "2f2b65d8e1189634",
+          "iv": "iOQu+xll9CdzCzIr",
+          "wrapped": "YFMs5uYMTtwrqmK6U4wz2M84mmgAUxDrpmgRU7vEIHWanrgCNU6gZ6Nb0TBaFzYu",
+          "createdAt": 1792051594787,
+          "kdf": {
+            "name": "HKDF",
+            "hash": "SHA-256",
+            "salt": "gofLfdr+xmZ/c6ucnWSmfw==",
+            "v": 1
+          }
+        }
+      ],
+      "deviceKey": "5RRFiu6FYHrUCsndMhwEPr5E58keP1xpVVTUriTSLSQ=",
+      "previous": []
+    },
+    "envelope": {
+      "format": "sixkey-vault",
+      "formatVersion": 1,
+      "cipher": "AES-256-GCM",
+      "vaultId": "9QKD1hEnrJ_2h_f7_rcmAw",
+      "vkId": "2f2b65d8e1189634",
+      "rev": 1,
+      "iv": "ZZBNAu8Z2Dt7E72c",
+      "ciphertext": "YiMIWkbaKqBuGGqakL9mnSIblbA7welkgCW2AE7hUqS863e1Qve6AKt5+lhYCSymW57Tn8S7VO6+Z+Hk6UpFq1QPKqpA6IF13knYksg1rQIaouLn3xouyuMtgtoWC+BvEjB3+Fby/HB0Tle6rVYWhDffQX1atepjrW0=",
+      "checksum": "7pCz/3BopVVvqyatu3WnI9PtCfbBrZRLHsTNGfgLwEM="
+    }
+  },
+  "protected": {
+    "keyring": {
+      "format": "sixkey-keyring",
+      "v": 1,
+      "vaultId": "9QKD1hEnrJ_2h_f7_rcmAw",
+      "vkId": "2f2b65d8e1189634",
+      "wraps": [
+        {
+          "method": "password",
+          "vkId": "2f2b65d8e1189634",
+          "iv": "XP/XEZtB6EDfFto1",
+          "wrapped": "PMga7SeEVXNNUQDI/30a9Jaj0o6SNDH7hGo0fC2jKNY0x3u8jMFCSrE47bX3ZpWf",
+          "createdAt": 1792051594848,
+          "kdf": {
+            "name": "PBKDF2",
+            "hash": "SHA-256",
+            "iterations": 600000,
+            "salt": "Cx+5uyHY810ZZb/ahqp6nQ==",
+            "v": 1
+          }
+        },
+        {
+          "method": "recovery",
+          "vkId": "2f2b65d8e1189634",
+          "iv": "faOvXnpWmJ3z/1w6",
+          "wrapped": "vJ2cuDH4CPS/j8seVIcCezlxVY5PQmqjvz740bNn0RpcfMsthk//O1IhRLO+4DyG",
+          "createdAt": 1792051594849,
+          "kdf": {
+            "name": "HKDF",
+            "hash": "SHA-256",
+            "salt": "QdV1aCwOtRRqLDjRTDdbfg==",
+            "v": 1
+          }
+        }
+      ],
+      "previous": []
+    },
+    "envelope": {
+      "format": "sixkey-vault",
+      "formatVersion": 1,
+      "cipher": "AES-256-GCM",
+      "vaultId": "9QKD1hEnrJ_2h_f7_rcmAw",
+      "vkId": "2f2b65d8e1189634",
+      "rev": 2,
+      "iv": "xTkTfg3XHoKfIQIv",
+      "ciphertext": "GlZO7o+vPcJpmo1oZ/dXZVFSXp2Rg0Lfz8ah8zUgB+6eZ35iMTmc0kXVQpSeSZlLqhACfI7nGQI04T7KLo7DA7xTNF2GgSI7rQp1QehmR1du+uSuTkncKUYY3zKcEydKPVDXGDn1VYhj2jJpOVhqVN6Nfvmv3+4yLmE=",
+      "checksum": "TMsTjZpLiIiziShWa+C12V9W95vNktgRpg3aGD1oGUo="
+    }
+  }
+}

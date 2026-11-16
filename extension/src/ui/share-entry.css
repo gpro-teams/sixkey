@@ -1,0 +1,62 @@
+/* The recovery code shares' entry (ShareEntry.tsx), loaded with it on the popup's lock screen, in the side panel and on
+   the settings page. Tokens only, so both themes and both pages draw it without rules of their own. */
+.sh-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: start;
+}
+.sh-lead,
+.sh-progress,
+.sh-rebuilt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.sh-rebuilt {
+  color: var(--good);
+  font-weight: 600;
+}
+.sh-typed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.sh-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sh-field > label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.sh-in {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  font-family: var(--f-num);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.sh-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sh-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--muted);
+}

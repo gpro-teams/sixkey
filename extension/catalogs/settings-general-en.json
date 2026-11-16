@@ -1,0 +1,71 @@
+{
+  "listRevealHint": {
+    "message": "Click copies the code without showing it. Hold, or press Space, to show it for 5 seconds."
+  },
+  "lookLead": {
+    "message": "How Sixkey looks in this browser, and how the popup and the side panel list your accounts."
+  },
+  "lookTheme": {
+    "message": "Theme"
+  },
+  "lookThemeAuto": {
+    "message": "Follow the system"
+  },
+  "lookThemeLight": {
+    "message": "Light"
+  },
+  "lookThemeDark": {
+    "message": "Dark"
+  },
+  "lookThemeNote": {
+    "message": "Saved in this browser only, like the language. It is not part of a backup."
+  },
+  "lookDensity": {
+    "message": "Rows"
+  },
+  "lookDensityStandard": {
+    "message": "Standard"
+  },
+  "lookDensityCompact": {
+    "message": "Compact"
+  },
+  "lookDensityNote": {
+    "message": "Compact puts each account on one line, so about 12 fit in the popup. The current website's accounts keep the full size."
+  },
+  "lookSort": {
+    "message": "Order"
+  },
+  "lookSortManual": {
+    "message": "Manual"
+  },
+  "lookSortName": {
+    "message": "By name"
+  },
+  "lookSortNote": {
+    "message": "Manual is the order you drag accounts into. Either way, the current website's accounts come first."
+  },
+  "lookShortcutTitle": {
+    "message": "Keyboard shortcut"
+  },
+  "lookShortcutBody": {
+    "message": "Opens Sixkey on any page, as a click on its icon does:"
+  },
+  "lookShortcutWhere": {
+    "message": "Or type $1 in the address bar."
+  },
+  "lookOpen": {
+    "message": "Clicking the icon opens"
+  },
+  "lookOpenPopup": {
+    "message": "Popup"
+  },
+  "lookOpenPanel": {
+    "message": "Side panel"
+  },
+  "lookOpenNote": {
+    "message": "The side panel stays open beside the page, and the keyboard shortcut opens it too. While it is open, Sixkey locks after 15 minutes without use, even if Automatic lock allows longer."
+  },
+  "lookOpenShared": {
+    "message": "The side panel is not offered in a shared profile (Security mode)."
+  }
+}

@@ -1,0 +1,33 @@
+# Files Prettier must never reformat (paths are relative to this file). Patterns in ../.gitignore are ignored too:
+# `npm run format` in extension/ passes both files.
+
+# Generated files, and files that tools compare byte for byte
+package-lock.json
+rules/build/
+rules/upstream/
+extension/_locales/
+extension/catalogs/
+contract/vectors/
+docs/audit/INDEX.md
+THIRD-PARTY-NOTICES.md
+
+# JSON syntax that the extension and the server read with plain JSON parsers; Prettier would print it as YAML
+api/openapi.yaml
+
+# Test fixtures
+extension/test/fixtures/
+
+# Extension pages: scripts/check-dist.mjs checks the built HTML as text (each page's own policy before its first script)
+*.html
+
+# Third-party text kept verbatim
+CODE_OF_CONDUCT.md
+
+# Records and design history: kept as written, and cited by line from other documents
+docs/SYNC-DESIGN.md
+docs/audit/internal-reviews/
+docs/design/
+docs/history/
+docs/research/
+docs/OWNER-CHECKLIST.md
+contract/M0-NOTES.md

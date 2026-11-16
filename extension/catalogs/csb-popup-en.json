@@ -1,0 +1,29 @@
+{
+  "cbPill": {
+    "message": "Chrome Sync"
+  },
+  "cbBrowser": {
+    "message": "browser sync"
+  },
+  "cbOk": {
+    "message": "Handed to Chrome Sync · $1"
+  },
+  "cbTitle": {
+    "message": "Automatic backup to Chrome Sync"
+  },
+  "cbStopped": {
+    "message": "Backup stopped"
+  },
+  "cbProblem": {
+    "message": "backup problem"
+  },
+  "cbFoundAt": {
+    "message": "Found a Sixkey backup in Chrome Sync (latest $1)."
+  },
+  "cbArrived": {
+    "message": "A Sixkey backup just arrived through Chrome Sync."
+  },
+  "cbRestore": {
+    "message": "Restore from Chrome Sync"
+  }
+}

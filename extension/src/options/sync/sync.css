@@ -1,0 +1,539 @@
+/* The Sync section (src/options/sync/): loaded with its chunk. Built on the page's tokens and components (styles.css,
+   options.css); nothing here defines a colour of its own. Dark themes come with the tokens; the few rules that need a
+   different value in the dark are written in both forms (see the head of src/ui/styles.css). */
+
+.sync-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sync-steps {
+  margin-bottom: 0;
+}
+.step-focus:focus {
+  outline: none;
+}
+.step-focus:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.hint {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* the explanation card (O1) */
+.sync-off details,
+#sync-parked details {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.sync-off summary,
+#sync-parked summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.sync-off summary:focus-visible,
+#sync-parked summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.sync-sees .grid2 {
+  margin-top: 10px;
+}
+.sync-sees ul,
+.sync-pre {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+}
+.sync-sees p {
+  margin-top: 10px !important;
+  font-size: 13px;
+}
+.sync-pre {
+  list-style: none;
+  padding: 0;
+}
+.sync-pre li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sync-pre li.ok .ic {
+  color: var(--good);
+}
+.sync-pre li.no {
+  color: var(--warn);
+}
+.callout.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.callout.warn .ic {
+  color: var(--warn);
+}
+.box .callout.warn {
+  background: var(--warn-soft);
+}
+
+/* links in the section: the page's accent, not the browser's blue */
+#sync a {
+  color: var(--brass-ink);
+  font-weight: 500;
+  text-underline-offset: 2px;
+}
+
+/* the status card (O12) */
+.sync-card {
+  gap: 14px;
+}
+.sc-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.sc-ic {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+.sc-tx {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sync-card.good .sc-ic {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.sync-card.warn .sc-ic {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.sync-card.danger {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+}
+.sync-card.danger .sc-ic {
+  background: var(--surface);
+  color: var(--danger);
+}
+.sync-card.info .sc-ic,
+.sync-card.busy .sc-ic {
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+}
+.sync-card.busy .sc-ic .ic {
+  animation: dial-spin 1.6s linear infinite;
+}
+.sync-adopt {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sync-notices ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sync-notices li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13.5px;
+}
+.sync-notices li .ic {
+  margin-top: 3px;
+  color: var(--muted);
+  flex: none;
+}
+.sync-notices li.warn .ic {
+  color: var(--warn);
+}
+.sync-notices li.danger {
+  color: var(--danger);
+}
+.sync-notices li.danger .ic {
+  color: var(--danger);
+}
+.sync-notices li.good .ic {
+  color: var(--good);
+}
+.sync-notices time {
+  font-family: var(--f-num);
+  font-size: 11.5px;
+}
+
+/* the rail's line, once the section has loaded */
+.status .sync.good dd {
+  color: var(--good);
+}
+.status .sync.warn dd {
+  color: var(--warn);
+}
+.status .sync.bad dd {
+  color: var(--danger);
+}
+
+/* six digits drawn as cells over one real input (widgets.tsx Digits) */
+.digits {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+}
+.digits-in {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  opacity: 0;
+  border: 0 !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  cursor: text;
+}
+.cells {
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+.cells i {
+  width: 42px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font: 500 22px/1 var(--f-num);
+  font-style: normal;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.cells i.gap {
+  margin-left: 10px;
+}
+.digits:focus-within .cells i.cur,
+.digits:focus-within .cells i:last-child:not(:empty) {
+  border-color: var(--focus);
+  box-shadow: var(--ring-focus);
+}
+.digits.bad .cells i {
+  border-color: var(--danger);
+}
+.digits-in:disabled + .cells i {
+  opacity: 0.55;
+}
+
+/* the pairing code on the approving device (O9): seven groups in large type, Copy and its note */
+.pair-code {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pair-code .code-box.big {
+  font-size: 21px;
+  padding: 22px 18px;
+}
+
+/* the six-digit check in the vault dial (O5) */
+.sas {
+  position: relative;
+  width: 236px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  align-self: center;
+  margin: 4px 0;
+}
+.sas-dial {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.sas-dial .face {
+  fill: var(--surface);
+  stroke: var(--line);
+}
+.sas-dial .face2 {
+  fill: var(--surface-2);
+  stroke: var(--line);
+}
+.sas-dial .tk {
+  stroke: var(--line);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.sas-dial .tk.on {
+  stroke: var(--brass);
+}
+.sas-digits {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0 !important;
+  font: 500 34px/1 var(--f-num);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  white-space: pre;
+}
+.sas-left {
+  text-align: center;
+  font-family: var(--f-num);
+  font-size: 13px;
+}
+
+/* the review of a merge the guard stopped */
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.review-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.review-list li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.review-list em {
+  font-style: normal;
+}
+
+/* an in-page confirmation */
+.box.confirm {
+  background: var(--surface);
+  border-color: var(--line-2);
+  box-shadow: var(--sh-2);
+}
+.box.confirm.warn .bt .ic {
+  color: var(--warn);
+}
+.box.confirm.danger {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line-2));
+}
+.box.confirm.danger .bt .ic {
+  color: var(--danger);
+}
+
+/* the devices of the account, the join requests waiting, and the boxes that manage them */
+.sync-devices,
+.sync-requests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sync-devices li,
+.sync-requests li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.sync-devices .sd-main {
+  min-width: 0;
+  flex: 1 1 220px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+.sync-devices .row2,
+.sync-requests .row2 {
+  margin: 0;
+}
+.sync-devices li.revoked {
+  background: var(--sunken);
+  box-shadow: none;
+}
+.sync-devices li.revoked b {
+  color: var(--muted);
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.sync-requests li > span:first-child {
+  min-width: 0;
+  flex: 1 1 200px;
+  font-size: 13.5px;
+}
+.sync-rename {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#sync .tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.sync-manage {
+  gap: 12px;
+}
+.sync-reasons {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sync-reasons legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.sync-reasons .check {
+  align-items: flex-start;
+}
+.sync-reasons .check input {
+  margin-top: 3px;
+}
+.sync-reasons .check.disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.sync-claims {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--sunken);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+.sync-advanced {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.sync-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.sync-advanced summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.sync-advanced > * + * {
+  margin-top: 10px;
+}
+
+@media (max-width: 700px) {
+  .cells i {
+    width: 36px;
+    height: 44px;
+    font-size: 19px;
+  }
+  .cells i.gap {
+    margin-left: 6px;
+  }
+  .sas {
+    width: 200px;
+  }
+  .sas-digits {
+    font-size: 28px;
+  }
+}
+@media (max-width: 380px) {
+  .cells {
+    gap: 4px;
+  }
+  .cells i {
+    width: 30px;
+    height: 40px;
+    font-size: 17px;
+    border-radius: 8px;
+  }
+}
+/* five steps fit on one line at the page's usual width */
+.sync-steps li + li::before {
+  width: 22px;
+  margin: 0 8px;
+}
+/* text for screen readers only (the six digits spelled out beside the large ones) */
+#sync .vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* finding accounts (O13): the versions to look into, and what one holds */
+.sync-find-src {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.sync-find-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.sync-find-list .check {
+  align-items: flex-start;
+}
+.sync-find-list .check input {
+  margin-top: 3px;
+}

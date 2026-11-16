@@ -1,0 +1,148 @@
+# Continuous integration: the same commands CONTRIBUTING.md asks contributors to run.
+#
+# Each `uses:` is pinned to the full commit SHA of a release, with the release's tag as a comment: tags can be moved,
+# commit SHAs cannot. To move to another release, look its SHA up, e.g. with
+#   git ls-remote https://github.com/actions/checkout 'refs/tags/v5*'
+# (for an annotated tag, the line ending in ^{} is the commit), and verify it against the release page.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# No token permissions by default; each job asks for what it needs (read the repository, nothing else).
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  extension:
+    name: extension (typecheck, build, check-dist, i18n)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "22"
+      - name: Install (exact lockfile, no install scripts)
+        run: npm ci --ignore-scripts
+      - name: Formatting (Prettier, whole repository; .prettierignore lists the exceptions)
+        run: npm run format:check
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Store build
+        run: npm run build
+      - name: Check the store build (check-dist)
+        run: npm run check
+      - name: Generated catalogs are up to date
+        run: |
+          python3 -I scripts/messages.py
+          git diff --exit-code -- _locales catalogs
+          test -z "$(git status --porcelain -- _locales catalogs)" # and none is new and uncommitted
+
+  # The unit suite needs about 50 CPU-minutes, more than a 2-core runner gets through in a job's 30 minutes. Vitest
+  # splits its files into shards (sorted by a hash of each file's path, then cut into runs of equal length: every file
+  # is in exactly one shard), and each shard runs on its own runner; the slowest shard is about a fifth of the suite.
+  # To change the number of shards, list 1 to N in the matrix.
+  extension-tests:
+    name: extension (unit tests, shard ${{ matrix.shard }} of ${{ strategy.job-total }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "22"
+      - name: Install (exact lockfile, no install scripts)
+        run: npm ci --ignore-scripts
+      - name: Unit, fault-injection and regression tests (this shard's files)
+        run: npx vitest run --shard=${{ matrix.shard }}/${{ strategy.job-total }} --maxWorkers=2
+
+  server:
+    name: server (pytest against PostgreSQL) and contract (Python reference, cryptography path)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: api/server
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
+      - name: Virtual environment with the pinned dependencies
+        run: make venv
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "22"
+      - name: The Python licences in THIRD-PARTY-NOTICES.md match the installed packages
+        run: node ../../extension/scripts/notices.mjs --verify-python .venv
+      - name: Formatting (ruff format, every Python file in the repository)
+        run: make format-check
+      - name: Test suite (starts a private PostgreSQL from the runner's preinstalled binaries)
+        run: make check
+      - name: Contract checks with cryptography
+        run: make contract
+
+  contract:
+    name: contract (vectors, consistency, stdlib-only reference)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.14"
+      - name: Known-answer vectors recompute exactly
+        run: node contract/tools/gen-vectors.mjs --check
+      - name: Design document against the contract
+        run: python3 -I contract/tools/check_consistency.py
+      - name: Python reference, standard library only
+        run: python3 -I -B contract/py/test_contract.py
+        env:
+          SIXKEY_CONTRACT_NO_CRYPTOGRAPHY: "1"
+
+  licensing:
+    name: licensing (REUSE lint, every file has a licence)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: fsfe/reuse-action@bb774aa972c2a89ff34781233d275075cbddf542 # v5.0.0

@@ -1,0 +1,29 @@
+{
+  "cbPill": {
+    "message": "Chrome 同步"
+  },
+  "cbBrowser": {
+    "message": "浏览器同步"
+  },
+  "cbOk": {
+    "message": "已交给 Chrome 同步 · $1"
+  },
+  "cbTitle": {
+    "message": "自动备份到 Chrome 同步"
+  },
+  "cbStopped": {
+    "message": "备份已停"
+  },
+  "cbProblem": {
+    "message": "备份出了问题"
+  },
+  "cbFoundAt": {
+    "message": "在 Chrome 同步里找到了 Sixkey 的备份（最近一份 $1）。"
+  },
+  "cbArrived": {
+    "message": "Chrome 同步里刚到了一份 Sixkey 备份。"
+  },
+  "cbRestore": {
+    "message": "从 Chrome 同步恢复"
+  }
+}

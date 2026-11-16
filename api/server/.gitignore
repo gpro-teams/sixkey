@@ -1,0 +1,5 @@
+.venv/
+.pg/
+__pycache__/
+.hypothesis/
+.pytest_cache/

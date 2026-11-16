@@ -1,0 +1,149 @@
+{
+  "shEntryLead": {
+    "message": "照着纸上的内容，一次输入一份分片。"
+  },
+  "shEntryLabel": {
+    "message": "第 $1 份分片"
+  },
+  "shEntryAdd": {
+    "message": "添加这份"
+  },
+  "shEntryTyped": {
+    "message": "第 $1 份（分片组 $2）"
+  },
+  "shEntryProgress": {
+    "message": "已输入 $1 份，共需 $2 份（分片组 $3）。"
+  },
+  "shEntryRebuilt": {
+    "message": "已用 $1 份分片重建恢复密钥。"
+  },
+  "shEntryClear": {
+    "message": "重新输入"
+  },
+  "shEntryToCode": {
+    "message": "改为输入恢复密钥"
+  },
+  "shEntryOther": {
+    "message": "这是第 $1 份，请输入第 $2 份。"
+  },
+  "shEntryOtherSet": {
+    "message": "这份分片属于分片组 $1，请输入分片组 $2 的分片。"
+  },
+  "shWrongCheck": {
+    "message": "这份分片有输入错误，请对照纸上的内容核对。"
+  },
+  "shLength": {
+    "message": "一份分片有 36 个字符，共 9 组，每组 4 个。"
+  },
+  "shNewer": {
+    "message": "这份分片由更新版本的 Sixkey 生成，请先更新 Sixkey。"
+  },
+  "shDifferentSets": {
+    "message": "这些分片来自不同的分片组。"
+  },
+  "shSame": {
+    "message": "这份分片已经输入过了。"
+  },
+  "shNoFit": {
+    "message": "这几份分片对不上，请逐份对照纸上的内容。"
+  },
+  "shStale": {
+    "message": "这些分片重建出的恢复密钥打不开这个库：它们可能属于旧的恢复密钥，也可能属于另一个 Sixkey 库（分片组 $1）。"
+  },
+  "shIntro": {
+    "message": "生成 $1 份分片。任意 $2 份即可重建恢复密钥，少于 $2 份则不会泄露任何信息。请分开存放。"
+  },
+  "shPick23": {
+    "message": "3 份中任意 2 份（推荐）"
+  },
+  "shPick35": {
+    "message": "5 份中任意 3 份"
+  },
+  "shReplace": {
+    "message": "生成新的恢复密钥，只以分片形式显示（推荐）"
+  },
+  "shReplaceNote": {
+    "message": "完成后，当前恢复密钥及用它做的分片都会失效。在此之前什么都不会改变。"
+  },
+  "shSplitCurrent": {
+    "message": "拆分我现在的恢复密钥"
+  },
+  "shSplitNote": {
+    "message": "当前恢复密钥继续有效，分片只是多一种找回它的方式。"
+  },
+  "shWrongCode": {
+    "message": "这个恢复密钥打不开你的库。"
+  },
+  "shMake": {
+    "message": "生成分片"
+  },
+  "shCheckMine": {
+    "message": "核对我的分片"
+  },
+  "shCheckLead": {
+    "message": "输入你手上的分片，不会改动任何东西。"
+  },
+  "shCheckOk": {
+    "message": "这些分片可用：它们能重建现在打开你的库的恢复密钥。"
+  },
+  "shCheckRestart": {
+    "message": "换成这些分片之后，浏览器还没有重启过。请在重启浏览器后再核对一次，通过后再销毁旧的恢复密钥。"
+  },
+  "shSwitchLost": {
+    "message": "如果这些是你上次换成的分片，那次切换没有完成：旧的恢复密钥仍能打开你的库。请保留它，并重新生成分片。"
+  },
+  "shSheetTitle": {
+    "message": "第 $1 份，共 $2 份"
+  },
+  "shSheetSet": {
+    "message": "分片组 $1 · $2"
+  },
+  "shPrint": {
+    "message": "打印第 $1 份"
+  },
+  "shSaveFile": {
+    "message": "另存为文本文件"
+  },
+  "shSaveWarn": {
+    "message": "会同步的下载文件夹（iCloud 云盘、OneDrive、Dropbox 等）会把文件传到云端。请打印出来或移到 U 盘，然后删除文件。"
+  },
+  "shKept": {
+    "message": "第 $1 份已打印或抄下"
+  },
+  "shNotYet": {
+    "message": "现在什么都还没变：做完最后的核对之前，这些分片打不开任何东西。"
+  },
+  "shTestTitle": {
+    "message": "切换前先核对 $1 份分片"
+  },
+  "shTestTitleSplit": {
+    "message": "核对 $1 份分片"
+  },
+  "shTestLead": {
+    "message": "请照纸上的内容输入第 $1 份，确认每份都保存无误。"
+  },
+  "shSwitch": {
+    "message": "换成这些分片"
+  },
+  "shDone": {
+    "message": "完成。现在 $2 份分片中任意 $1 份即可重建恢复密钥。请先保留旧的恢复密钥：下次重启浏览器后“核对我的分片”通过一次，再销毁它。"
+  },
+  "shDoneSplit": {
+    "message": "完成。$2 份分片中任意 $1 份即可重建恢复密钥。原来那张恢复密钥纸也仍然有效。"
+  },
+  "shLost": {
+    "message": "丢了一份？用“生成新的恢复密钥”重新生成分片：旧的恢复密钥和全部旧分片都会随之失效。"
+  },
+  "shPaperTitle": {
+    "message": "Sixkey 恢复密钥分片 第 $1 份，共 $2 份"
+  },
+  "shPaperAny": {
+    "message": "$2 份分片中任意 $1 份即可重建你的恢复密钥。"
+  },
+  "shPaperWhere": {
+    "message": "只在 Sixkey 的恢复界面（“我有分片”）中使用。Sixkey 绝不会通过邮件、聊天或电话索要分片。这不是加密钱包助记词。不要拍照。"
+  },
+  "shPaperHeld": {
+    "message": "保管人："
+  }
+}

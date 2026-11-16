@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Belt and braces with the manifest's policy: this page can reach no host at all. -->
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'none'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sixkey WebAuthn probe</title>
+    <link rel="stylesheet" href="probe.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Sixkey WebAuthn probe <span id="ctx" class="badge"></span></h1>
+      <p class="warn">
+        Dev-only test. It creates a test passkey named <b>sixkey-probe-delete-me</b> and sends nothing anywhere.
+        Delete the passkey afterwards (see the bottom of this page).
+      </p>
+    </header>
+
+    <p id="status" role="status" aria-live="polite">Loading…</p>
+    <p id="previous" class="note" hidden></p>
+
+    <section>
+      <h2>1. Create a test passkey</h2>
+      <label>
+        Resident key
+        <select id="resident">
+          <option value="preferred" selected>preferred (default)</option>
+          <option value="required">required</option>
+          <option value="discouraged">discouraged</option>
+        </select>
+      </label>
+      <label>
+        Authenticator attachment
+        <select id="attachment">
+          <option value="platform" selected>platform (default)</option>
+          <option value="">(not set)</option>
+        </select>
+      </label>
+      <label>
+        Hints
+        <select id="hints">
+          <option value="client-device" selected>client-device (default)</option>
+          <option value="">(none)</option>
+        </select>
+      </label>
+      <label>
+        Blob extensions at creation
+        <select id="blobs">
+          <option value="none" selected>none (a plain credential, default)</option>
+          <option value="both">credBlob (32 random bytes) + largeBlob support "preferred"</option>
+        </select>
+      </label>
+      <button id="create" type="button">Create test passkey</button>
+      <p class="hint">Uses this extension's own origin as the relying party, user verification required, and the PRF
+        extension with a fixed salt. Attachment and hints change which save locations Chrome offers.</p>
+    </section>
+
+    <section>
+      <h2>2. Read it back</h2>
+      <button id="gets" type="button">Run 3 get() tests</button>
+      <button id="discoverable" type="button">get() without a saved credential ID</button>
+      <p class="hint">"Run 3 get() tests" asks for Touch ID / Windows Hello three times: salt A, salt A again (by
+        credential), salt B. Use the second button after a browser restart.</p>
+      <label class="check"><input id="auto" type="checkbox" /> Start one get() by itself when this page opens (tests
+        whether a click is needed)</label>
+    </section>
+
+    <section>
+      <h2>2b. Can the credential hold a secret?</h2>
+      <button id="blobtests" type="button">Blob tests (3 touches)</button>
+      <button id="sigdet" type="button">Signature determinism (2 touches)</button>
+      <p class="hint">Blob tests on the saved credential: write a random largeBlob, read it back, read the credBlob set at
+        creation. Run them on a plain credential and on one created with the blob extensions. Signature determinism signs
+        the same challenge twice. Only lengths and SHA-256 prefixes are reported, never a blob.</p>
+    </section>
+
+    <section>
+      <h2>3. Same tests outside the toolbar popup</h2>
+      <button id="window" type="button">Open in a small window</button>
+      <button id="tab" type="button">Open in a tab</button>
+    </section>
+
+    <section>
+      <h2>4. What you saw</h2>
+      <label>
+        Dialog
+        <select id="dialog">
+          <option value="">(not recorded)</option>
+          <option value="os">Only the OS dialog (Touch ID / Windows Hello / Mac or Windows password)</option>
+          <option value="chrome-then-os">Chrome's passkey dialog first, then the OS dialog</option>
+          <option value="chrome-only">Only Chrome's dialog</option>
+          <option value="none">No dialog at all</option>
+          <option value="popup-closed">The popup closed when the dialog appeared</option>
+        </select>
+      </label>
+      <label>Name of the requester shown in the dialog <input id="requester" type="text" maxlength="120" /></label>
+      <label>Notes (where the passkey was saved, Windows update installed, anything odd)
+        <textarea id="notes" rows="3" maxlength="2000"></textarea></label>
+    </section>
+
+    <section>
+      <h2>5. Report</h2>
+      <button id="copy" type="button">Copy report</button>
+      <button id="clear" type="button">Clear probe data</button>
+      <textarea id="report" rows="14" readonly aria-label="Report (JSON)"></textarea>
+    </section>
+
+    <section class="note">
+      <h2>Deleting the test passkey</h2>
+      <p>A web page cannot delete a passkey. Remove <b>sixkey-probe-delete-me</b> yourself:</p>
+      <ul>
+        <li>macOS: the Passwords app › Passkeys (macOS 14: System Settings › Passwords), and
+          <code>chrome://password-manager/passwords</code> if Chrome saved it in Google Password Manager or the Chrome
+          profile.</li>
+        <li>Windows: Settings › Accounts › Passkeys, and <code>chrome://password-manager/passwords</code> if it was saved
+          in Google Password Manager.</li>
+      </ul>
+      <p>Then remove this extension in <code>chrome://extensions</code>.</p>
+    </section>
+
+    <script type="module" src="probe.js"></script>
+  </body>
+</html>

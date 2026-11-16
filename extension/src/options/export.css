@@ -1,0 +1,101 @@
+/* Settings page > Backup: the master password asked before every export, and the "Export selected accounts" picker
+   (Backup.tsx, SubsetPicker.tsx; PHASE0X-PLAN C6). Built on the options.css boxes and the styles.css tokens only, so
+   it has no colours of its own and nothing to restate for dark mode. */
+.exp-pw {
+  border-color: var(--brass-line);
+}
+.exp-pw .field {
+  max-width: 360px;
+}
+
+.sub-tools #sub-count {
+  margin-left: auto;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.sub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.sub-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.sub-group legend {
+  padding: 0;
+  margin: 0 0 2px;
+}
+.sub-group.titled .sub-item {
+  padding-left: 27px;
+}
+.sub-g b {
+  font-weight: 600;
+}
+.sub-g small {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sub-item {
+  align-items: flex-start;
+}
+.sub-item input {
+  flex: none;
+  margin-top: 2px;
+}
+.sub-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sub-name b {
+  font-weight: 500;
+}
+.sub-name small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.sub-preview p {
+  margin: 0;
+  font-weight: 500;
+  color: var(--ink);
+}
+.sub-preview ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sub-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-left: 8px;
+  overflow-wrap: anywhere;
+}
+.sub-meta small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+/* A group with some of its accounts ticked: a dash in the accent colour (tokens only, so both themes get it). */
+.options .sub-g input:indeterminate {
+  border-color: var(--accent);
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 10px 2.5px;
+}

@@ -1,0 +1,71 @@
+{
+  "emptyOptions": {
+    "message": "No vault yet. First a master password, then a recovery key; nothing is saved until both are done."
+  },
+  "restored": {
+    "message": "Restored $1 account(s)."
+  },
+  "frTitle": {
+    "message": "Set up Sixkey"
+  },
+  "frRestoreLead": {
+    "message": "Choose the backup, then set a master password for this computer: the accounts are saved under it from the start."
+  },
+  "frStartOverLead": {
+    "message": "A new, empty vault with a master password. Nothing is erased until you finish."
+  },
+  "frStepFile": {
+    "message": "Backup file"
+  },
+  "frStepProfile": {
+    "message": "This profile"
+  },
+  "frStepAccount": {
+    "message": "First account"
+  },
+  "frPasswordTitle": {
+    "message": "Choose a master password"
+  },
+  "frPreparing": {
+    "message": "Preparing…"
+  },
+  "frCodeNote": {
+    "message": "Nothing is saved until you finish. If you close this page before that, this key will not open anything; you will get a new one."
+  },
+  "frRiskTitle": {
+    "message": "Is this browser profile used only by you?"
+  },
+  "frRiskBody": {
+    "message": "Could it be used by others, synced to an anti-detect browser vendor's cloud, or controlled by scripts or automation tools?"
+  },
+  "frRiskNote": {
+    "message": "You can change this later in Settings › Security › Security mode."
+  },
+  "frFinish": {
+    "message": "Finish"
+  },
+  "frClipLead": {
+    "message": "Recommended for a shared or automated profile."
+  },
+  "frChanged": {
+    "message": "Sixkey was set up or changed in another page meanwhile. Nothing was changed here."
+  },
+  "frRestoreInstead": {
+    "message": "Restore from a backup instead"
+  },
+  "frCreateInstead": {
+    "message": "Start with an empty vault instead"
+  },
+  "frReadyTitle": {
+    "message": "Sixkey is ready"
+  },
+  "frAddBelow": {
+    "message": "Add your first account below."
+  },
+  "frScanHint": {
+    "message": "You can also click the Sixkey icon on a website to read a QR code shown on the page."
+  },
+  "frJoinSync": {
+    "message": "Join a synced vault instead"
+  }
+}

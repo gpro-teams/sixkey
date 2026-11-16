@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="connect-src 'none'"><meta name="sixkey-dev-sync" content="dev and e2e builds only"><title>Sixkey sync (dev)</title></head>
+<body>
+  <h1>Sixkey sync (dev)</h1>
+  <p>A developer page of dev and e2e builds. It drives the sync engine from the console or from end-to-end tests while
+  the settings page has no sync section yet. Production builds do not contain it.</p>
+  <p>The API host permission (asked for by a click, as Chrome requires; the e2e build declares it as required):
+  <button id="grant" type="button">Grant API access</button> <button id="revoke" type="button">Remove API access</button></p>
+  <pre id="out"></pre>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

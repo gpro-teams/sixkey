@@ -1,0 +1,106 @@
+/* Settings page > Appearance (Appearance.tsx). Built on options.css tokens and boxes. */
+.look {
+  gap: 18px;
+}
+.look-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 6px 18px;
+  align-items: start;
+}
+.look-k {
+  padding-top: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.look-v {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+.look-v > .check {
+  min-height: 36px;
+}
+.look-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 64ch;
+  text-wrap: pretty;
+}
+
+/* a segmented bar over real radio buttons: the chosen one is filled, so the state never rests on a faint tint alone */
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+}
+.seg-o {
+  position: relative;
+  flex: 1 1 auto; /* in a narrow window the bar wraps: a choice alone on its line fills it instead of hanging */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 5px 13px;
+  border-radius: 9px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.seg-o .ic {
+  color: var(--muted);
+  transition: color 0.15s;
+}
+.seg-o:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+.seg-o.on {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--sh-1);
+}
+.seg-o.on .ic {
+  color: currentColor;
+}
+.seg-o input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.seg-o:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.look-key {
+  font-size: 12px;
+  padding: 5px 8px 4px;
+}
+
+@media (max-width: 700px) {
+  .look-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .look-k {
+    padding-top: 0;
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "dvNameMac": {
+    "message": "Touch ID"
+  },
+  "dvNameWin": {
+    "message": "Windows Hello"
+  },
+  "dvNameOther": {
+    "message": "这台电脑的登录验证"
+  },
+  "dvUnlock": {
+    "message": "用 $1 解锁"
+  },
+  "dvWindowNote": {
+    "message": "电脑会请你确认身份。请求方可能显示为“chrome-extension”，即 Sixkey。"
+  },
+  "dvFailed": {
+    "message": "未能完成，请使用主密码。"
+  },
+  "dvDue": {
+    "message": "Sixkey 每 14 天请你输入一次主密码，免得忘记。"
+  },
+  "dvPaused": {
+    "message": "密钥已更换，$1 已暂停，需在设置中重新开启。"
+  },
+  "dvWaiting": {
+    "message": "浏览器重启后以及每隔 12 小时，$1 需要先输一次主密码。"
+  },
+  "dvLead": {
+    "message": "用 $1 代替输入主密码来打开 Sixkey。"
+  },
+  "dvNone": {
+    "message": "这台电脑的登录验证在这里用不了。PIN 照常可用。"
+  },
+  "dvAdd": {
+    "message": "使用 $1"
+  },
+  "dvPick": {
+    "message": "在 Chrome 的对话框里：iCloud 钥匙串或 Google 密码管理器（先勾选上面的框）重启后也能用；“仅此设备”到浏览器关闭为止。"
+  },
+  "dvOptIn": {
+    "message": "允许会同步到 Apple、Google 或密码管理器的通行密钥"
+  },
+  "dvOptInNotice": {
+    "message": "它会保存在那家公司的云端和你的其他设备上。谁进了那个账户、又拿到这个浏览器配置文件的副本，就能不用主密码打开 Sixkey。拿不准就别开：不开的话，$1 在浏览器关闭前照样能用。"
+  },
+  "dvOptInSync": {
+    "message": "开启同步时，他们还能冒充你的一台设备。"
+  },
+  "dvRowPrf": {
+    "message": "重启后也可以。拿到这个浏览器配置文件副本的人仍需要你的主密码。"
+  },
+  "dvRowPrfSynced": {
+    "message": "重启后也可以。它会同步：那个账户加上这个浏览器配置文件的副本也能打开 Sixkey。"
+  },
+  "dvRowGate": {
+    "message": "到浏览器关闭为止。它挡得住坐到你电脑前的人，挡不住电脑上的程序，也挡不住会打开浏览器开发者工具的人。"
+  },
+  "dvRowGateShared": {
+    "message": "这个安全模式下不使用。"
+  },
+  "dvSynced": {
+    "message": "会同步"
+  },
+  "dvRemove": {
+    "message": "移除"
+  },
+  "dvTurnOn": {
+    "message": "重新开启"
+  },
+  "dvNotWorking": {
+    "message": "在这里用不了，或电脑丢了？移除即可：主密码和恢复密钥照样能打开 Sixkey。"
+  },
+  "dvAlsoRestart": {
+    "message": "重启后也可以"
+  },
+  "dvKeyChanged": {
+    "message": "密钥已更换：按一次即可重新开启 $1，无需再输密码。"
+  },
+  "dvOn": {
+    "message": "已开启。"
+  },
+  "dvSyncedRefused": {
+    "message": "这个通行密钥会同步，所以只在浏览器关闭前有效。想重启后也能用，点它旁边的“重启后也可以”。"
+  },
+  "dvNoPrf": {
+    "message": "这个通行密钥没有给 Sixkey 的专属密钥，只在浏览器关闭前有效。"
+  },
+  "dvRemoved": {
+    "message": "已移除。通行密钥本身仍在 $1 中，不再需要请在那里删除。"
+  },
+  "dvWhereIcloud": {
+    "message": "“密码”App"
+  },
+  "dvWhereGoogle": {
+    "message": "Google 密码管理器"
+  },
+  "dvWhereWindows": {
+    "message": "Windows 设置 › 账户 › 通行密钥"
+  },
+  "dvWhereUnknown": {
+    "message": "你的通行密钥服务"
+  },
+  "dvCancelled": {
+    "message": "什么也没保存。"
+  },
+  "dvExists": {
+    "message": "已经添加过了。"
+  },
+  "dvRefused": {
+    "message": "Sixkey 用不了这个通行密钥，什么也没保存。"
+  },
+  "dvFull": {
+    "message": "最多 10 个，请先移除一个。"
+  }
+}

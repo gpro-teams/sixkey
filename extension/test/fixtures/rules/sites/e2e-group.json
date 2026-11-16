@@ -1,0 +1,10 @@
+{
+  "id": "e2e-group",
+  "hosts": ["rules2.fix.test"],
+  "pages": [{ "path": "/rule/", "field": "input.digit", "segments": 6, "fill": "chars" }],
+  "flags": ["sent"],
+  "minLeft": 20,
+  "verified": "2026-11-05",
+  "fixtures": ["e2e-group/six.html"],
+  "note": "The e2e build's test rule: six one-digit boxes without maxlength, a group the heuristics do not see"
+}

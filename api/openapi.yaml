@@ -1,0 +1,1348 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sixkey sync API",
+    "version": "1.0.0-m0",
+    "summary": "End-to-end encrypted vault sync for the Sixkey extension (Phase 1).",
+    "description": "Contract for docs/SYNC-DESIGN.md §5 (revision 18), milestone M0. The design doc is the source of truth; revisions 5 and 6 (§0.0d, §0.0e) resolved every M0 note, revision 7 (§0.0f) the M1 review, revision 15 (§0.0o) the M4 backend review, revision 16 (§0.0p) its fix pass and revision 18 (§0.0r) its cleanup round, and x-sixkey-doc on each operation cites the sections it implements. The file is JSON syntax, which is valid YAML 1.2, so TypeScript and Python read it with their standard JSON parsers and no YAML dependency (§0.0d N0). Conventions (§5.4): bodies are JSON; envelope and bundle are JSON strings holding the raw text; other byte fields are standard base64; ids are base64url; every JSON response body carries server_time (ms). Error bodies are {error: {code, ...details}, server_time} and never echo user data. Request bodies reject unknown members (422); clients ignore unknown response members. Every number in a request body, a bundle or the enrollment payload is a safe integer written as an integer literal; the server rejects any other number token, such as 3.0 or 1e3, with 422 invalid_request (§2.3, §5.4, §0.0d N20). Strict JSON (§5.4, §0.0o A18): in a request body, a bundle or an envelope, a duplicate object key, a NUL character or a lone surrogate in any string is 422 invalid_request, and the integer-token rule also applies inside the envelope text. Every request body, on operations without one too, is capped (413 too_large, §5.4, §0.0o A9). Rules every request of a kind must follow, such as the JSON Content-Type, are in x-sixkey-request-rules."
+  },
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
+  "servers": [
+    { "url": "https://api.sixkey.app", "description": "production (the one host_permissions origin, §7)" },
+    { "url": "http://127.0.0.1:8787", "description": "e2e (fixed port, §7)" }
+  ],
+  "tags": [
+    { "name": "auth", "description": "Email OTP account session (§5.2)." },
+    { "name": "vault", "description": "Encrypted vault and its history (§4, §5.3, §5.8)." },
+    { "name": "keys", "description": "KeyBundle operations (§3.6-§3.9)." },
+    { "name": "devices", "description": "Device list, rename, revoke, fork (§3.10, §4.10)." },
+    { "name": "enroll", "description": "Approval and recovery-code enrollment (§3.2, §3.3)." },
+    { "name": "account", "description": "Account state and deletion (§3.12, §5.7)." }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "operationId": "healthz",
+        "tags": ["account"],
+        "summary": "Liveness",
+        "security": [],
+        "x-sixkey-doc": "§5.4",
+        "x-sixkey-auth": { "signer": "none", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "413": ["too_large"] },
+        "responses": {
+          "200": { "description": "alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } },
+          "413": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/otp": {
+      "post": {
+        "operationId": "authOtp",
+        "tags": ["auth"],
+        "summary": "Send an email OTP",
+        "description": "Proxies Supabase POST /auth/v1/otp {email, create_user: true}. Always 202 whether or not the email exists (§5.2).",
+        "security": [],
+        "x-sixkey-doc": "§3.1 step 2, §5.2, §5.5",
+        "x-sixkey-auth": { "signer": "none", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "400": ["invalid_email"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OtpRequest" } } } },
+        "responses": {
+          "202": { "description": "accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServerTimeOnly" } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/verify": {
+      "post": {
+        "operationId": "authVerify",
+        "tags": ["auth"],
+        "summary": "Exchange the OTP for a one-time account session",
+        "description": "Proxies Supabase POST /auth/v1/verify, then immediately revokes the Supabase session (POST /auth/v1/logout?scope=local) and returns only the access token. No refresh token ever reaches the extension (§0.3 C1, §5.2). If the immediate logout fails, verify answers 503 unavailable: it fails closed, the code is spent and the user requests a new one (§5.2, §0.0o A23).",
+        "security": [],
+        "x-sixkey-doc": "§3.1 step 2, §5.2, §5.5",
+        "x-sixkey-auth": { "signer": "none", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["otp_invalid"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VerifyRequest" } } } },
+        "responses": {
+          "200": { "description": "account session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VerifyResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/account": {
+      "get": {
+        "operationId": "getAccount",
+        "tags": ["account"],
+        "summary": "Does this account have a vault",
+        "description": "The only account-level read. The numbers drive the anti-squatting warning (§3.5); they are hints, the real protection is the pairing code, which only the user's own approving device shows and which is never sent (§3.2 MUST 5, MUST 10).",
+        "security": [{ "accountSession": [] }],
+        "x-sixkey-doc": "§3.1 step 3, §3.2 N0, §3.5",
+        "x-sixkey-auth": { "signer": "none", "account_session": "required", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["session_invalid"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "account state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccountResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccount",
+        "tags": ["account"],
+        "summary": "Delete the sync account",
+        "description": "Needs the device signature, a fresh account session (iat within 600 s, sub = this device's account) and pw_auth. Deletes the Supabase auth user only; on delete cascade clears every row. 500 means nothing was deleted and the request can be retried unchanged (§5.7).",
+        "security": [{ "deviceSignature": [], "accountSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.12, §5.2, §5.7",
+        "x-sixkey-auth": { "signer": "device", "account_session": "step_up", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["step_up_required", "session_invalid", "bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"], "500": ["internal_error"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordAuthOnly" } } } },
+        "responses": {
+          "204": { "description": "deleted (no body; use the Date header for the clock)" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/vault/init": {
+      "post": {
+        "operationId": "initVault",
+        "tags": ["vault"],
+        "summary": "First device creates the vault",
+        "description": "Account session plus a signature by the new device key whose public key is in device.sig_pubkey (proof of possession). Idempotent on the raw request: the same vault_id, device_id, sig_pubkey and bundle text return the same 201; anything else is 409 vault_exists (§5.3 D4). 422 invalid_request also covers a bundle whose at, wraps[].createdAt or previous[].createdAt is not a multiple of 3600000 (§2.3, §0.0d N16) and any non-integer number token (§0.0d N20). device.name_ct.vkId must equal the envelope's vkId, else 422 invalid_request (§5.4, §0.0o A19).",
+        "security": [{ "accountSession": [], "registrationSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.1 steps 5-7, §5.3",
+        "x-sixkey-auth": { "signer": "registration", "account_session": "required", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 9437184,
+        "x-sixkey-errors": { "401": ["session_invalid", "bad_signature", "clock_skew"], "409": ["vault_exists", "device_exists"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InitRequest" } } } },
+        "responses": {
+          "201": { "description": "created (or the identical retry of a request that created it)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InitResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/sync/status": {
+      "get": {
+        "operationId": "getSyncStatus",
+        "tags": ["vault"],
+        "summary": "Cheap status poll",
+        "description": "Read-only: never writes the database except last_seen_at once per UTC day (§5.3 T2). Works while locked. Clients below min_client_version enter update_required and stop all reads and writes (§5.2 d6).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.1 step 7 (D4), §4.2 step 1, §5.2, §5.3, §0.0d N15, N21",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "404": ["no_vault"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StatusResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/vault": {
+      "get": {
+        "operationId": "getVault",
+        "tags": ["vault"],
+        "summary": "Head envelope",
+        "description": "Unconditional: no If-None-Match, ETag or 304. A version number can be reused after a rollback (D5), and §4.2 step 3 only fetches the head when needPull is already true, so a 304 could only be the wrong answer (§5.4 已删除, §0.0d N2).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§4.2 step 3, §5.4, §0.0d N2",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "404": ["no_vault"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "head version", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VaultResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "put": {
+        "operationId": "putVault",
+        "tags": ["vault"],
+        "summary": "Compare-and-swap a new head",
+        "description": "Requires write_proof = HMAC(K_write, 'sixkey-write|1|{vaultId}|{if_version}|{envelope.checksum}') (§5.2). Checked before the transaction: proof, envelope.rev = if_version + 1, vaultId, vkId, checksum, size. The transaction locks the device row FOR NO KEY UPDATE, then CAS on version and vk_id (§5.3 C3; lock order device rows, vault row, enrollment rows, §5.3 A1). The cursor in the signed body drives clone detection (§4.10); forked = true means another copy of this identity wrote.",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§4.2 step 6, §4.7, §4.10, §5.2, §5.3",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": true, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 9437184,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["write_denied", "device_revoked"], "404": ["no_vault"], "409": ["version_conflict", "vk_mismatch"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutVaultRequest" } } } },
+        "responses": {
+          "200": { "description": "accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutVaultResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/vault/versions": {
+      "get": {
+        "operationId": "listVaultVersions",
+        "tags": ["vault"],
+        "summary": "History list (hour precision)",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§4.3 (backtracking, F6a), §5.8, §6 O13",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "404": ["no_vault"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "versions, newest first", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VersionsResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteVaultVersions",
+        "tags": ["vault"],
+        "summary": "Clear server history (keeps the head)",
+        "description": "Deletes every history row except the head version. Idempotent. Needs pw_auth so a holder of only the device credential cannot erase the history that backs the two-step-delete guard (§5.8, decided Q5, C1).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.14, §4.4, §5.8, §6 O14",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "404": ["no_vault"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordAuthOnly" } } } },
+        "responses": {
+          "200": { "description": "number of history rows deleted (0 on a repeat)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeletedResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/vault/versions/{v}": {
+      "get": {
+        "operationId": "getVaultVersion",
+        "tags": ["vault"],
+        "summary": "One history version",
+        "description": "May be encrypted with an older VK; the client opens it with keyring.previous and only uses it for recovering accounts, never as a wholesale replacement (§5.8).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/VersionPath" }, { "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§4.3, §5.8",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "404": ["not_found", "no_vault"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "the version", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VaultResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/keys": {
+      "get": {
+        "operationId": "getKeys",
+        "tags": ["keys"],
+        "summary": "Current KeyBundle (raw text)",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.6.0, §3.9 R3, §3.14 pre-send check, §4.2 step 1",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "404": ["no_vault"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "bundle", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KeysResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "put": {
+        "operationId": "putKeys",
+        "tags": ["keys"],
+        "summary": "Change password and/or recovery code (same VK)",
+        "description": "Exactly one of password_auth or recovery_auth (recovery-code reset, §3.3 step 5). Keyless server checks (§2.3): shape, vaultId, keyring.vkId = current vk_id, if_kver < kver <= if_kver + KVER_MAX_JUMP, else 422 invalid_request (jumps allowed up to KVER_MAX_JUMP; clients publish publishKver = min(max(server kver, maxSeenKver) + 1, server kver + KVER_MAX_JUMP), §2.3, §3.9 R1, §0.0e N27, §0.0f F-01), by = signing device, KDF bounds, and P4 consistency: recovery wrap changed <=> recovery_verifier present; password wrap changed <=> auth.kdf changed <=> password_verifier present; otherwise 422. A wrap changed when its iv or wrapped bytes did; createdAt and its other members do not count (§2.3, §0.0f S-2). The CAS is on if_kver: if it is not the server's current kver, 409 keys_conflict, unless the stored bundle text equals the submitted text byte for byte, which is the idempotent 200 whatever if_kver is (§3.6.0, §5.3). Same-VK repair (§4.2, R1 keys_behind, §0.0e N27): if_kver = the server's kver, the device's own keyring with a jumped kver, recovery_verifier from a typed recovery code, and password_verifier when the password wrap changes. 422 invalid_request also covers bundle times that are not multiples of 3600000 (§2.3, §0.0d N16) and non-integer number tokens (§0.0d N20). Check order (§5.3, §0.0o A5): 1. shape and the kver range (422); 2. a stored bundle text byte-identical to the submitted one is the idempotent 200, before any proof (a replay after success carries the replaced state's password_auth, and P4 against the identical stored bundle would demand no verifier); 3. the CAS precondition (409 keys_conflict), before the proof so an honest race is never counted as a wrong password; 4. password_auth or recovery_auth (403, counted); 5. vaultId, keyring.vkId, by and P4 (422); 6. the transaction.",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§2.3, §3.3 step 5, §3.6, §3.7, §3.9 R1, §3.14, §4.2, §0.0e N27",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "password_or_recovery", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "recovery_mismatch", "device_revoked"], "404": ["no_vault"], "409": ["keys_conflict"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutKeysRequest" } } } },
+        "responses": {
+          "200": { "description": "new kver", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/KverResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/keys/rotate": {
+      "post": {
+        "operationId": "rotateKeys",
+        "tags": ["keys"],
+        "summary": "Rotate the VK (also: repair the cloud from this device)",
+        "description": "One transaction: lock every device row of the account FOR NO KEY UPDATE in device_id order (lock order device rows, vault row, enrollment rows, §5.3 A1), double CAS (version, kver), swap vk_id and write_key, write history, re-encrypt every device name (revoked ones too), delete every open enrollment (§3.8, §5.3). write_proof uses the current K_write; new_write_key is K_write of the new VK. The kver rule, P4 and idempotency are the same as PUT /v1/keys: if_kver < kver <= if_kver + KVER_MAX_JUMP, else 422 invalid_request; clients publish publishKver = min(max(server kver, maxSeenKver) + 1, server kver + KVER_MAX_JUMP); P4 judges a wrap changed by its iv and wrapped bytes only (§2.3, §0.0f S-2); if_kver != the server's kver is 409 keys_conflict unless the stored bundle text equals the submitted one (200) (§3.6.0, §3.8, §0.0e N27, §0.0f F-01). Carries an envelope, so it uses the 9 MiB body limit (§5.4, §0.0d N13). Repair use (§4.2 以本机为准修复云端, §0.0d N24): a rotate that does not change this device's VK; bundle.keyring.vkId equals the envelope's vkId and may differ from the server's vk_id before the request; write_proof and password_auth follow the server's rolled-back state; recovery_verifier is required (from a recovery code the user types, or a new one). 422 invalid_request also covers bundle times that are not multiples of 3600000 (§2.3, §0.0d N16) and non-integer number tokens (§0.0d N20). Check order (§5.3, §0.0o A5, A7): 1. shape and the kver range (422); 2. a stored bundle text byte-identical to the submitted one is the idempotent 200, before any proof; 3. the CAS preconditions (409), and when both if_version and if_kver are stale keys_conflict comes first, because the key race voids the rotation; 4. write_proof (403 write_denied); 5. password_auth (403, counted); 6. vaultId, keyring.vkId, by and P4 (422); 7. the transaction. device_names (§5.3, §0.0o A6): every device_id must be a device of this account (else 422), no duplicates, and every name_ct.vkId must be the new VK; devices not listed keep their old name_ct (for example one that completed enrollment concurrently), and the client lists them later.",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.8 P3, §4.2 (repair), §5.2, §5.3, §0.0d N13, N24, §0.0e N27",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": true, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 9437184,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "write_denied", "device_revoked"], "404": ["no_vault"], "409": ["version_conflict", "keys_conflict"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RotateRequest" } } } },
+        "responses": {
+          "200": { "description": "rotated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RotateResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/devices": {
+      "get": {
+        "operationId": "listDevices",
+        "tags": ["devices"],
+        "summary": "Device list (names are ciphertext)",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.10, §4.2 step 1, §6 O8",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "devices of this account, revoked ones included", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DevicesResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/devices/fork": {
+      "post": {
+        "operationId": "forkDevice",
+        "tags": ["devices"],
+        "summary": "Split a cloned profile into its own identity",
+        "description": "Two signatures over one signing input (§5.2): Sixkey-Sig by the current DSK, and Sixkey-New-Sig by the new private key, verified with the body's new_sig_pubkey (proof of possession, S5). The new-key signature is a header because the signing input hashes the body, and a signature in the body could not cover itself (§0.0d N1). A missing or wrong Sixkey-New-Sig is 401 bad_signature. Creates a row with joined_via = fork and approved_by = the original device. name_ct.vkId must equal the account's current vk_id, else 422 invalid_request (§5.4, §0.0o A19).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }, { "$ref": "#/components/parameters/SixkeyNewSig" }],
+        "x-sixkey-doc": "§4.10, §5.2, §5.4, §0.0d N1",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": true },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "409": ["device_exists", "too_many_devices"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForkRequest" } } } },
+        "responses": {
+          "201": { "description": "new identity created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceIdResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/devices/{id}": {
+      "patch": {
+        "operationId": "renameDevice",
+        "tags": ["devices"],
+        "summary": "Rename a device (including this one)",
+        "description": "pw_auth is required for every rename, own device included (S8). A replay inside the signature window can only undo one newer rename (accepted residual, §5.2). name_ct.vkId must equal the account's current vk_id, else 422 invalid_request (§5.4, §0.0o A19).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/DeviceIdPath" }, { "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§2.4, §3.14, §5.2, §6 O8",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "404": ["not_found"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RenameRequest" } } } },
+        "responses": {
+          "200": { "description": "renamed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServerTimeOnly" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/devices/{id}/revoke": {
+      "post": {
+        "operationId": "revokeDevice",
+        "tags": ["devices"],
+        "summary": "Revoke a device (including this one)",
+        "description": "Sets revoked_at (hour precision). Idempotent. pw_auth is required even for revoking yourself (S8). Afterwards the revoked device gets 403 device_revoked (signature checked first, P6) and its unfinished approvals are void.",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/DeviceIdPath" }, { "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.10, §3.14, §5.2",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "404": ["not_found"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordAuthOnly" } } } },
+        "responses": {
+          "200": { "description": "revoked (or already revoked)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RevokeResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests": {
+      "post": {
+        "operationId": "createEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "M1: new device opens an approval request",
+        "description": "Account session plus a signature by the new device key in sig_pubkey. At most one pending request per account session (enrollments_one_per_session). expires_at is (now + 600 s) rounded up to the UTC minute, so a request lives 10 to 11 minutes and the exact creation time is not revealed (§5.3 C14, §0.0o A13). N never re-opens a request on its own (MUST 3).",
+        "security": [{ "accountSession": [], "registrationSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M1, §5.5",
+        "x-sixkey-auth": { "signer": "registration", "account_session": "required", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["session_invalid", "bad_signature", "clock_skew"], "404": ["no_vault"], "409": ["device_exists", "one_per_session"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnrollCreateRequest" } } } },
+        "responses": {
+          "201": { "description": "pending request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnrollCreateResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "get": {
+        "operationId": "listEnrollRequests",
+        "tags": ["enroll"],
+        "summary": "M2: approver lists open requests",
+        "description": "Approval requests of this account in every state, with handled_by once someone responded. Recovery-code requests are never listed (§5.4, §0.0o A14).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M2, §6 O9",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "open requests (minute precision)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnrollListResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests/{rid}": {
+      "get": {
+        "operationId": "getEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "Poll one request (new-device view or approver view)",
+        "description": "The new device (Sixkey-Enroll) sees the approver's values; an enrolled device (Sixkey-Device) sees the new device's values. Both sides pin the first values they see and abort on any later change (§3.2 MUST 1-2). Only approval requests can be polled: a GET on a recovery-code request is 410 enroll_gone (§5.4, §0.0o A14). Exactly one of Sixkey-Device and Sixkey-Enroll, and Sixkey-Enroll must equal the path rid; otherwise 401 bad_signature (§5.4, §0.0o A20).",
+        "security": [{ "enrollSignature": [] }, { "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RequestIdPath" }, { "$ref": "#/components/parameters/SixkeyDeviceAlt" }, { "$ref": "#/components/parameters/SixkeyEnrollAlt" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M3, M4, M6",
+        "x-sixkey-auth": { "signer": "device_or_enroll", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["device_revoked"], "410": ["enroll_gone"], "413": ["too_large"], "429": ["rate_limited"] },
+        "responses": {
+          "200": { "description": "request state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnrollGetResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests/{rid}/respond": {
+      "post": {
+        "operationId": "respondEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "M2: approver commits its ephemeral key",
+        "description": "CAS pending -> responded; only one approver. Before calling, A pins (rid, devN, dpk_N, C) (MUST 1). 409 enroll_state carries handled_by when another device got there first (F9). An identical retry (same approver, same epk) is 200; different values are 409 enroll_state (§5.4, §0.0o A15).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RequestIdPath" }, { "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M2, §3.14",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "409": ["enroll_state"], "410": ["enroll_gone"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RespondRequest" } } } },
+        "responses": {
+          "200": { "description": "responded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StateResponded" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests/{rid}/reveal": {
+      "post": {
+        "operationId": "revealEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "M3: new device opens its commitment",
+        "description": "CAS responded -> revealed. name_ct = AES-GCM(K_enroll, device name, AAD 'sixkey-enroll-name|2|' b64u(h)), sent as base64(iv || ct || tag), where K_enroll = HKDF(IKM = Z || S, salt = h, 'sixkey/v2/enroll-key') and S is the pairing code the user typed, which no request carries (enrolment v2, §3.2 M3, MUST 10); the name is validated and padded to 160 bytes first (§2.4, §3.2, §0.0d N5, N6). An identical retry is 200; different values are 409 enroll_state (§5.4, §0.0o A15).",
+        "security": [{ "enrollSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RequestIdPath" }, { "$ref": "#/components/parameters/SixkeyEnroll" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M3",
+        "x-sixkey-auth": { "signer": "enroll", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "clock_skew"], "409": ["enroll_state"], "410": ["enroll_gone"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RevealRequest" } } } },
+        "responses": {
+          "200": { "description": "revealed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StateRevealed" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests/{rid}/approve": {
+      "post": {
+        "operationId": "approveEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "M5: approver hands over the encrypted payload",
+        "description": "CAS revealed -> approved; only the device that responded may approve (others get 409 enroll_state, §5.4 通用错误码, §0.0d N11). The server checks sig_pubkey_sha256 = SHA-256(new_sig_pubkey) (422 key_mismatch). No code is shown after this returns 200: the pairing code was shown once respond returned 200, and the new device uses only a payload that opens under K_enroll, which holds it (MUST 5, MUST 10). A repeated approve is 409 enroll_state; a lost 200 is recovered by polling (MUST 8, §5.4, §0.0o A15). name_ct.vkId must equal the account's current vk_id, else 422 invalid_request (§5.4, §0.0o A19).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RequestIdPath" }, { "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M5, §3.14",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "409": ["enroll_state"], "410": ["enroll_gone"], "413": ["too_large"], "422": ["key_mismatch", "invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApproveRequest" } } } },
+        "responses": {
+          "200": { "description": "approved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StateApproved" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests/{rid}/complete": {
+      "post": {
+        "operationId": "completeEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "M7 / recovery step 4: create the device row",
+        "description": "Called only after the new device has written its local state (and sk_sync_cfg). Creates the devices row (joined_via approval or recovery) and deletes the request with its payload. The first complete deletes the request row, so a retry of the same rid is 410 enroll_gone; after an unclear outcome the new device queries the status signed as devN, and 200 means it is enrolled (D4, §3.2 M7, §5.3, §0.0o A17). The idempotent 200 applies to another request (another session) completing the same device_id with the same public key in this account. If the device id was taken between create and complete (another account's init, a fork), the answer is 409 enroll_state and the request survives (§5.3, §0.0o A16). name_ct: the approval path already sent it in approve, and a name_ct here is 422; on the recovery path it is optional, and without it the device row gets a null name (§5.3). name_ct.vkId must equal the account's current vk_id, else 422 (§5.4, §0.0o A19).",
+        "security": [{ "enrollSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RequestIdPath" }, { "$ref": "#/components/parameters/SixkeyEnroll" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M7, §3.3 step 4, §5.3",
+        "x-sixkey-auth": { "signer": "enroll", "account_session": "none", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "clock_skew"], "409": ["enroll_state", "too_many_devices"], "410": ["enroll_gone"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CompleteRequest" } } } },
+        "responses": {
+          "200": { "description": "enrolled", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeviceIdResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/requests/{rid}/reject": {
+      "post": {
+        "operationId": "rejectEnrollRequest",
+        "tags": ["enroll"],
+        "summary": "Reject one request (approver with pw_auth, or the new device itself)",
+        "description": "An enrolled device must send password_auth (S8). The new device rejecting its own request (its payload does not open under K_enroll, bad_payload, MUST 5 / M6) signs with Sixkey-Enroll and sends no password_auth. An enrolled device that sends no password_auth gets 403 password_mismatch, not counted, since no guess was made (§5.4, §0.0o A11). Exactly one of Sixkey-Device and Sixkey-Enroll, and Sixkey-Enroll must equal the path rid; otherwise 401 bad_signature (§5.4, §0.0o A20).",
+        "security": [{ "deviceSignature": [] }, { "enrollSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RequestIdPath" }, { "$ref": "#/components/parameters/SixkeyDeviceAlt" }, { "$ref": "#/components/parameters/SixkeyEnrollAlt" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.2 M6, §3.14",
+        "x-sixkey-auth": { "signer": "device_or_enroll", "account_session": "none", "pw_auth": "device_only", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "410": ["enroll_gone"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RejectRequest" } } } },
+        "responses": {
+          "200": { "description": "rejected and deleted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ServerTimeOnly" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/reject-all": {
+      "post": {
+        "operationId": "rejectAllEnrollRequests",
+        "tags": ["enroll"],
+        "summary": "Reject every open request of this account",
+        "description": "Deletes the account's open requests, approval and recovery-code requests alike, whose created_at <= minute_floor(Sixkey-Ts) of this signed request; a replay inside the signature window can therefore only delete requests opened in the same minute as the original (§5.2 replay residual 2, §0.0o A2). rejected counts the deleted requests that had not expired (§5.4, §0.0o A14). Replaces the deleted 24-hour enrollment pause (decided Q11, §12). The bound is the client-signed Sixkey-Ts, not the server's clock, so clients must sign with the server-corrected time (§4.14): a device whose clock is 4 minutes slow would otherwise miss the requests of the last 4 minutes (§0.0p).",
+        "security": [{ "deviceSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§0.0c, §5.5, §6 O8, §11 Q11",
+        "x-sixkey-auth": { "signer": "device", "account_session": "none", "pw_auth": "required", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["bad_signature", "unknown_device", "clock_skew"], "403": ["password_mismatch", "device_revoked"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasswordAuthOnly" } } } },
+        "responses": {
+          "200": { "description": "number rejected", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RejectedResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/enroll/recovery": {
+      "post": {
+        "operationId": "enrollWithRecovery",
+        "tags": ["enroll"],
+        "summary": "Self-service enrollment with the recovery code",
+        "description": "Rate limit, then constant-time compare of SHA-256('sixkey-recovery-verifier|1|' || recovery_auth) with the stored verifier. On success creates an enrollment with via = recovery, state = approved, and returns the vault and bundle. A retry with the same device_id and public key inside the validity window returns the same result (§3.3).",
+        "security": [{ "accountSession": [], "registrationSignature": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SixkeyDevice" }, { "$ref": "#/components/parameters/SixkeyTs" }, { "$ref": "#/components/parameters/SixkeySig" }],
+        "x-sixkey-doc": "§3.3 steps 3-4, §5.5",
+        "x-sixkey-auth": { "signer": "registration", "account_session": "required", "pw_auth": "none", "write_proof": false, "new_key_proof": false },
+        "x-sixkey-max-body-bytes": 65536,
+        "x-sixkey-errors": { "401": ["session_invalid", "bad_signature", "clock_skew"], "403": ["recovery_mismatch"], "404": ["no_vault"], "409": ["device_exists", "one_per_session"], "413": ["too_large"], "422": ["invalid_request"], "429": ["rate_limited"] },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecoveryEnrollRequest" } } } },
+        "responses": {
+          "200": { "description": "vault and bundle for the new device", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecoveryEnrollResponse" } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "413": { "$ref": "#/components/responses/Error" },
+          "422": { "$ref": "#/components/responses/Error" },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "accountSession": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Account session: the Supabase access token returned once by POST /v1/auth/verify as account_token (lifetime 900 s). The server verifies it with JWKS, algorithms = [ES256], aud, iss, exp, sub, and rejects is_anonymous; aud must be exactly the string authenticated (not a list) and role must be authenticated (§5.2, §0.0p, M4 I2); deleting the account also needs iat >= now - 600 (§5.2). Reading it grants no ciphertext and no wrapped key. Header name pinned by M0 (N10)."
+      },
+      "deviceSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Sixkey-Sig",
+        "description": "Enrolled device. Headers: Sixkey-Device: {deviceId}, Sixkey-Ts: {ms}, Sixkey-Sig: base64url(P1363 r||s). Key: devices.sig_pubkey. Server order (§5.2, P6): look up the device by primary key (absent: 401 unknown_device); verify the signature (bad: 401 bad_signature); revoked: 403 device_revoked; |ts - now| > 300 s: 401 clock_skew. All later queries use the device row's user_id.",
+        "x-sixkey-signer": "deviceId"
+      },
+      "enrollSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Sixkey-Sig",
+        "description": "Device in the middle of enrolling. Headers: Sixkey-Enroll: {request_id}, Sixkey-Ts, Sixkey-Sig. Key: enrollments.new_sig_pubkey. Unknown or expired request: 410 enroll_gone. Sixkey-Enroll must equal the path rid, else 401 bad_signature (§5.4, §0.0o A20).",
+        "x-sixkey-signer": "enroll:{rid}"
+      },
+      "registrationSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Sixkey-Sig",
+        "description": "Proof of possession for a key that is not registered yet (init, enrollment request, recovery enrollment). Headers: Sixkey-Device: {the device_id in the body}, Sixkey-Ts, Sixkey-Sig; verified with the sig_pubkey in the body; the request also carries the account session, so the signing input's sub is the JWT sub (§5.2, §0.0d N8).",
+        "x-sixkey-signer": "deviceId (from the body)"
+      }
+    },
+    "parameters": {
+      "SixkeyDevice": { "name": "Sixkey-Device", "in": "header", "required": true, "description": "deviceId of the signer", "schema": { "$ref": "#/components/schemas/DeviceId" } },
+      "SixkeyEnroll": { "name": "Sixkey-Enroll", "in": "header", "required": true, "description": "request_id of the enrollment the signer is in", "schema": { "$ref": "#/components/schemas/RequestId" } },
+      "SixkeyDeviceAlt": { "name": "Sixkey-Device", "in": "header", "required": false, "description": "present when an enrolled device signs (exactly one of Sixkey-Device or Sixkey-Enroll)", "schema": { "$ref": "#/components/schemas/DeviceId" } },
+      "SixkeyEnrollAlt": { "name": "Sixkey-Enroll", "in": "header", "required": false, "description": "present when the enrolling device signs (exactly one of Sixkey-Device or Sixkey-Enroll)", "schema": { "$ref": "#/components/schemas/RequestId" } },
+      "SixkeyTs": { "name": "Sixkey-Ts", "in": "header", "required": true, "description": "client time in ms since the Unix epoch (corrected by the server offset, §4.14); must be within 300 s of the server clock", "schema": { "type": "string", "pattern": "^[0-9]{1,16}$" } },
+      "SixkeyNewSig": { "name": "Sixkey-New-Sig", "in": "header", "required": true, "description": "POST /v1/devices/fork only: base64url (no padding) of the 64-byte P1363 signature by the NEW private key over exactly the same signing input as Sixkey-Sig; verified with the body's new_sig_pubkey. Missing or wrong: 401 bad_signature (§4.10, §5.2, §0.0d N1).", "schema": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" } },
+      "SixkeySig": { "name": "Sixkey-Sig", "in": "header", "required": true, "description": "base64url (no padding) of the 64-byte IEEE P1363 ECDSA P-256 / SHA-256 signature over the signing input (x-sixkey-signature)", "schema": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" } },
+      "DeviceIdPath": { "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/DeviceId" } },
+      "RequestIdPath": { "name": "rid", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RequestId" } },
+      "VersionPath": { "name": "v", "in": "path", "required": true, "schema": { "type": "integer", "minimum": 1 } }
+    },
+    "headers": {
+      "RetryAfter": { "description": "seconds to wait (429, 503; §4.8)", "schema": { "type": "integer", "minimum": 0 } }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error body. The code determines the status (x-sixkey-error-codes); the operation's x-sixkey-errors lists the codes it can return.",
+        "headers": { "Retry-After": { "$ref": "#/components/headers/RetryAfter" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } } }
+      }
+    },
+    "schemas": {
+      "ServerTime": { "type": "integer", "minimum": 0, "description": "server clock in ms since the Unix epoch; in every JSON response body (§5.4, §4.14). The only bodiless response, 204, relies on the Date header (§5.4, §0.0d N12)." },
+      "Ms": { "type": "integer", "minimum": 0, "description": "ms since the Unix epoch" },
+      "HourMs": { "type": "integer", "minimum": 0, "multipleOf": 3600000, "description": "ms since the Unix epoch, floored to the UTC hour (§2.3 T1, §5.3 C14, §0.0d N4); the server rejects bundle times that are not (§2.3, §0.0d N16)" },
+      "MinuteMs": { "type": "integer", "minimum": 0, "multipleOf": 60000, "description": "ms since the Unix epoch, a multiple of 60000 ms (UTC minute boundary): created_at floored, expires_at rounded up (§5.3 C14, §0.0o A13)" },
+      "DayMs": { "type": "integer", "minimum": 0, "multipleOf": 86400000, "description": "UTC midnight, ms since the Unix epoch (§5.4, §0.0d N14)" },
+      "B64": { "type": "string", "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", "description": "standard base64 with padding (RFC 4648 §4)" },
+      "B64Bytes12": { "type": "string", "pattern": "^[A-Za-z0-9+/]{16}$", "description": "12 bytes, standard base64 (AES-GCM iv)" },
+      "B64Bytes16": { "type": "string", "pattern": "^[A-Za-z0-9+/]{22}==$", "description": "16 bytes, standard base64" },
+      "B64Bytes32": { "type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$", "description": "32 bytes, standard base64" },
+      "B64Bytes48": { "type": "string", "pattern": "^[A-Za-z0-9+/]{64}$", "description": "48 bytes, standard base64 (wrapped VK: 32 + 16-byte tag)" },
+      "DeviceId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{22}$", "description": "16 random bytes, base64url without padding (§2.5)" },
+      "VaultId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{8,64}$", "description": "Phase 0 vaultId" },
+      "VkId": { "type": "string", "pattern": "^[0-9a-f]{16}$", "description": "HKDF(VK, empty, 'sixkey/v1/vk-id', 64 bits), lowercase hex" },
+      "RequestId": { "type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", "description": "enrollment request id: lowercase hyphenated UUID, exactly as it appears in the transcript T" },
+      "SpkiP256": { "type": "string", "pattern": "^MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE[A-Za-z0-9+/]{86}==$", "description": "P-256 public key as 91-byte SPKI DER with an uncompressed point, standard base64 (§2.2 dpk)" },
+      "EcPointP256": { "type": "string", "pattern": "^B[A-Za-z0-9+/]{86}=$", "description": "P-256 public key as the 65-byte uncompressed point 0x04||x||y, standard base64 (§2.2 epk). WebCrypto and pyca also accept compressed points, so this check is not optional." },
+      "Version": { "type": "integer", "minimum": 1 },
+      "Kver": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+      "PasswordAuth": { "$ref": "#/components/schemas/B64Bytes32", "description": "pw_auth (§3.14)" },
+      "Verifier": { "$ref": "#/components/schemas/B64Bytes32" },
+      "EnvelopeText": {
+        "type": "string",
+        "maxLength": 8388608,
+        "contentMediaType": "application/json",
+        "contentSchema": { "$ref": "#/components/schemas/EncryptedVault" },
+        "description": "EncryptedVault as raw JSON text; the server stores this exact text, its UTF-8 byte count is size_bytes (<= MAX_ENVELOPE_BYTES) and SHA-256 of it is head (§4.1, §4.3, §5.3). The server checks the UTF-8 byte count first: over MAX_ENVELOPE_BYTES is 413 too_large, before the schema; maxLength (code points) is only the schema-level bound (§5.4, §0.0o A8). The text is parsed strictly: integer-only number tokens and no duplicate keys, NUL or lone surrogates (§5.4, §0.0o A18)."
+      },
+      "BundleText": {
+        "type": "string",
+        "maxLength": 65536,
+        "contentMediaType": "application/json",
+        "contentSchema": { "$ref": "#/components/schemas/KeyBundle" },
+        "description": "KeyBundle as raw JSON text, stored without parse/re-serialize (§2.3, P11). The server also checks the raw text for non-integer number tokens (3.0, 1e3), which JSON parsing would hide (§2.3, §0.0d N20)."
+      },
+      "EncryptedVault": {
+        "type": "object",
+        "description": "Phase 0 envelope v1, unchanged (core/crypto/envelope.ts).",
+        "required": ["format", "formatVersion", "cipher", "vaultId", "vkId", "rev", "iv", "ciphertext", "checksum"],
+        "properties": {
+          "format": { "const": "sixkey-vault" },
+          "formatVersion": { "const": 1 },
+          "cipher": { "const": "AES-256-GCM" },
+          "vaultId": { "$ref": "#/components/schemas/VaultId" },
+          "vkId": { "$ref": "#/components/schemas/VkId" },
+          "rev": { "type": "integer", "minimum": 0 },
+          "iv": { "$ref": "#/components/schemas/B64Bytes12" },
+          "ciphertext": { "$ref": "#/components/schemas/B64" },
+          "checksum": { "$ref": "#/components/schemas/B64Bytes32" }
+        }
+      },
+      "Pbkdf2Params": {
+        "type": "object",
+        "required": ["name", "hash", "iterations", "salt", "v"],
+        "properties": {
+          "name": { "const": "PBKDF2" },
+          "hash": { "const": "SHA-256" },
+          "iterations": { "type": "integer", "minimum": 600000, "maximum": 20000000 },
+          "salt": { "allOf": [{ "$ref": "#/components/schemas/B64" }, { "minLength": 24 }] },
+          "v": { "const": 1 }
+        }
+      },
+      "HkdfParams": {
+        "type": "object",
+        "required": ["name", "hash", "salt", "v"],
+        "properties": {
+          "name": { "const": "HKDF" },
+          "hash": { "const": "SHA-256" },
+          "salt": { "allOf": [{ "$ref": "#/components/schemas/B64" }, { "minLength": 24 }] },
+          "v": { "const": 1 }
+        }
+      },
+      "PasswordWrap": {
+        "type": "object",
+        "required": ["method", "vkId", "kdf", "iv", "wrapped", "createdAt"],
+        "properties": {
+          "method": { "const": "password" },
+          "vkId": { "$ref": "#/components/schemas/VkId" },
+          "kdf": { "$ref": "#/components/schemas/Pbkdf2Params" },
+          "iv": { "$ref": "#/components/schemas/B64Bytes12" },
+          "wrapped": { "$ref": "#/components/schemas/B64Bytes48" },
+          "createdAt": { "$ref": "#/components/schemas/HourMs" }
+        }
+      },
+      "RecoveryWrap": {
+        "type": "object",
+        "required": ["method", "vkId", "kdf", "iv", "wrapped", "createdAt"],
+        "properties": {
+          "method": { "const": "recovery" },
+          "vkId": { "$ref": "#/components/schemas/VkId" },
+          "kdf": { "$ref": "#/components/schemas/HkdfParams" },
+          "iv": { "$ref": "#/components/schemas/B64Bytes12" },
+          "wrapped": { "$ref": "#/components/schemas/B64Bytes48" },
+          "createdAt": { "$ref": "#/components/schemas/HourMs" }
+        }
+      },
+      "PreviousVk": {
+        "type": "object",
+        "required": ["vkId", "iv", "wrapped", "createdAt"],
+        "properties": {
+          "vkId": { "$ref": "#/components/schemas/VkId" },
+          "iv": { "$ref": "#/components/schemas/B64Bytes12" },
+          "wrapped": { "$ref": "#/components/schemas/B64Bytes48" },
+          "createdAt": { "$ref": "#/components/schemas/HourMs" }
+        }
+      },
+      "SyncKeyring": {
+        "type": "object",
+        "description": "Phase 0 keyring v1 with the sync constraints (§2.3, §3.13): wraps exactly {password, recovery}, no deviceKey, previous <= 64, times truncated to the hour. Unknown members are kept by clients (forward compatibility, §2.3).",
+        "required": ["format", "v", "vaultId", "vkId", "wraps", "previous"],
+        "properties": {
+          "format": { "const": "sixkey-keyring" },
+          "v": { "const": 1 },
+          "vaultId": { "$ref": "#/components/schemas/VaultId" },
+          "vkId": { "$ref": "#/components/schemas/VkId" },
+          "wraps": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "oneOf": [{ "$ref": "#/components/schemas/PasswordWrap" }, { "$ref": "#/components/schemas/RecoveryWrap" }] },
+            "allOf": [
+              { "contains": { "type": "object", "required": ["method"], "properties": { "method": { "const": "password" } } } },
+              { "contains": { "type": "object", "required": ["method"], "properties": { "method": { "const": "recovery" } } } }
+            ]
+          },
+          "deviceKey": false,
+          "previous": { "type": "array", "maxItems": 64, "items": { "$ref": "#/components/schemas/PreviousVk" } }
+        }
+      },
+      "KeyBundle": {
+        "type": "object",
+        "description": "§2.3. mac = base64(HMAC-SHA256(K_mac, 'sixkey-keybundle|1|' + canonicalJson(bundle without mac))), K_mac 256 bits. Unknown members are allowed and kept (they are under the MAC); a client that sees one refuses key operations. Not expressible here and checked in code: vaultId equals keyring.vaultId and the account's vault; keyring.vkId matches the current or new vk_id; if_kver < kver <= if_kver + KVER_MAX_JUMP (§2.3, §0.0e N27, §0.0f F-01); by equals the signing device; P4 consistency, wraps compared by iv and wrapped (§0.0f S-2).",
+        "required": ["format", "v", "vaultId", "kver", "keyring", "auth", "by", "at", "mac"],
+        "properties": {
+          "format": { "const": "sixkey-keybundle" },
+          "v": { "const": 1 },
+          "vaultId": { "$ref": "#/components/schemas/VaultId" },
+          "kver": { "$ref": "#/components/schemas/Kver" },
+          "keyring": { "$ref": "#/components/schemas/SyncKeyring" },
+          "auth": { "type": "object", "required": ["kdf"], "properties": { "kdf": { "$ref": "#/components/schemas/Pbkdf2Params" } } },
+          "by": { "$ref": "#/components/schemas/DeviceId" },
+          "at": { "$ref": "#/components/schemas/HourMs" },
+          "mac": { "$ref": "#/components/schemas/B64Bytes32" }
+        }
+      },
+      "NameCt": {
+        "type": "object",
+        "description": "Device name under K_name (§2.4): ct = AES-256-GCM(K_name(VK), name padded to 160 bytes, AAD 'sixkey-devname|1|{vaultId}|{vkId}|{deviceId}'), always 176 bytes. Member name vkId (§2.4, §5.3, §0.0d N6).",
+        "required": ["vkId", "iv", "ct"],
+        "additionalProperties": false,
+        "properties": {
+          "vkId": { "$ref": "#/components/schemas/VkId" },
+          "iv": { "$ref": "#/components/schemas/B64Bytes12" },
+          "ct": { "type": "string", "pattern": "^[A-Za-z0-9+/]{235}=$", "description": "176 bytes, standard base64" }
+        }
+      },
+      "EnrollNameCiphertext": { "type": "string", "pattern": "^[A-Za-z0-9+/]{251}=$", "description": "base64(iv(12) || AES-GCM(K_enroll, name padded to 160 bytes) || tag(16)) = 188 bytes (§2.4, §3.2, §0.0d N5, N6)" },
+      "EnrollPayloadCiphertext": { "allOf": [{ "$ref": "#/components/schemas/B64" }, { "minLength": 40, "maxLength": 60000 }], "description": "base64(iv(12) || AES-GCM(K_enroll, P, AAD 'sixkey-enroll-payload|2|' b64u(h)) || tag(16)) (§3.2 M5; P carries the bundle as its raw text, §0.0d N6, N7)" },
+      "Cursor": {
+        "type": "object",
+        "description": "Clone soft detection, only exchanged in PUT /v1/vault (§4.10, T2). cur is absent on a device's first write (§5.4 PUT row, §0.0d N17).",
+        "required": ["pending"],
+        "additionalProperties": false,
+        "properties": { "cur": { "$ref": "#/components/schemas/B64Bytes16" }, "pending": { "$ref": "#/components/schemas/B64Bytes16" } }
+      },
+      "EnrollState": { "type": "string", "enum": ["pending", "responded", "revealed", "approved"] },
+      "JoinedVia": { "type": "string", "enum": ["first", "approval", "recovery", "fork"] },
+      "ErrorCode": {
+        "type": "string",
+        "description": "Machine-readable table with status and meaning: x-sixkey-error-codes.",
+        "enum": [
+          "invalid_email", "invalid_request", "otp_invalid", "session_invalid", "step_up_required", "bad_signature", "unknown_device", "clock_skew",
+          "device_revoked", "write_denied", "password_mismatch", "recovery_mismatch", "no_vault", "not_found", "vault_exists", "device_exists",
+          "version_conflict", "vk_mismatch", "keys_conflict", "one_per_session", "enroll_state", "too_many_devices", "enroll_gone", "too_large",
+          "key_mismatch", "rate_limited", "internal_error", "unavailable"
+        ]
+      },
+      "ErrorBody": {
+        "type": "object",
+        "required": ["error", "server_time"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "$ref": "#/components/schemas/ErrorCode" },
+              "retry_after": { "type": "integer", "minimum": 0, "description": "seconds (rate_limited, unavailable)" },
+              "version": { "$ref": "#/components/schemas/Version", "description": "version_conflict: the server's current version" },
+              "vk_id": { "$ref": "#/components/schemas/VkId", "description": "version_conflict: the server's current vk_id" },
+              "kver": { "$ref": "#/components/schemas/Kver", "description": "version_conflict: the server's current kver" },
+              "handled_by": { "$ref": "#/components/schemas/DeviceId", "description": "enroll_state: the device that already handled the request (F9)" }
+            }
+          },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      },
+      "ServerTimeOnly": { "type": "object", "required": ["server_time"], "properties": { "server_time": { "$ref": "#/components/schemas/ServerTime" } } },
+      "HealthResponse": { "type": "object", "required": ["ok", "server_time"], "properties": { "ok": { "const": true }, "server_time": { "$ref": "#/components/schemas/ServerTime" } } },
+      "OtpRequest": {
+        "type": "object", "required": ["email"], "additionalProperties": false,
+        "properties": { "email": { "type": "string", "minLength": 3, "maxLength": 254 } }
+      },
+      "VerifyRequest": {
+        "type": "object", "required": ["email", "token"], "additionalProperties": false,
+        "properties": { "email": { "type": "string", "minLength": 3, "maxLength": 254 }, "token": { "type": "string", "pattern": "^[0-9]{6}$" } }
+      },
+      "VerifyResponse": {
+        "type": "object", "required": ["account_token", "expires_at", "server_time"],
+        "properties": { "account_token": { "type": "string", "minLength": 1 }, "expires_at": { "$ref": "#/components/schemas/Ms" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "AccountResponse": {
+        "type": "object", "required": ["has_vault", "server_time"],
+        "properties": {
+          "has_vault": { "type": "boolean" },
+          "vault_created_at": { "$ref": "#/components/schemas/HourMs" },
+          "device_count": { "type": "integer", "minimum": 0 },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      },
+      "InitDevice": {
+        "type": "object", "required": ["device_id", "sig_pubkey", "name_ct"], "additionalProperties": false,
+        "properties": { "device_id": { "$ref": "#/components/schemas/DeviceId" }, "sig_pubkey": { "$ref": "#/components/schemas/SpkiP256" }, "name_ct": { "$ref": "#/components/schemas/NameCt" } }
+      },
+      "InitRequest": {
+        "type": "object",
+        "required": ["vault_id", "envelope", "bundle", "recovery_verifier", "password_verifier", "write_key", "device"],
+        "additionalProperties": false,
+        "properties": {
+          "vault_id": { "$ref": "#/components/schemas/VaultId" },
+          "envelope": { "$ref": "#/components/schemas/EnvelopeText" },
+          "bundle": { "$ref": "#/components/schemas/BundleText" },
+          "recovery_verifier": { "$ref": "#/components/schemas/Verifier" },
+          "password_verifier": { "$ref": "#/components/schemas/Verifier" },
+          "write_key": { "$ref": "#/components/schemas/B64Bytes32", "description": "K_write = HKDF(VK, empty, 'sixkey/v1/vault-write', 256)" },
+          "device": { "$ref": "#/components/schemas/InitDevice" }
+        }
+      },
+      "InitResponse": {
+        "type": "object", "required": ["version", "kver", "server_time"],
+        "properties": { "version": { "const": 1 }, "kver": { "const": 1 }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "required": ["version", "head", "vk_id", "kver", "pending_enrollments", "devices_rev", "min_client_version", "server_time"],
+        "properties": {
+          "version": { "$ref": "#/components/schemas/Version" },
+          "head": { "$ref": "#/components/schemas/B64Bytes32", "description": "SHA-256 of the stored envelope text (D5)" },
+          "vk_id": { "$ref": "#/components/schemas/VkId" },
+          "kver": { "$ref": "#/components/schemas/Kver" },
+          "pending_enrollments": { "type": "integer", "minimum": 0, "description": "unexpired approval requests in state pending; recovery-code requests never count (§5.4, §0.0o A14)" },
+          "devices_rev": { "type": "integer", "minimum": 0, "description": "vaults.devices_rev: an opaque counter incremented in the same transaction as any devices-row change (join, revoke, rename, an auth_failures increase or its reset by a valid proof, rotate re-encryption; not cursor writes or last_seen_at; §0.0o A12). Compare for equality only; a change means GET /v1/devices (§4.2 step 1, §5.3, §0.0d N15)." },
+          "min_client_version": { "type": "string", "pattern": "^[0-9]{1,5}(\\.[0-9]{1,5}){0,3}$", "description": "Chrome manifest version format, compared numerically per component, missing components count as 0 (§5.2, §0.0d N21)" },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      },
+      "VaultResponse": {
+        "type": "object", "required": ["version", "envelope", "server_time"],
+        "properties": { "version": { "$ref": "#/components/schemas/Version" }, "envelope": { "$ref": "#/components/schemas/EnvelopeText" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "PutVaultRequest": {
+        "type": "object", "required": ["if_version", "envelope", "write_proof", "cursor"], "additionalProperties": false,
+        "properties": {
+          "if_version": { "$ref": "#/components/schemas/Version" },
+          "envelope": { "$ref": "#/components/schemas/EnvelopeText" },
+          "write_proof": { "$ref": "#/components/schemas/B64Bytes32" },
+          "cursor": { "$ref": "#/components/schemas/Cursor" }
+        }
+      },
+      "PutVaultResponse": {
+        "type": "object", "required": ["version", "forked", "server_time"],
+        "properties": { "version": { "$ref": "#/components/schemas/Version" }, "forked": { "type": "boolean" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "VersionInfo": {
+        "type": "object", "required": ["version", "vk_id", "size_bytes", "created_at"],
+        "properties": {
+          "version": { "$ref": "#/components/schemas/Version" },
+          "vk_id": { "$ref": "#/components/schemas/VkId" },
+          "size_bytes": { "type": "integer", "minimum": 0, "maximum": 8388608 },
+          "created_at": { "$ref": "#/components/schemas/HourMs" }
+        }
+      },
+      "VersionsResponse": {
+        "type": "object", "required": ["versions", "server_time"],
+        "properties": { "versions": { "type": "array", "items": { "$ref": "#/components/schemas/VersionInfo" } }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "PasswordAuthOnly": {
+        "type": "object", "required": ["password_auth"], "additionalProperties": false,
+        "properties": { "password_auth": { "$ref": "#/components/schemas/PasswordAuth" } }
+      },
+      "DeletedResponse": {
+        "type": "object", "required": ["deleted", "server_time"],
+        "properties": { "deleted": { "type": "integer", "minimum": 0 }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "KeysResponse": {
+        "type": "object", "required": ["kver", "bundle", "server_time"],
+        "properties": { "kver": { "$ref": "#/components/schemas/Kver" }, "bundle": { "$ref": "#/components/schemas/BundleText" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "PutKeysRequest": {
+        "type": "object", "required": ["if_kver", "bundle"], "additionalProperties": false,
+        "description": "Exactly one of password_auth and recovery_auth. Which verifiers are required follows the P4 consistency rule (§2.3).",
+        "oneOf": [{ "required": ["password_auth"] }, { "required": ["recovery_auth"] }],
+        "properties": {
+          "if_kver": { "$ref": "#/components/schemas/Kver" },
+          "bundle": { "$ref": "#/components/schemas/BundleText" },
+          "password_auth": { "$ref": "#/components/schemas/PasswordAuth" },
+          "recovery_auth": { "$ref": "#/components/schemas/B64Bytes32", "description": "recAuth (§3.3 step 5, S6)" },
+          "recovery_verifier": { "$ref": "#/components/schemas/Verifier" },
+          "password_verifier": { "$ref": "#/components/schemas/Verifier" }
+        }
+      },
+      "KverResponse": {
+        "type": "object", "required": ["kver", "server_time"],
+        "properties": { "kver": { "$ref": "#/components/schemas/Kver" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "DeviceName": {
+        "type": "object", "required": ["device_id", "name_ct"], "additionalProperties": false,
+        "properties": { "device_id": { "$ref": "#/components/schemas/DeviceId" }, "name_ct": { "$ref": "#/components/schemas/NameCt" } }
+      },
+      "RotateRequest": {
+        "type": "object",
+        "required": ["if_version", "if_kver", "envelope", "write_proof", "new_write_key", "bundle", "password_auth", "recovery_verifier", "password_verifier", "device_names"],
+        "additionalProperties": false,
+        "properties": {
+          "if_version": { "$ref": "#/components/schemas/Version" },
+          "if_kver": { "$ref": "#/components/schemas/Kver" },
+          "envelope": { "$ref": "#/components/schemas/EnvelopeText" },
+          "write_proof": { "$ref": "#/components/schemas/B64Bytes32", "description": "with the current K_write" },
+          "new_write_key": { "$ref": "#/components/schemas/B64Bytes32", "description": "K_write of the new VK" },
+          "bundle": { "$ref": "#/components/schemas/BundleText" },
+          "password_auth": { "$ref": "#/components/schemas/PasswordAuth" },
+          "recovery_verifier": { "$ref": "#/components/schemas/Verifier" },
+          "password_verifier": { "$ref": "#/components/schemas/Verifier", "description": "for the new auth salt" },
+          "device_names": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceName" }, "description": "every device of the account, revoked ones included, re-encrypted under the new VK (the client sends all it knows); the server requires devices of this account, no duplicates and name_ct.vkId = the new VK (else 422), and leaves the name_ct of unlisted devices unchanged (§5.3, §0.0o A6)" }
+        }
+      },
+      "RotateResponse": {
+        "type": "object", "required": ["version", "kver", "server_time"],
+        "properties": { "version": { "$ref": "#/components/schemas/Version" }, "kver": { "$ref": "#/components/schemas/Kver" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "DeviceInfo": {
+        "type": "object",
+        "required": ["device_id", "name_ct", "joined_via", "approved_by", "created_at", "last_seen_at", "revoked_at", "auth_failures"],
+        "properties": {
+          "device_id": { "$ref": "#/components/schemas/DeviceId" },
+          "name_ct": { "oneOf": [{ "$ref": "#/components/schemas/NameCt" }, { "type": "null" }] },
+          "joined_via": { "$ref": "#/components/schemas/JoinedVia" },
+          "approved_by": { "oneOf": [{ "$ref": "#/components/schemas/DeviceId" }, { "type": "null" }] },
+          "created_at": { "$ref": "#/components/schemas/HourMs" },
+          "last_seen_at": { "oneOf": [{ "$ref": "#/components/schemas/DayMs" }, { "type": "null" }] },
+          "revoked_at": { "oneOf": [{ "$ref": "#/components/schemas/HourMs" }, { "type": "null" }] },
+          "auth_failures": { "type": "integer", "minimum": 0, "maximum": 10 }
+        }
+      },
+      "DevicesResponse": {
+        "type": "object", "required": ["current", "devices", "server_time"],
+        "properties": {
+          "current": { "$ref": "#/components/schemas/DeviceId", "description": "the calling device" },
+          "devices": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceInfo" } },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      },
+      "RenameRequest": {
+        "type": "object", "required": ["name_ct", "password_auth"], "additionalProperties": false,
+        "properties": { "name_ct": { "$ref": "#/components/schemas/NameCt" }, "password_auth": { "$ref": "#/components/schemas/PasswordAuth" } }
+      },
+      "RevokeResponse": {
+        "type": "object", "required": ["revoked_at", "server_time"],
+        "properties": { "revoked_at": { "$ref": "#/components/schemas/HourMs" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "ForkRequest": {
+        "type": "object", "required": ["new_device_id", "new_sig_pubkey", "name_ct", "password_auth"], "additionalProperties": false,
+        "properties": {
+          "new_device_id": { "$ref": "#/components/schemas/DeviceId" },
+          "new_sig_pubkey": { "$ref": "#/components/schemas/SpkiP256", "description": "the new key; Sixkey-New-Sig must verify with it" },
+          "name_ct": { "$ref": "#/components/schemas/NameCt" },
+          "password_auth": { "$ref": "#/components/schemas/PasswordAuth" }
+        }
+      },
+      "DeviceIdResponse": {
+        "type": "object", "required": ["device_id", "server_time"],
+        "properties": { "device_id": { "$ref": "#/components/schemas/DeviceId" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "EnrollCreateRequest": {
+        "type": "object", "required": ["device_id", "sig_pubkey", "commit"], "additionalProperties": false,
+        "properties": {
+          "device_id": { "$ref": "#/components/schemas/DeviceId" },
+          "sig_pubkey": { "$ref": "#/components/schemas/SpkiP256" },
+          "commit": { "$ref": "#/components/schemas/B64Bytes32", "description": "C = SHA-256('sixkey-enroll-commit|2|' devN '|' b64u(dpk_N) '|' b64u(epk_N) '|' b64u(n_N))" }
+        }
+      },
+      "EnrollCreateResponse": {
+        "type": "object", "required": ["request_id", "expires_at", "server_time"],
+        "properties": { "request_id": { "$ref": "#/components/schemas/RequestId" }, "expires_at": { "$ref": "#/components/schemas/MinuteMs", "description": "(now + 600 s) rounded up to the UTC minute: the request lives 10 to 11 minutes (§5.3, §0.0o A13)" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "EnrollListItem": {
+        "type": "object", "required": ["request_id", "created_at", "expires_at", "state"],
+        "properties": {
+          "request_id": { "$ref": "#/components/schemas/RequestId" },
+          "created_at": { "$ref": "#/components/schemas/MinuteMs" },
+          "expires_at": { "$ref": "#/components/schemas/MinuteMs" },
+          "state": { "$ref": "#/components/schemas/EnrollState" },
+          "handled_by": { "$ref": "#/components/schemas/DeviceId", "description": "the approver once someone responded" }
+        }
+      },
+      "EnrollListResponse": {
+        "type": "object", "required": ["requests", "server_time"],
+        "properties": { "requests": { "type": "array", "items": { "$ref": "#/components/schemas/EnrollListItem" } }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "EnrollNewDeviceView": {
+        "type": "object", "required": ["state", "server_time"],
+        "description": "From responded on the view always carries approver_device_id and approver_epk, and approved also carries payload; a missing field aborts like a changed one (§3.2 MUST 1/2, §5.4, §0.0f F-10). Top-level required stays as §5.4 writes it.",
+        "not": { "required": ["new_device_id"] },
+        "allOf": [
+          { "if": { "required": ["state"], "properties": { "state": { "enum": ["responded", "revealed", "approved"] } } }, "then": { "required": ["approver_device_id", "approver_epk"] } },
+          { "if": { "required": ["state"], "properties": { "state": { "const": "approved" } } }, "then": { "required": ["payload"] } }
+        ],
+        "properties": {
+          "state": { "$ref": "#/components/schemas/EnrollState" },
+          "approver_device_id": { "$ref": "#/components/schemas/DeviceId" },
+          "approver_epk": { "$ref": "#/components/schemas/EcPointP256" },
+          "payload": { "$ref": "#/components/schemas/EnrollPayloadCiphertext" },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      },
+      "EnrollApproverView": {
+        "type": "object", "required": ["state", "new_device_id", "new_sig_pubkey", "commit", "server_time"],
+        "description": "From revealed on the view always carries new_epk, new_nonce and new_name_ct; a missing field aborts like a changed one (§3.2 MUST 1, §5.4, §0.0f F-10). Top-level required stays as §5.4 writes it.",
+        "allOf": [
+          { "if": { "required": ["state"], "properties": { "state": { "enum": ["revealed", "approved"] } } }, "then": { "required": ["new_epk", "new_nonce", "new_name_ct"] } }
+        ],
+        "properties": {
+          "state": { "$ref": "#/components/schemas/EnrollState" },
+          "new_device_id": { "$ref": "#/components/schemas/DeviceId" },
+          "new_sig_pubkey": { "$ref": "#/components/schemas/SpkiP256" },
+          "commit": { "$ref": "#/components/schemas/B64Bytes32" },
+          "new_epk": { "$ref": "#/components/schemas/EcPointP256" },
+          "new_nonce": { "$ref": "#/components/schemas/B64Bytes32" },
+          "new_name_ct": { "$ref": "#/components/schemas/EnrollNameCiphertext" },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      },
+      "EnrollGetResponse": { "oneOf": [{ "$ref": "#/components/schemas/EnrollNewDeviceView" }, { "$ref": "#/components/schemas/EnrollApproverView" }] },
+      "RespondRequest": {
+        "type": "object", "required": ["epk", "password_auth"], "additionalProperties": false,
+        "properties": { "epk": { "$ref": "#/components/schemas/EcPointP256" }, "password_auth": { "$ref": "#/components/schemas/PasswordAuth" } }
+      },
+      "RevealRequest": {
+        "type": "object", "required": ["epk", "nonce", "name_ct"], "additionalProperties": false,
+        "properties": { "epk": { "$ref": "#/components/schemas/EcPointP256" }, "nonce": { "$ref": "#/components/schemas/B64Bytes32" }, "name_ct": { "$ref": "#/components/schemas/EnrollNameCiphertext" } }
+      },
+      "ApproveRequest": {
+        "type": "object", "required": ["transcript_hash", "payload", "name_ct", "sig_pubkey_sha256", "password_auth"], "additionalProperties": false,
+        "properties": {
+          "transcript_hash": { "$ref": "#/components/schemas/B64Bytes32" },
+          "payload": { "$ref": "#/components/schemas/EnrollPayloadCiphertext" },
+          "name_ct": { "$ref": "#/components/schemas/NameCt" },
+          "sig_pubkey_sha256": { "$ref": "#/components/schemas/B64Bytes32" },
+          "password_auth": { "$ref": "#/components/schemas/PasswordAuth" }
+        }
+      },
+      "StateResponded": { "type": "object", "required": ["state", "server_time"], "properties": { "state": { "const": "responded" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } } },
+      "StateRevealed": { "type": "object", "required": ["state", "server_time"], "properties": { "state": { "const": "revealed" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } } },
+      "StateApproved": { "type": "object", "required": ["state", "server_time"], "properties": { "state": { "const": "approved" }, "server_time": { "$ref": "#/components/schemas/ServerTime" } } },
+      "CompleteRequest": {
+        "type": "object", "additionalProperties": false,
+        "properties": { "name_ct": { "$ref": "#/components/schemas/NameCt", "description": "recovery path only, optional there (without it the device has a null name); on the approval path it is 422 (§5.3, §0.0o A16)" } }
+      },
+      "RejectRequest": {
+        "type": "object", "additionalProperties": false,
+        "properties": { "password_auth": { "$ref": "#/components/schemas/PasswordAuth", "description": "required when an enrolled device rejects; absent when the new device rejects its own request" } }
+      },
+      "RejectedResponse": {
+        "type": "object", "required": ["rejected", "server_time"],
+        "properties": { "rejected": { "type": "integer", "minimum": 0 }, "server_time": { "$ref": "#/components/schemas/ServerTime" } }
+      },
+      "RecoveryEnrollRequest": {
+        "type": "object", "required": ["device_id", "sig_pubkey", "recovery_auth"], "additionalProperties": false,
+        "properties": {
+          "device_id": { "$ref": "#/components/schemas/DeviceId" },
+          "sig_pubkey": { "$ref": "#/components/schemas/SpkiP256" },
+          "recovery_auth": { "$ref": "#/components/schemas/B64Bytes32", "description": "recAuth = HKDF(code128, empty, 'sixkey/v1/recovery-auth', 256)" }
+        }
+      },
+      "RecoveryEnrollResponse": {
+        "type": "object", "required": ["request_id", "vault_id", "version", "envelope", "kver", "bundle", "server_time"],
+        "properties": {
+          "request_id": { "$ref": "#/components/schemas/RequestId" },
+          "vault_id": { "$ref": "#/components/schemas/VaultId" },
+          "version": { "$ref": "#/components/schemas/Version" },
+          "envelope": { "$ref": "#/components/schemas/EnvelopeText" },
+          "kver": { "$ref": "#/components/schemas/Kver" },
+          "bundle": { "$ref": "#/components/schemas/BundleText" },
+          "server_time": { "$ref": "#/components/schemas/ServerTime" }
+        }
+      }
+    }
+  },
+  "x-sixkey-signature": {
+    "section": "§5.2",
+    "signing_input": "sixkey-req|1|{host}|{METHOD}|{target}|{signer}|{sub}|{ts}|{base64url(SHA-256(body))}",
+    "host": "the configured API host (URL.host: lowercase hostname, plus :port only when non-default), never the Host header seen behind a proxy (§5.2, §0.0d N9)",
+    "target": "raw request target: path plus query string exactly as sent; the server rejects any target containing '|'",
+    "signer": "deviceId (Sixkey-Device) or 'enroll:{rid}' (Sixkey-Enroll)",
+    "sub": "JWT sub on the operations that carry an account session (the registration endpoints and DELETE /v1/account), otherwise '-' (§5.2, §5.4, §0.0o A20)",
+    "ts": "decimal ms, identical to Sixkey-Ts",
+    "body": "SHA-256 of the exact body bytes; a request with no body hashes zero bytes",
+    "algorithm": "ECDSA P-256 / SHA-256, IEEE P1363 r||s (64 bytes), base64url without padding; the server checks 0 < r, s < n and converts to DER",
+    "fork_new_key": "POST /v1/devices/fork also carries Sixkey-New-Sig: the new private key's signature over the same signing input, verified with the body's new_sig_pubkey (§4.10, §5.2, §0.0d N1)",
+    "window_s": 300,
+    "no_nonce_cache": "no nonce cache (§5.2): replays inside the window mostly hit optimistic locks, idempotency or one-shot state machines. Six residuals are accepted; each needs a captured TLS-protected signed request (with its pw_auth where required), and none exposes plaintext or breaks the vault's integrity: (1) a replayed rename undoes one newer rename; (2) a replayed reject-all deletes requests opened since, limited to the original's minute by created_at <= minute_floor(Sixkey-Ts); (3) a replayed DELETE /v1/vault/versions deletes history written since; (4) an enrollment create replayed after its request was rejected re-creates a pending ghost request with N's id, key and commitment, which the replayer cannot advance and which expires; (5) a recovery enrollment replayed after reject-all re-creates an approved recovery request and returns the envelope and bundle (ciphertext and wrapped keys) to the replayer; (6) signed GETs (/v1/vault, /v1/keys, history versions) replayed within 5 minutes return ciphertext and wrapped keys usable for offline password guessing, which the hosting rule never to log request headers or bodies prevents (§5.6). See §5.2, §1.2 A6 and §10 #93 (§0.0o A2).",
+    "vectors": "contract/vectors/sync-v1.json groups.request_signature"
+  },
+  "x-sixkey-error-codes": {
+    "invalid_email": { "status": 400, "meaning": "email is not a valid address", "section": "§5.4", "source": "doc" },
+    "invalid_request": { "status": 422, "meaning": "body or parameter fails the schema or a keyless server check (P4 consistency, by != signer, rev/vaultId/vkId/checksum mismatch, malformed key or signature, bundle kver outside if_kver < kver <= if_kver + KVER_MAX_JUMP, bundle times not multiples of 3600000, non-integer number tokens, and in a body, bundle or envelope a duplicate object key or a NUL or lone surrogate in any string, §0.0o A18)", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc" },
+    "otp_invalid": { "status": 401, "meaning": "wrong or expired OTP (deliberately not distinguished)", "section": "§5.4", "source": "doc" },
+    "session_invalid": { "status": 401, "meaning": "account session missing, malformed, expired, wrong aud/iss/alg, or anonymous", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc" },
+    "step_up_required": { "status": 401, "meaning": "DELETE /v1/account needs an account session whose iat is within 600 s and whose sub is this device's account", "section": "§3.12, §5.4", "source": "doc" },
+    "bad_signature": { "status": 401, "meaning": "signature headers missing or malformed, or a signature does not verify (Sixkey-Sig; on fork also Sixkey-New-Sig)", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc" },
+    "unknown_device": { "status": 401, "meaning": "no device row for Sixkey-Device (never enrolled, init not finished, or account deleted)", "section": "§3.1, §3.10, §5.2, §5.7", "source": "doc" },
+    "clock_skew": { "status": 401, "meaning": "|Sixkey-Ts - server time| > 300 s; the client adopts server_time and retries once", "section": "§4.14, §5.2", "source": "doc" },
+    "device_revoked": { "status": 403, "meaning": "signature valid but the device is revoked", "section": "§3.10, §5.2", "source": "doc" },
+    "write_denied": { "status": 403, "meaning": "write_proof does not verify; counts against no quota and never pauses the device", "section": "§5.2, §5.5", "source": "doc" },
+    "password_mismatch": { "status": 403, "meaning": "password_auth does not match password_verifier; counted per device (cap 10), never locks or backs off", "section": "§3.14, §5.4", "source": "doc" },
+    "recovery_mismatch": { "status": 403, "meaning": "recovery_auth does not match recovery_verifier; counted with the same per-device counter", "section": "§3.3, §3.14, §5.4", "source": "doc" },
+    "no_vault": { "status": 404, "meaning": "the account has no vault", "section": "§5.4", "source": "doc" },
+    "not_found": { "status": 404, "meaning": "the addressed history version or device does not exist in this account", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc" },
+    "vault_exists": { "status": 409, "meaning": "init: a vault already exists and the request is not an identical retry", "section": "§3.1, §5.3", "source": "doc" },
+    "device_exists": { "status": 409, "meaning": "the device_id is already registered (with another key or account)", "section": "§5.4", "source": "doc" },
+    "version_conflict": { "status": 409, "meaning": "if_version is not the current version", "section": "§4.2, §5.3, §5.4", "source": "doc", "details": ["version", "vk_id", "kver"] },
+    "vk_mismatch": { "status": 409, "meaning": "envelope.vkId is not the current vk_id", "section": "§4.2, §5.3", "source": "doc" },
+    "keys_conflict": { "status": 409, "meaning": "if_kver is not the server's current kver and the stored bundle text differs from the submitted one (identical text is the idempotent 200)", "section": "§3.6.0, §3.8, §5.4, §0.0e N27", "source": "doc" },
+    "one_per_session": { "status": 409, "meaning": "this account session already has a pending enrollment request", "section": "§5.4, §5.5", "source": "doc" },
+    "enroll_state": { "status": 409, "meaning": "transition not allowed in the request's current state, or not by this device", "section": "§5.4", "source": "doc", "details": ["handled_by"] },
+    "too_many_devices": { "status": 409, "meaning": "the account already has 200 unrevoked devices", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc" },
+    "enroll_gone": { "status": 410, "meaning": "the enrollment request expired, was rejected, completed, or never existed", "section": "§5.4", "source": "doc" },
+    "too_large": { "status": 413, "meaning": "envelope over MAX_ENVELOPE_BYTES (UTF-8 bytes, checked before the schema), or the body over its limit; operations without a request body are capped at MAX_BODY_BYTES_OTHER too, so every operation lists it", "section": "§4.3, §5.4 (§0.0o A8, A9)", "source": "doc" },
+    "key_mismatch": { "status": 422, "meaning": "approve: sig_pubkey_sha256 is not SHA-256 of the request's new_sig_pubkey", "section": "§3.2 M5, §5.4", "source": "doc" },
+    "rate_limited": { "status": 429, "meaning": "a rate limit in x-sixkey-rate-limits was hit; Retry-After and retry_after give seconds", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc", "details": ["retry_after"] },
+    "internal_error": { "status": 500, "meaning": "server failure; nothing was changed (account deletion: retry unchanged, §5.7)", "section": "§5.4 通用错误码 (§0.0d N11)", "source": "doc", "applies_to": "any" },
+    "unavailable": { "status": 503, "meaning": "temporarily unavailable; honour Retry-After. Sources, each with Retry-After: waiting longer than 5 s for a database connection; waiting longer than 10 s for one of the slots of the three 9 MiB endpoints; a request body not read within 60 s; a retryable database conflict (deadlock or serialization failure); the auth provider unreachable, including a failed immediate logout in verify (§5.2 A23). Past uvicorn's limit_concurrency the server process itself answers 503 without a JSON error body (no Retry-After guaranteed); clients treat any 503 as unavailable", "section": "§5.4 通用错误码 (§0.0d N11), §5.3, §5.5, §5.7 (§0.0p)", "source": "doc", "applies_to": "any", "details": ["retry_after"] }
+  },
+  "x-sixkey-constants": {
+    "MAX_ENVELOPE_BYTES": { "value": 8388608, "unit": "bytes", "section": "§4.3, §5.3", "source": "doc", "enforced_by": "both", "meaning": "UTF-8 bytes of the envelope JSON text (= size_bytes)" },
+    "MAX_BODY_BYTES_VAULT": { "value": 9437184, "unit": "bytes", "section": "§5.4 请求体上限 (§0.0d N13)", "source": "doc", "enforced_by": "server", "meaning": "9 MiB: request body limit for POST /v1/vault/init, PUT /v1/vault and POST /v1/keys/rotate (each carries an envelope of up to 8 MiB)" },
+    "MAX_BODY_BYTES_OTHER": { "value": 65536, "unit": "bytes", "section": "§5.4 请求体上限 (§0.0d N13)", "source": "doc", "enforced_by": "server", "meaning": "64 KiB: request body limit for every other endpoint, including those without a request body; their body is also hashed into the signing input like any body (§5.4, §0.0o A9)" },
+    "PAD_BUCKET_BYTES": { "value": 16384, "unit": "bytes", "section": "§3.13, §4.1", "source": "doc", "enforced_by": "client", "meaning": "plaintext padded with spaces to a multiple of this" },
+    "DEVICE_NAME_MAX_CODE_POINTS": { "value": 40, "unit": "code points", "section": "§2.4", "source": "doc", "enforced_by": "client", "meaning": "after NFKC" },
+    "DEVICE_NAME_PADDED_BYTES": { "value": 160, "unit": "bytes", "section": "§2.4", "source": "doc", "enforced_by": "client" },
+    "DEVICE_NAME_CT_BYTES": { "value": 176, "unit": "bytes", "section": "§2.4", "source": "m0", "enforced_by": "server", "meaning": "derived from §2.4: 160-byte padded name + 16-byte tag; the server can check name_ct.ct length exactly" },
+    "KEYRING_PREVIOUS_MAX": { "value": 64, "unit": "entries", "section": "§2.3, §3.8 P1, §3.9 R3", "source": "doc", "enforced_by": "both" },
+    "KVER_MAX_JUMP": { "value": 65536, "unit": "kver", "section": "§2.3, §3.9 R0/R1", "source": "doc", "enforced_by": "both", "meaning": "largest kver jump: the server accepts only if_kver < kver <= if_kver + KVER_MAX_JUMP; a client classifies a bundle beyond maxSeenKver + KVER_MAX_JUMP (maxSeenKver > 0) as kver <= maxSeenKver; publishKver = min(max(server kver, maxSeenKver) + 1, server kver + KVER_MAX_JUMP) (§0.0f F-01)" },
+    "PBKDF2_MIN_ITERATIONS": { "value": 600000, "unit": "iterations", "section": "§3.14, Phase 0 kdf.ts", "source": "doc", "enforced_by": "both" },
+    "PBKDF2_MAX_ITERATIONS": { "value": 20000000, "unit": "iterations", "section": "§3.14 (bounds), Phase 0 kdf.ts", "source": "doc", "enforced_by": "both" },
+    "KDF_SALT_MIN_BYTES": { "value": 16, "unit": "bytes", "section": "§2.2, Phase 0 kdf.ts", "source": "doc", "enforced_by": "both" },
+    "SIG_WINDOW_S": { "value": 300, "unit": "s", "section": "§5.2", "source": "doc", "enforced_by": "server" },
+    "ACCOUNT_SESSION_TTL_S": { "value": 900, "unit": "s", "section": "§5.2", "source": "doc", "enforced_by": "server" },
+    "STEP_UP_MAX_AGE_S": { "value": 600, "unit": "s", "section": "§3.12, §5.2", "source": "doc", "enforced_by": "server" },
+    "ENROLL_TTL_S": { "value": 600, "unit": "s", "section": "§3.2, §5.5", "source": "doc", "enforced_by": "server" },
+    "ENROLL_PENDING_PER_SESSION": { "value": 1, "unit": "requests", "section": "§5.5", "source": "doc", "enforced_by": "server" },
+    "SAS_DIGITS": { "value": 6, "unit": "digits", "section": "§3.2", "source": "doc", "enforced_by": "client" },
+    "SAS_ATTEMPTS": { "value": 3, "unit": "attempts", "section": "§3.2 M4", "source": "doc", "enforced_by": "client" },
+    "OTP_DIGITS": { "value": 6, "unit": "digits", "section": "§3.1", "source": "doc", "enforced_by": "server" },
+    "AUTH_FAILURES_CAP": { "value": 10, "unit": "count", "section": "§3.14", "source": "doc", "enforced_by": "server" },
+    "AUTH_FAILURES_BANNER": { "value": 3, "unit": "count", "section": "§3.14", "source": "doc", "enforced_by": "client" },
+    "DEVICES_MAX_ACTIVE": { "value": 200, "unit": "devices", "section": "§5.5", "source": "doc", "enforced_by": "server" },
+    "HISTORY_KEEP_VERSIONS": { "value": 30, "unit": "versions", "section": "§5.8", "source": "doc", "enforced_by": "server" },
+    "HISTORY_KEEP_DAYS": { "value": 30, "unit": "days", "section": "§5.8", "source": "doc", "enforced_by": "server" },
+    "HISTORY_MAX_BYTES": { "value": 67108864, "unit": "bytes", "section": "§5.8 (§0.0d N13)", "source": "doc", "enforced_by": "server", "meaning": "64 MiB of history per account" },
+    "ENTRY_LIMIT_ADD": { "value": 5000, "unit": "entries", "section": "§3.13 C13", "source": "doc", "enforced_by": "client" },
+    "ENTRY_LIMIT_PARSE": { "value": 50000, "unit": "entries", "section": "§3.13 C13, §4.3", "source": "doc", "enforced_by": "client" },
+    "TRUNC_HOUR_MS": { "value": 3600000, "unit": "ms", "section": "§2.3 T1, §5.3", "source": "doc", "enforced_by": "both" },
+    "TRUNC_DAY_MS": { "value": 86400000, "unit": "ms", "section": "§5.3 T2", "source": "doc", "enforced_by": "server" },
+    "TRUNC_MINUTE_MS": { "value": 60000, "unit": "ms", "section": "§5.3", "source": "doc", "enforced_by": "server" },
+    "UNCONFIRMED_USER_TTL_S": { "value": 86400, "unit": "s", "section": "§5.2 T3", "source": "doc", "enforced_by": "server" },
+    "IP_COUNTER_TTL_S": { "value": 3600, "unit": "s", "section": "§5.1, §5.6", "source": "doc", "enforced_by": "server" },
+    "DAILY_COUNTER_TTL_S": { "value": 86400, "unit": "s", "section": "§5.1, §5.5", "source": "doc", "enforced_by": "server" },
+    "LOG_RETENTION_DAYS": { "value": 14, "unit": "days", "section": "§5.6", "source": "doc", "enforced_by": "server" }
+  },
+  "x-sixkey-request-rules": [
+    { "id": "json_content_type", "applies_to": "with_request_body", "status": 422, "code": "invalid_request", "section": "§5.4 (§0.0p, §0.0r, M4 S6)", "source": "doc",
+      "rule": "Every operation with a JSON request body requires a Content-Type header: the media type is application/json, case-insensitive, optionally followed by one parameter charset=utf-8 (case-insensitive), with optional whitespace around the ';'. charset=utf8, a quoted value, any other parameter, a trailing ';' and 'charset = utf-8' are 422. Clients send application/json (§9 M5). The server checks it before reading the body; otherwise 422 invalid_request, which every such operation lists. Reason: a web page can send a cross-site 'simple' request (text/plain, form types) without a CORS preflight, and this rule keeps such pages from triggering OTP mails or spending verify attempts (S6)." }
+  ],
+  "x-sixkey-rate-limits": {
+    "rules": [
+      "Requests rejected with 401 or 403 never count against any quota, with one exception: device_envelope_bytes keeps what the PUT /v1/vault and POST /v1/keys/rotate requests it applies to used (§5.5, §0.0p, §0.0r).",
+      "A limit with unit bytes counts the whole request body's bytes, including a body that does not parse (422 or 413); every other limit counts requests.",
+      "A request whose body does not parse carries no valid proof and pays every bucket that applies to it (device_writes, the account ceiling, device_envelope_bytes and account_envelope_bytes; for init, session_writes and session_envelope_bytes).",
+      "A request carrying a valid password_auth or recovery_auth is exempt from every per-device limit; the server checks the proof before the limits (§3.14, S2).",
+      "Only an invalid proof enters invalid_proof_per_device; past the limit the request gets 429 rate_limited with Retry-After and never touches the database (§5.5, §0.0o A10). No lockout, no backoff.",
+      "An enrolling device (Sixkey-Enroll) is limited like a device keyed enroll:{rid} (device_writes, device_reads); it does not count toward account_reads or account_writes (§5.5, §0.0r A21).",
+      "Revocation and rotation are not subject to account_writes (F8), but they are subject to proof_valid_account and account_envelope_bytes; an invalid proof never enters proof_valid_account, so a copy without the password cannot fill it (§5.5, §0.0p).",
+      "Counters live in memory only: IP keys are HMAC(daily random key, IP) with TTL <= 1 h; daily per-email/account keys are HMAC(daily key, email or account) with TTL <= 24 h (§5.1, §5.6).",
+      "An IP key counts an IPv4 address, or the /64 of an IPv6 address; an IPv4-mapped IPv6 address counts as its IPv4 address (§5.5, §0.0p, M4 S5).",
+      "Each limiter table holds at most 200000 keys; a request that needs a new key once a table is full gets 429 rate_limited with Retry-After 60 (§5.5, §0.0p, §0.0r, M4 S5)."
+    ],
+    "limits": [
+      { "id": "device_writes", "key": "device", "limit": 30, "window_s": 60, "applies_to": "device-signed non-GET requests (every write)", "section": "§5.5 (§0.0d N12)", "source": "doc" },
+      { "id": "device_reads", "key": "device", "limit": 60, "window_s": 60, "applies_to": "device-signed GET requests, status included", "section": "§5.5", "source": "doc" },
+      { "id": "account_writes", "key": "account", "limit": 600, "window_s": 60, "applies_to": "sum of device_writes over the account (20x a device)", "section": "§5.5", "source": "doc" },
+      { "id": "account_reads", "key": "account", "limit": 1200, "window_s": 60, "applies_to": "sum of device_reads over the account (20x a device)", "section": "§5.5", "source": "doc" },
+      { "id": "session_writes", "key": "account session", "limit": 30, "window_s": 60, "applies_to": "account-session non-GET requests: POST /v1/vault/init and POST /v1/enroll/requests", "section": "§5.5 (§0.0o A21)", "source": "doc" },
+      { "id": "session_reads", "key": "account session", "limit": 60, "window_s": 60, "applies_to": "account-session GET requests: GET /v1/account", "section": "§5.5 (§0.0o A21)", "source": "doc" },
+      { "id": "proof_valid_account", "key": "account", "limit": 60, "window_s": 60, "applies_to": "requests with a valid password_auth or recovery_auth (exempt from the per-device limits), revoke and rotate included; an invalid proof never enters it", "section": "§5.5 (§0.0p, M4 S2)", "source": "m4" },
+      { "id": "device_envelope_bytes", "key": "device", "limit": 268435456, "window_s": 3600, "unit": "bytes", "applies_to": "PUT /v1/vault and POST /v1/keys/rotate requests without a valid proof, counted by the whole request body including bodies that fail to parse (422/413); never refunded", "section": "§5.5 (§0.0p, §0.0r, M4 S2, S4)", "source": "m4" },
+      { "id": "account_envelope_bytes", "key": "account", "limit": 1073741824, "window_s": 3600, "unit": "bytes", "applies_to": "every PUT /v1/vault and POST /v1/keys/rotate request, valid proof or not, counted by the whole request body including bodies that fail to parse; refunded when the request ends in 401 or 403", "section": "§5.5 (§0.0p, §0.0r, M4 S2, S4)", "source": "m4" },
+      { "id": "session_envelope_bytes", "key": "account session", "limit": 1073741824, "window_s": 3600, "unit": "bytes", "applies_to": "POST /v1/vault/init only, parsed or not, counted by the whole request body; refunded when the request ends in 401 or 403", "section": "§5.5 (§0.0r, M4 RR1)", "source": "m4" },
+      { "id": "invalid_proof_per_device", "key": "device", "limit": 10, "window_s": 60, "applies_to": "requests with an invalid password_auth or recovery_auth", "section": "§3.14, §5.5", "source": "doc" },
+      { "id": "otp_send_email_ip", "key": "email + IP-HMAC", "limit": 3, "window_s": 600, "applies_to": "POST /v1/auth/otp", "section": "§5.5", "source": "doc" },
+      { "id": "otp_send_email_ip_day", "key": "email + IP-HMAC", "limit": 10, "window_s": 86400, "applies_to": "POST /v1/auth/otp", "section": "§5.5", "source": "doc" },
+      { "id": "otp_send_email_day", "key": "email", "limit": 50, "window_s": 86400, "applies_to": "POST /v1/auth/otp", "section": "§5.5", "source": "doc" },
+      { "id": "otp_send_ip", "key": "IP-HMAC", "limit": 20, "window_s": 3600, "applies_to": "POST /v1/auth/otp", "section": "§5.5", "source": "doc" },
+      { "id": "otp_verify_code", "key": "email (HMAC), reset by a new code", "limit": 5, "window_s": null, "applies_to": "POST /v1/auth/verify: after 5 wrong attempts every verify for that email is 401 otp_invalid until a new code is sent; an attempt is taken before the provider is asked (S1); a malformed email is 401 otp_invalid too; if the counter table is full and this email has no counter yet, 429 rate_limited with Retry-After 60, and the provider is not asked", "section": "§5.5 (§0.0o A22, §0.0r)", "source": "doc" },
+      { "id": "otp_verify_ip", "key": "IP-HMAC", "limit": 30, "window_s": 3600, "applies_to": "POST /v1/auth/verify", "section": "§5.5", "source": "doc" },
+      { "id": "recovery_account_ip", "key": "account + IP-HMAC", "limit": 5, "window_s": 3600, "applies_to": "POST /v1/enroll/recovery", "section": "§5.5", "source": "doc" },
+      { "id": "recovery_account_day", "key": "account", "limit": 50, "window_s": 86400, "applies_to": "POST /v1/enroll/recovery", "section": "§5.5", "source": "doc" },
+      { "id": "pending_enrollments_per_session", "key": "account session", "limit": 1, "window_s": null, "applies_to": "POST /v1/enroll/requests (one pending at a time; 409 one_per_session)", "section": "§5.5", "source": "doc" },
+      { "id": "active_devices", "key": "account", "limit": 200, "window_s": null, "applies_to": "unrevoked devices (409 too_many_devices)", "section": "§5.5", "source": "doc" }
+    ]
+  },
+  "x-sixkey-removed": {
+    "description": "Removed by revisions 2-5 of the design. Must not appear in paths, ErrorCode, responses or headers; both loaders and contract/tools/check_consistency.py assert that.",
+    "operations": ["POST /v1/auth/refresh", "POST /v1/devices/{id}/unlock-sensitive", "GET /v1/time", "POST /v1/enroll/pause"],
+    "path_substrings": ["invite", "inbox", "unlock-sensitive", "/v1/time", "/v1/enroll/pause", "/v1/auth/refresh"],
+    "error_codes": ["sensitive_locked", "enroll_paused"],
+    "statuses": ["423", "304"],
+    "headers": ["Sixkey-Cursor", "If-None-Match", "ETag"],
+    "fields": ["revoked_by", "enroll_paused_until", "sensitive_locked", "devices_changed_at", "new_sig"],
+    "conditional_get": "GET /v1/vault with If-None-Match / ETag / 304 (§5.4 已删除, §0.0d N2)",
+    "section": "§0.0, §0.0b, §0.0c, §0.0d, §5.4 (已删除), §13"
+  }
+}

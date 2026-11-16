@@ -1,0 +1,230 @@
+{
+  "fieldIssuer": {
+    "message": "服务商"
+  },
+  "fieldLabel": {
+    "message": "账户"
+  },
+  "fieldSecret": {
+    "message": "密钥"
+  },
+  "fieldAlgorithm": {
+    "message": "算法"
+  },
+  "fieldDigits": {
+    "message": "位数"
+  },
+  "fieldPeriod": {
+    "message": "周期（秒）"
+  },
+  "optPaste": {
+    "message": "粘贴 otpauth:// 链接"
+  },
+  "optManual": {
+    "message": "手动输入密钥"
+  },
+  "pasteHelp": {
+    "message": "粘贴 otpauth:// 链接、Google Authenticator 导出链接或纯文本密钥（单独一个密钥，或 名称|密钥），每行一条，也可以在下面选择文件。确认之前不会添加任何账户。"
+  },
+  "chooseImages": {
+    "message": "选择二维码图片"
+  },
+  "dropOrPasteImage": {
+    "message": "或把文件拖到这里：文本、JSON 或 CSV 导出文件（Aegis、2FAS、andOTP、Raivo、Bitwarden）和二维码图片。用 Ctrl+V 可粘贴截图。"
+  },
+  "noQrIn": {
+    "message": "这些图片里没有找到二维码：$1"
+  },
+  "previewAdd": {
+    "message": "将添加 $1 个"
+  },
+  "previewDup": {
+    "message": "$1 个已存在或重复，已跳过"
+  },
+  "previewFailed": {
+    "message": "第 $1 行已跳过：$2"
+  },
+  "previewIncomplete": {
+    "message": "Google 导出：已读取 $1 / $2 个二维码，还缺：$3。"
+  },
+  "previewHotp": {
+    "message": "$1 个计数型账户会保留，但暂不能生成验证码。"
+  },
+  "previewShort": {
+    "message": "$1 个账户的密钥较短，仍可使用，但服务商给的密钥强度偏低。"
+  },
+  "addN": {
+    "message": "添加 $1 个账户"
+  },
+  "incompleteHint": {
+    "message": "请先补全其余二维码，或只添加已有的部分。"
+  },
+  "rNotOtpauth": {
+    "message": "不是链接，也不是密钥"
+  },
+  "rMalformed": {
+    "message": "无法读取"
+  },
+  "rType": {
+    "message": "不支持的类型"
+  },
+  "rNoSecret": {
+    "message": "缺少密钥"
+  },
+  "rBadSecret": {
+    "message": "密钥无效"
+  },
+  "rAlg": {
+    "message": "不支持的算法"
+  },
+  "rDigits": {
+    "message": "不支持的位数"
+  },
+  "rPeriod": {
+    "message": "周期无效"
+  },
+  "rCounter": {
+    "message": "计数器无效"
+  },
+  "rTooLarge": {
+    "message": "内容过大"
+  },
+  "googleTitle": {
+    "message": "从 Google Authenticator 迁移"
+  },
+  "googleStep1": {
+    "message": "在 Google Authenticator 中选择“转移账户”，再选“导出账户”，会显示一个或多个二维码。"
+  },
+  "googleStep2": {
+    "message": "在这里用摄像头逐个扫描，或截图后在上方选择或拖入。"
+  },
+  "googleStep3": {
+    "message": "完成后请删除截图和导出的文件，里面包含你的密钥。"
+  },
+  "addLead": {
+    "message": "通过链接、文件、二维码图片、摄像头或手动输入密钥添加账户。确认之前不会添加任何内容。"
+  },
+  "siteRemove": {
+    "message": "移除 $1"
+  },
+  "linesHelp": {
+    "message": "有 $1 行用 | 分成了多列。只读取密钥列和名称列，其他列（例如密码）一律丢弃，不会保存。"
+  },
+  "linesKey": {
+    "message": "密钥列"
+  },
+  "linesName": {
+    "message": "名称列"
+  },
+  "linesChoose": {
+    "message": "请选择一列"
+  },
+  "linesNoName": {
+    "message": "不设名称"
+  },
+  "linesColumn": {
+    "message": "第 $1 列 · $2 个字符 · $4 行中有 $3 行像密钥"
+  },
+  "linesPending": {
+    "message": "请选择密钥列：在此之前，这 $1 行不会被添加。"
+  },
+  "linesTag": {
+    "message": "文本"
+  },
+  "linesFromText": {
+    "message": "$1 个来自纯文本，按常用设置：6 位、每 30 秒。请确认每一个都是真正的 2FA 密钥。"
+  },
+  "linesUnnamed": {
+    "message": "$1 个没有名称，添加后可以在弹窗里命名。"
+  },
+  "rNotKey": {
+    "message": "太短，不像密钥（至少 16 个字符）"
+  },
+  "addNothing": {
+    "message": "请先粘贴链接、选择文件或扫描二维码。"
+  },
+  "camStart": {
+    "message": "用摄像头扫描"
+  },
+  "camStop": {
+    "message": "停止扫描"
+  },
+  "camSource": {
+    "message": "摄像头"
+  },
+  "camHint": {
+    "message": "把二维码对准摄像头。"
+  },
+  "camDenied": {
+    "message": "Sixkey 没有使用摄像头的权限。请点击地址栏里的摄像头图标，或在本扩展的网站设置里允许（Mac 上还要在“系统设置 › 隐私与安全性 › 摄像头”中允许）。"
+  },
+  "camFailed": {
+    "message": "无法启动摄像头：没有摄像头，或正被其他应用占用。"
+  },
+  "camOther": {
+    "message": "这个码来自另一次 Google Authenticator 导出。请先扫完这一次的，或先添加已扫到的。"
+  },
+  "camNotOtp": {
+    "message": "这不是 2FA 二维码。"
+  },
+  "fileTooBig": {
+    "message": "太大，无法导入。"
+  },
+  "fileNotText": {
+    "message": "不是文本、JSON、CSV 或图片文件。"
+  },
+  "fileZip": {
+    "message": "这是 ZIP 压缩包。请先解压，再选择里面的文件。"
+  },
+  "fileEncrypted": {
+    "message": "这是加密的 $1 导出文件，Sixkey 无法打开。请重新导出未加密的文件，再选择它。"
+  },
+  "fileIsBackup": {
+    "message": "这是 Sixkey 备份文件：请在“备份”中导入。"
+  },
+  "fileNothing": {
+    "message": "其中没有找到账户。"
+  },
+  "fileHtml": {
+    "message": "这是网页形式的导出：里面的码只是图片。请用摄像头扫描，或选择它们的截图。"
+  },
+  "fileSkipType": {
+    "message": "已跳过 $1 个账户：Sixkey 无法生成 $2 验证码。"
+  },
+  "skipNamed": {
+    "message": "已跳过 $1：$2"
+  },
+  "delAsk": {
+    "message": "$1 以明文保存着你的密钥。现在删除它吗？"
+  },
+  "delPlain": {
+    "message": "$1 以明文保存着你的密钥。"
+  },
+  "delNote": {
+    "message": "删除并不能保证数据无法恢复。"
+  },
+  "delLeft": {
+    "message": "其中未导入的账户：$1 个。删除文件会让它们丢失。"
+  },
+  "delHotp": {
+    "message": "其中基于计数器的账户（HOTP）：$1 个。Sixkey 会保存它们，但暂时不能生成验证码。"
+  },
+  "delYes": {
+    "message": "删除文件"
+  },
+  "delKeep": {
+    "message": "保留"
+  },
+  "delDone": {
+    "message": "已删除 $1。"
+  },
+  "delNot": {
+    "message": "未删除 $1。"
+  },
+  "delChanged": {
+    "message": "$1 在 Sixkey 读取之后被改动过，因此没有删除。"
+  },
+  "delManual": {
+    "message": "请自行删除：把它移到废纸篓或回收站，再清空。"
+  }
+}

@@ -1,0 +1,290 @@
+{
+  "deviceOnlyBody": {
+    "message": "你的账户目前只受一把存放在旁边的密钥保护。它能防止随手查看，但挡不住能访问这个浏览器配置文件的人或恶意软件。设置主密码后，配置文件被拷走时有多安全，取决于你选的密码。"
+  },
+  "enablePassword": {
+    "message": "开启主密码"
+  },
+  "changePasswordTitle": {
+    "message": "修改主密码"
+  },
+  "newCodeTitle": {
+    "message": "新的恢复密钥"
+  },
+  "newCodeBody": {
+    "message": "会替换当前恢复密钥，旧的随即失效。"
+  },
+  "newCodeAction": {
+    "message": "生成新的恢复密钥"
+  },
+  "rotateTitle": {
+    "message": "更换加密密钥"
+  },
+  "rotateBody": {
+    "message": "如果你怀疑旧的数据副本或密钥泄露了，请使用。所有数据会用新密钥重新加密，并生成新的恢复密钥。"
+  },
+  "rotateAction": {
+    "message": "更换密钥"
+  },
+  "autoLockTitle": {
+    "message": "自动锁定"
+  },
+  "autoLockWhen": {
+    "message": "锁定时机"
+  },
+  "alIdle": {
+    "message": "闲置一段时间后"
+  },
+  "alSession": {
+    "message": "浏览器重新启动时"
+  },
+  "alAlways": {
+    "message": "每次关闭弹窗时"
+  },
+  "autoLockNote": {
+    "message": "设置了主密码才生效。更新或重新加载扩展一定会锁定。"
+  },
+  "residueWarning": {
+    "message": "在开启之前添加的账户，在浏览器整理存储之前，仍可能从磁盘上残留的数据中被恢复出来。如果这个浏览器配置文件曾被复制或共享过，请到各个服务重新生成这些账户的 2FA 密钥。"
+  },
+  "secLead": {
+    "message": "账户在这台电脑上如何受保护，以及锁定的规则。"
+  },
+  "trustNoTrack": {
+    "message": "无追踪，不联网"
+  },
+  "smTitle": {
+    "message": "安全模式"
+  },
+  "smLead": {
+    "message": "下面这些设置有两套现成的组合，与首次设置时的那一问相同。改动其中任何一项，就会显示为“自定义”。"
+  },
+  "smCustomTitle": {
+    "message": "自定义"
+  },
+  "smCustomBody": {
+    "message": "下面的设置是你自己选的组合。在上面选一个模式即可恢复。"
+  },
+  "smLocksNow": {
+    "message": "更改锁定时机会立即锁定 Sixkey，之后用主密码再解锁即可。"
+  },
+  "smLockedNow": {
+    "message": "Sixkey 现已锁定。请在本页顶部解锁后继续。"
+  },
+  "smClipNote": {
+    "message": "共享或自动化的配置文件，建议同时开启复制后清空剪贴板："
+  },
+  "secNoticeBad": {
+    "message": "无法读取安全记录。"
+  },
+  "secLogLead": {
+    "message": "这个浏览器配置文件里的输错密码、导出和密钥变更，只记时间。它是告警线而非证据：拿到配置文件副本的人能改它。"
+  },
+  "secLogCount": {
+    "message": "解锁后尚未提示的输错次数：$1"
+  },
+  "secLogEmpty": {
+    "message": "还没有任何记录。"
+  },
+  "secLogDamaged": {
+    "message": "记录已损坏，下一条记录会重新开始。"
+  },
+  "secLogNewer": {
+    "message": "它由更新版本的 Sixkey 写入，本版本不往里添加。"
+  },
+  "secLogOlder": {
+    "message": "另有 $1 条较早的记录"
+  },
+  "secLogClear": {
+    "message": "清空记录"
+  },
+  "secLogClearLead": {
+    "message": "需要主密码，输错会被拒绝并记下。清空后留下一行带时间的记录。"
+  },
+  "secKUnlockFailed": {
+    "message": "主密码输错"
+  },
+  "secKRecoveryFailed": {
+    "message": "恢复密钥输错"
+  },
+  "secKRecoveryUsed": {
+    "message": "恢复密钥验证通过"
+  },
+  "secKExportEncrypted": {
+    "message": "保存了加密备份"
+  },
+  "secKExportPlain": {
+    "message": "保存了明文列表"
+  },
+  "secKExportSubset": {
+    "message": "导出了所选账户"
+  },
+  "secKPasswordEnabled": {
+    "message": "开启了主密码"
+  },
+  "secKPasswordChanged": {
+    "message": "修改了主密码"
+  },
+  "secKPasswordReset": {
+    "message": "用恢复密钥重设了主密码"
+  },
+  "secKKeyRotated": {
+    "message": "更换了加密密钥"
+  },
+  "secKRecoveryCodeNew": {
+    "message": "生成了新的恢复密钥"
+  },
+  "secKLogCleared": {
+    "message": "记录已清空"
+  },
+  "secInvTitle": {
+    "message": "Sixkey 在这个浏览器配置文件里保存的内容"
+  },
+  "secInvKeysPw": {
+    "message": "加密的账户，以及打开它们的密钥；密钥由主密码和恢复密钥分别加锁。"
+  },
+  "secInvKeysDevice": {
+    "message": "加密的账户，以及未加锁、就放在旁边的密钥：拿到这个配置文件的副本就能打开。"
+  },
+  "secInvSnaps": {
+    "message": "$1 份较早的加密副本（最近 10 次保存，及 7 天内每天一份）。"
+  },
+  "secInvMirror": {
+    "message": "这个配置文件的 IndexedDB 里还有一份加密副本，以及最多 7 份每日副本。"
+  },
+  "secInvNoMirror": {
+    "message": "在这个配置文件的 IndexedDB 里没有找到副本。"
+  },
+  "secInvSettings": {
+    "message": "设置：锁定、显示、语言、主题、安装来源警告（如有）、排列编辑先后的 ID、维护标记（不含密钥），以及上次备份（$1）。"
+  },
+  "secInvLogs": {
+    "message": "本记录、自动恢复提示和小问题日志，都不含密钥、验证码或账户名。"
+  },
+  "secInvSession": {
+    "message": "解锁期间：已打开的密钥，在浏览器只存于内存的会话存储里（每次都锁定时不放）。"
+  },
+  "secKSyncOn": {
+    "message": "在此配置文件中开启了同步"
+  },
+  "secKSyncOff": {
+    "message": "在此配置文件中关闭了同步"
+  },
+  "secKIdentityRestored": {
+    "message": "从加密副本恢复了本设备的同步身份"
+  },
+  "secKKeysAdopted": {
+    "message": "采用了在另一台设备上更改的密钥"
+  },
+  "secKDeviceApproved": {
+    "message": "从此配置文件批准了一台新设备"
+  },
+  "secKDeviceRevoked": {
+    "message": "从此配置文件吊销了一台设备"
+  },
+  "secKHistoryCleared": {
+    "message": "清除了服务器上的历史版本"
+  },
+  "secKPrfEnrolled": {
+    "message": "添加了用 Touch ID 或 Windows Hello 解锁"
+  },
+  "secKPrfRemoved": {
+    "message": "移除了用 Touch ID 或 Windows Hello 解锁"
+  },
+  "secKPrfFailed": {
+    "message": "用 Touch ID 或 Windows Hello 解锁失败"
+  },
+  "secKeysInSyncTitle": {
+    "message": "主密码、恢复密钥与密钥"
+  },
+  "secKeysInSyncBody": {
+    "message": "同步已开启，这些改动要在“同步”一节进行，这样每台设备都会更新。"
+  },
+  "secKeysInSyncOpen": {
+    "message": "打开同步"
+  },
+  "secKKeysAdoptedBack": {
+    "message": "从服务器取回了本机以前用过的密钥"
+  },
+  "pinBoxTitle": {
+    "message": "PIN 快速解锁"
+  },
+  "pinLead": {
+    "message": "4 到 8 位数字的 PIN 可以在 Sixkey 锁定后重新打开它，浏览器重启后也可以。不要用手机或银行卡的 PIN。"
+  },
+  "pinHonest": {
+    "message": "PIN 能挡住坐到你电脑前的人：输错 5 次后只有主密码能打开 Sixkey。它挡不住这台电脑上的程序，也挡不住会打开浏览器开发者工具的人。"
+  },
+  "pinRoot": {
+    "message": "主密码始终可用，导出、更改密钥、永久删除以及设置或更改 PIN 时仍会要求输入主密码。"
+  },
+  "pinClose": {
+    "message": "想每次关闭弹窗就锁定，请在“自动锁定”中选择“$1”，之后用 PIN 重新打开。"
+  },
+  "pinOn": {
+    "message": "已开启（$1 位）。"
+  },
+  "pinWaiting": {
+    "message": "已开启（$1 位）。下次输入主密码之后重新生效。"
+  },
+  "pinShared": {
+    "message": "不可用：这个配置文件被设为共享或由脚本控制（见“安全模式”），它们可能读到 PIN。"
+  },
+  "pinNeedsPassword": {
+    "message": "请先设置主密码。"
+  },
+  "pinNew": {
+    "message": "新 PIN"
+  },
+  "pinAgain": {
+    "message": "再次输入新 PIN"
+  },
+  "pinWeak": {
+    "message": "太容易被猜到。请避开重复数字、1234 这样的连续数字和常见 PIN。"
+  },
+  "pinDiffer": {
+    "message": "两次输入的 PIN 不一致。"
+  },
+  "pinSet": {
+    "message": "设置 PIN"
+  },
+  "pinChange": {
+    "message": "更改 PIN"
+  },
+  "pinRemove": {
+    "message": "移除 PIN"
+  },
+  "pinSaved": {
+    "message": "PIN 已保存，现在即可使用。"
+  },
+  "pinRemoved": {
+    "message": "PIN 已移除。"
+  },
+  "quickEndNow": {
+    "message": "结束快速解锁并锁定"
+  },
+  "quickEnded": {
+    "message": "已结束。Sixkey 已锁定，需要用主密码打开。"
+  },
+  "lockShortcutBody": {
+    "message": "在任何页面锁定 Sixkey："
+  },
+  "secKPinSet": {
+    "message": "设置了 PIN"
+  },
+  "secKPinRemoved": {
+    "message": "移除了 PIN"
+  },
+  "secKPinFailed": {
+    "message": "PIN 输错"
+  },
+  "secKQuickEnded": {
+    "message": "PIN 快速解锁已结束"
+  },
+  "sharesFoldTitle": {
+    "message": "恢复密钥分片"
+  },
+  "secKSharesMade": {
+    "message": "生成了恢复密钥分片"
+  }
+}

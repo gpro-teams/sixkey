@@ -1,0 +1,38 @@
+{
+  "listRevealHint": {
+    "message": "Click copies the code without showing it. Hold, or press Space, to show it for 5 seconds."
+  },
+  "lookTheme": {
+    "message": "Theme"
+  },
+  "lookThemeLight": {
+    "message": "Light"
+  },
+  "lookThemeDark": {
+    "message": "Dark"
+  },
+  "lookDensity": {
+    "message": "Rows"
+  },
+  "lookDensityStandard": {
+    "message": "Standard"
+  },
+  "lookDensityCompact": {
+    "message": "Compact"
+  },
+  "lookSort": {
+    "message": "Order"
+  },
+  "lookSortManual": {
+    "message": "Manual"
+  },
+  "lookSortName": {
+    "message": "By name"
+  },
+  "viewAuto": {
+    "message": "Auto"
+  },
+  "viewHide": {
+    "message": "Hide codes"
+  }
+}

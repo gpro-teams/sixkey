@@ -1,0 +1,77 @@
+/* What only the settings page draws of the page's shared components: the chips and the box a code is shown in for
+   saving. They were in ../ui/styles.css, which the popup and the side panel load too and count in their budgets; no
+   screen of theirs draws either (docs/design/notes/BUDGET-NOTES.md §9). Imported by ./main.tsx right after
+   ../ui/styles.css, so the settings page's cascade is as it was: the one rule that followed them there, the reduced
+   motion one, sets nothing these set. */
+
+/* ---------- chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 5px 9px 5px 8px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip:empty {
+  display: none;
+}
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.chip.ok {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.chip.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.chip.bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ---------- a one-time code shown for saving (recovery codes) ---------- */
+.code-box {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  text-align: center;
+  color: #f4e6c6;
+  background: radial-gradient(120% 140% at 100% 0%, #2a2f39 0%, #15181e 55%, #0f1115 100%);
+  box-shadow:
+    var(--sh-2),
+    inset 0 0 0 1px rgba(215, 168, 76, 0.35);
+  font: 500 15px/1.7 var(--f-num);
+  letter-spacing: 0.02em;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.code-box::after {
+  /* guilloche-like rings, the dial again, as a watermark */
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: repeating-radial-gradient(circle, transparent 0 7px, rgba(215, 168, 76, 0.14) 7px 8px);
+}
+.code-box i {
+  font-style: normal;
+  color: rgba(215, 168, 76, 0.7);
+}

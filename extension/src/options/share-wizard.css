@@ -1,0 +1,67 @@
+/* The recovery key shares wizard (ShareWizard.tsx), loaded with it. Tokens only, so both themes draw it. */
+.sh-wiz {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sh-title {
+  margin: 0;
+  font-size: 15px;
+}
+.sh-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 8px;
+}
+.sh-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.sh-opt.on {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.sh-opt input {
+  margin-top: 2px;
+}
+.sh-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sh-code {
+  font-size: 19px;
+  padding: 22px 16px;
+}
+/* The printed share: one node under <body>, put there only while printing (printPaper), and the only thing printed. */
+.sh-print {
+  display: none;
+}
+@media print {
+  html.sh-printing body > *:not(.sh-print) {
+    display: none !important;
+  }
+  html.sh-printing .sh-print {
+    display: block !important;
+    color: #000;
+    background: #fff;
+    font: 12pt/1.5 var(--f-ui);
+  }
+  html.sh-printing .sh-print h1 {
+    font-size: 16pt;
+    margin: 0 0 8pt;
+  }
+  html.sh-printing .sh-print pre {
+    font: 600 20pt/1.6 var(--f-num);
+    letter-spacing: 0.04em;
+    white-space: pre-wrap;
+    margin: 12pt 0;
+  }
+}

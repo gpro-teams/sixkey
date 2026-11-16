@@ -1,0 +1,28 @@
+/* Settings page > Add account > preview: the column choice for name|key lines, and the "from text" tag. */
+.lines-cols {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.lines-cols > p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 72ch;
+}
+.pv-list li em.pv-tag {
+  font-style: normal;
+  font-size: 11px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+}
+.lines-cols .grid2 {
+  grid-template-columns: minmax(0, 1fr);
+} /* one select per row: the column descriptions are long */

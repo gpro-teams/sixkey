@@ -1,0 +1,89 @@
+/* The install-source notice at the top of the settings page (InstallNotice.tsx, PHASE0X-PLAN C3). */
+.inst-ids {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+.inst-ids dt {
+  color: var(--ink-2);
+}
+.inst-ids dd {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  .inst-ids {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inst-ids dd {
+    margin-bottom: 4px;
+  }
+}
+
+/* the notice is one line until opened (InstallNotice.tsx); the line is the summary of a native <details> */
+.inst {
+  position: relative;
+  z-index: 2; /* above the header's dial, which reaches down behind the panels */
+  margin: 0 0 18px;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in srgb, var(--warn) 24%, transparent);
+}
+.inst summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+}
+.inst summary::-webkit-details-marker {
+  display: none;
+}
+.inst summary > .ic {
+  flex: none;
+  color: var(--warn);
+}
+.inst summary b {
+  min-width: 0;
+  font-weight: 600;
+}
+.inst-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  flex: none;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.inst-toggle .ic {
+  transition: transform 0.15s;
+}
+.inst details[open] .inst-toggle .ic {
+  transform: rotate(90deg);
+}
+.inst-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 14px 14px 39px;
+  font-size: 14px;
+}
+.inst-body p {
+  max-width: 72ch;
+}
+@media (max-width: 560px) {
+  .inst-body {
+    padding-left: 14px;
+  }
+}

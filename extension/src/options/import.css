@@ -1,0 +1,128 @@
+/* Settings page > Add account: the drop zone's actions, the files read, the camera, the delete prompt (IMPORT-FILE-NOTES.md). */
+#add-paste.over .dropzone {
+  border-color: var(--accent);
+  background: var(--brass-soft);
+}
+.dropzone .dz-help {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: 13px;
+}
+.dropzone .cam {
+  display: contents;
+}
+.cam-live {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cam-live video {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.cam-side {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.cam-side .pv-line {
+  margin: 0;
+}
+.cam-err {
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+}
+.cam-err span {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.src-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.src {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.src-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13.5px;
+}
+.src-head b {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.src-x {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.src-x:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+.src-msg {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  align-items: flex-start;
+}
+.src-msg > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.src-msg span {
+  min-width: 0;
+}
+.del-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.del-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.del-row p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.del-row + .del-row {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.del-left {
+  color: var(--ink);
+}

@@ -1,0 +1,19 @@
+# Python formatting for the whole repository: the sync server (api/server), the contract's reference implementation
+# and checker (contract/), and the extension's message generator (extension/scripts). Run `make format` (or
+# `make format-check`) in api/server. Lint rules are a separate, later step.
+line-length = 120
+# The server runs on Python 3.14, but the formatter keeps to syntax Python 3.12 also reads: it would otherwise drop the
+# parentheses of "except (A, B):" (PEP 758), which reads like the Python 2 form. Supporting 3.12 for self-hosting is
+# planned (audit P2-11).
+target-version = "py312"
+extend-exclude = [
+  # Python code blocks inside Markdown are documentation and review records, kept as written.
+  "*.md",
+  # The frozen text of the first release, grouped by screen (see its header). Reformat it when the message fragments
+  # are folded into one source per language.
+  "extension/scripts/i18n/base.py",
+]
+
+[format]
+# Ruff's defaults otherwise: double quotes, spaces, magic trailing commas respected.
+docstring-code-format = false

@@ -1,0 +1,137 @@
+{
+  "afFill": {
+    "message": "把验证码填入此页面"
+  },
+  "afFillShort": {
+    "message": "填写验证码"
+  },
+  "afFillOn": {
+    "message": "在 $1 上填写验证码"
+  },
+  "afAway": {
+    "message": "请在此页面上重新打开 Sixkey，再查看。"
+  },
+  "afComplex": {
+    "message": "此页面的输入框太多，Sixkey 无法逐个查看。请自己输入验证码。"
+  },
+  "afMoved": {
+    "message": "这不是 Sixkey 刚才查看的页面。请在它上面重新打开 Sixkey。"
+  },
+  "afSlow": {
+    "message": "页面没有及时响应。验证码可能已经填入，请先查看页面，再决定是否重试。"
+  },
+  "afLookSlow": {
+    "message": "页面没有及时响应，请重新查找。"
+  },
+  "afAfter": {
+    "message": "验证码已填入，随后页面发生了变化。请查看页面；如果没有继续，请再试一次。"
+  },
+  "afLeftTab": {
+    "message": "没有填写：等待新的验证码时，你切换了标签页。"
+  },
+  "afLeftPage": {
+    "message": "没有填写：等待新的验证码时，页面发生了变化。请再试一次。"
+  },
+  "afOld": {
+    "message": "自动填写需要 Chrome 140 或更高版本。"
+  },
+  "afScanning": {
+    "message": "正在查找验证码输入框…"
+  },
+  "afFound": {
+    "message": "此页面上找到了验证码输入框"
+  },
+  "afNone": {
+    "message": "此页面上没有找到验证码输入框。请先打开要求输入验证码的那一步，再试一次。"
+  },
+  "afBlocked": {
+    "message": "Sixkey 无法读取这类页面（浏览器页面、应用商店或 PDF）。"
+  },
+  "afFrame": {
+    "message": "没有找到验证码输入框。它可能在来自其他网站的框架里，Sixkey 无法查看。"
+  },
+  "afWait": {
+    "message": "$1 秒后填入新的验证码…"
+  },
+  "afDone": {
+    "message": "已填入验证码，请在页面上继续。"
+  },
+  "afGone": {
+    "message": "页面已经变化，请再试一次。"
+  },
+  "afDigits": {
+    "message": "此页面的验证码输入框与此账户的 $1 位验证码不匹配。"
+  },
+  "afRefused": {
+    "message": "页面没有接受填入的验证码，请自己输入。"
+  },
+  "afInsecure": {
+    "message": "此页面不安全（http）。仍要填写吗？"
+  },
+  "afAnyway": {
+    "message": "仍然填写"
+  },
+  "afPick": {
+    "message": "填到哪个输入框？"
+  },
+  "afBox": {
+    "message": "输入框 $1：$2"
+  },
+  "afBoxPlain": {
+    "message": "输入框 $1"
+  },
+  "afSegs": {
+    "message": "$1 个分格输入框"
+  },
+  "afSent": {
+    "message": "此页面可能要的是发给你的验证码，而不是验证器里的验证码。"
+  },
+  "afFocus": {
+    "message": "填入当前获得焦点的输入框"
+  },
+  "afAgain": {
+    "message": "重新查找"
+  },
+  "afResumeTab": {
+    "message": "没有填写：这不是你要求填写的标签页。如需填写这个标签页，请点填写。"
+  },
+  "afResumeOther": {
+    "message": "没有填写：从你要求填写到现在，页面已变化、Sixkey 已锁定或已过一分钟。如需填写此页面，请点填写。"
+  },
+  "afResumeChoose": {
+    "message": "请选择要在 $1 上填入验证码的账户。"
+  },
+  "afResumeNone": {
+    "message": "没有填写：没有为 $1 登记的账户。"
+  },
+  "afSiteAsk": {
+    "message": "在 $1 上自动提示验证码？"
+  },
+  "afSiteBody": {
+    "message": "当你点进此网站的验证码输入框或在其中输入时，Sixkey 的工具栏图标会显示 1：按填写快捷键即可填入验证码。它只查找这个输入框，不向任何地方发送数据。第一次开启时，Chrome 会询问是否允许 Sixkey“读取和更改您在 $1 上的数据”。仅限安全（https）网页。你可以随时在“设置 › 安全 › 自动填写”中关闭。你开启的网站列表会保存在 Chrome 自己的设置中。"
+  },
+  "afSiteYes": {
+    "message": "在 $1 上开启"
+  },
+  "afSiteNo": {
+    "message": "暂不"
+  },
+  "afSiteOn": {
+    "message": "已在 $1 上开启验证码提示。"
+  },
+  "afAppend": {
+    "message": "此网站要求把验证码接在密码后面，填在同一个输入框里。"
+  },
+  "afAlias": {
+    "message": "与 $1 用同一账户登录"
+  },
+  "afOffNow": {
+    "message": "自动填写已关闭。可在 设置 › 安全 › 自动填写 中打开。"
+  },
+  "afLockedNow": {
+    "message": "没有填写：等待新的验证码时，Sixkey 已锁定。"
+  },
+  "afAskNo": {
+    "message": "Chrome 没有让 Sixkey 进入此页面。请再点一次“填写验证码”。"
+  }
+}

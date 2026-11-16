@@ -1,0 +1,8 @@
+# Project metadata only: the server is not packaged or published, and its dependencies stay in requirements*.txt
+# (exact pins). The licence text is LICENSES/AGPL-3.0-or-later.txt at the repository root (REUSE.toml, LICENSE.md).
+[project]
+name = "sixkey-server"
+version = "0.1.0"
+description = "The Sixkey sync API: end-to-end encrypted, zero-knowledge storage for the Sixkey extension"
+requires-python = ">=3.14"
+license = "AGPL-3.0-or-later"

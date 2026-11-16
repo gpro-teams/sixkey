@@ -1,0 +1,86 @@
+{
+  "deleteForever": {
+    "message": "Delete forever"
+  },
+  "trashLead": {
+    "message": "Deleted accounts stay here until you erase them for good. Nothing is erased automatically."
+  },
+  "trashEmpty": {
+    "message": "Nothing in the trash."
+  },
+  "purgedNote": {
+    "message": "Some accounts were erased for good. Only a marker remains so the deletion stays deleted."
+  },
+  "clipHistoryNote": {
+    "message": "Clipboard history tools (such as Windows Win+V) may keep their own copy, which Sixkey cannot remove."
+  },
+  "clipDisable": {
+    "message": "Turn off"
+  },
+  "clipOff": {
+    "message": "Off"
+  },
+  "clockTitle": {
+    "message": "Check your computer's clock"
+  },
+  "clockBody": {
+    "message": "Codes depend on the time. If your clock is off by more than about 15 seconds, codes fail. Turn on automatic time in your system settings. Sixkey makes no network requests, so it cannot check this itself."
+  },
+  "diagTitle": {
+    "message": "Diagnostics"
+  },
+  "diagBody": {
+    "message": "A local log of recoveries and non-fatal problems. It has no keys, codes or account names. Nothing is sent anywhere; save it and send it to us only if you want help."
+  },
+  "diagExport": {
+    "message": "Save diagnostics"
+  },
+  "startOverTitle": {
+    "message": "Start over with an empty vault"
+  },
+  "startOverBody": {
+    "message": "Only if you have no backup. This permanently discards whatever unreadable data remains."
+  },
+  "startOverType": {
+    "message": "Type $1 to confirm"
+  },
+  "startOverAction": {
+    "message": "Erase and start over"
+  },
+  "trashClearOld": {
+    "message": "Erase $1 item(s) older than $2 days for good"
+  },
+  "advLead": {
+    "message": "Clock, diagnostics, and recovery tools."
+  },
+  "clipRowTitle": {
+    "message": "Clear 30 seconds after copying"
+  },
+  "afsLead": {
+    "message": "Sites where you turned on code suggestions. On each, Chrome lets Sixkey read and change the site's pages; Sixkey looks only for the verification-code box and sends nothing anywhere. Secure (https) pages only."
+  },
+  "afsNone": {
+    "message": "No sites yet. After a fill on an https site, Sixkey offers to turn it on there."
+  },
+  "afsOff": {
+    "message": "Turned off in Chrome"
+  },
+  "afsAgain": {
+    "message": "Turn on again"
+  },
+  "afsRemove": {
+    "message": "Remove"
+  },
+  "afsChrome": {
+    "message": "Chrome keeps this list of sites in its own settings, unencrypted. Remove also gives back Chrome's access to that site; Chrome remembers that you allowed it once, so turning it on again does not ask again."
+  },
+  "afsOld": {
+    "message": "Code suggestions need Chrome 140 or later."
+  },
+  "trashKeptUnchecked": {
+    "message": "$1 vault(s) this profile kept from before a sync join could not be checked here, so an account you erased may still be in them. Delete them in Settings › Sync if it must be gone everywhere."
+  },
+  "startOverKept": {
+    "message": "This profile also keeps $1 vault(s) from before a sync join. Starting over does not erase them; delete them in Settings › Sync if you want them gone."
+  }
+}

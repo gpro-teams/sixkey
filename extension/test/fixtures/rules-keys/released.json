@@ -1,0 +1,5 @@
+{
+  "note": "The site rules' signing keys of the store releases (scripts/rules-keys.mjs STORE_RULES_KEYS), copied here by each release (rules/SIGNING.md): `store`, the last release's list, and `ever`, every key any release has pinned, which only grows. test/unit/rules-update-gate.test.ts holds the store list to them, so the list moves forward only at a release and a dropped key never comes back. No release has pinned any yet.",
+  "store": [],
+  "ever": []
+}

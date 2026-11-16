@@ -1,0 +1,26 @@
+{
+  "ruTitle": {
+    "message": "Get the latest site rules"
+  },
+  "ruLead": {
+    "message": "Once a day, Sixkey asks $1 for newer site rules, signed by Sixkey, that help it find code boxes. That server sees your IP address, your browser's version and when you asked, never your accounts or sites."
+  },
+  "ruBuiltIn": {
+    "message": "Site rules: built in, version $1"
+  },
+  "ruUpdated": {
+    "message": "Site rules: updated on $1 (version $2)"
+  },
+  "ruWaiting": {
+    "message": "Waiting for a version newer than $1"
+  },
+  "ruChecking": {
+    "message": "Checking for newer site rules…"
+  },
+  "ruFailed": {
+    "message": "That didn't go through. Try again."
+  },
+  "ruUnread": {
+    "message": "This setting can't be read right now. Reload the page to try again."
+  }
+}

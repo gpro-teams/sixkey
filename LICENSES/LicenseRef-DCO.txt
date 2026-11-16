@@ -1,0 +1,6 @@
+The Developer Certificate of Origin, version 1.1 (DCO.txt in the repository root), is a text of the Linux Foundation
+and its contributors, published at https://developercertificate.org/. Its terms are stated on that page: it may be
+copied and distributed in verbatim copies, and it may not be changed.
+
+Sixkey uses it as the terms of the "Signed-off-by:" line on every contribution (CONTRIBUTING.md). It is not the licence
+of any of Sixkey's own files; LICENSE.md says which licence covers which part of the repository.

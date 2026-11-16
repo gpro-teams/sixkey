@@ -1,0 +1,187 @@
+/* PHASE0X-PLAN B3: the confirm page for a paste or a scan. Loaded with the page itself, not with the popup. Tokens
+   only, so the dark theme needs no rules of its own. */
+.cf {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cf-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cf-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  animation: rise 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.cf-card .who b {
+  font-size: 15px;
+}
+.cf-card .who i {
+  font-family: var(--f-num);
+  font-size: 11px;
+}
+.cf .field input {
+  min-height: 34px;
+  font-size: 13.5px;
+}
+.cf-alert {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--sunken);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.cf-alert > .ic {
+  margin-top: 1px;
+  flex: none;
+  color: var(--muted);
+}
+.cf-alert b {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+}
+.cf-alert.warn {
+  background: var(--warn-soft);
+}
+.cf-alert.warn > .ic {
+  color: var(--warn);
+}
+.cf-alert.bad {
+  background: var(--danger-soft);
+}
+.cf-alert.bad > .ic {
+  color: var(--danger);
+}
+.cf-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 7px;
+}
+.cf-choice label,
+.cf-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.cf-choice input,
+.cf-check input,
+.cf-list input {
+  flex: none;
+  margin: 0;
+  accent-color: var(--brass);
+}
+.cf-check {
+  padding: 8px 11px;
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.cf-check:has(input:checked) {
+  background: var(--brass-soft);
+  box-shadow: inset 0 0 0 1px var(--brass-line);
+  color: var(--ink);
+}
+.cf-line,
+.cf-next {
+  margin: 0;
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.cf-line .ic,
+.cf-next .ic {
+  margin-top: 1px;
+  flex: none;
+}
+.cf-next {
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--brass-soft);
+  color: var(--brass-ink);
+}
+.cf-more {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.cf-more span {
+  flex: 1;
+}
+.cf-count {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.cf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cf-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+}
+.cf-list label.off {
+  cursor: default;
+  opacity: 0.62;
+}
+.cf-list .who {
+  flex: 1;
+  min-width: 0;
+}
+.cf-list em {
+  flex: none;
+  max-width: 45%;
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cf-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px 12px 14px;
+  border-top: 1px solid var(--line);
+}

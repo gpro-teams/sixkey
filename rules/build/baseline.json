@@ -1,0 +1,1218 @@
+{
+  "format": "sixkey-rules",
+  "kind": "baseline",
+  "schema": 1,
+  "version": 1,
+  "created": "2026-11-04",
+  "license": "AGPL-3.0-or-later AND MIT",
+  "source": "https://github.com/gpro-teams/sixkey/tree/rules-v1/rules",
+  "upstream": [
+    {
+      "id": "apple-shared-credentials",
+      "url": "https://github.com/apple/password-manager-resources",
+      "commit": "e6a7cf40fe91aa8897b1be07b0ab416332c31488",
+      "path": "quirks/shared-credentials.json",
+      "sha256": "c79bfc702783df253ce4c33bd5c61d4ea7e1be6e51d93418a3685a559ac2f1ce",
+      "license": "MIT"
+    },
+    {
+      "id": "apple-append-2fa",
+      "url": "https://github.com/apple/password-manager-resources",
+      "commit": "e6a7cf40fe91aa8897b1be07b0ab416332c31488",
+      "path": "quirks/websites-that-append-2fa-to-password.json",
+      "sha256": "0b7049bd13629a13491d516455aadacb5056a7764f34aff4b2de10165e20f9ac",
+      "license": "MIT"
+    }
+  ],
+  "rules": {},
+  "hosts": {},
+  "aliases": [
+    {
+      "f": [
+        "a2hosting.com"
+      ],
+      "t": [
+        "hosting.com"
+      ]
+    },
+    {
+      "f": [
+        "adobelogin.com",
+        "behance.net"
+      ],
+      "t": [
+        "adobe.com"
+      ]
+    },
+    {
+      "f": [
+        "angel.co"
+      ],
+      "t": [
+        "wellfound.com"
+      ]
+    },
+    {
+      "f": [
+        "appannie.com"
+      ],
+      "t": [
+        "data.ai"
+      ]
+    },
+    {
+      "f": [
+        "bit.ly"
+      ],
+      "t": [
+        "bitly.com"
+      ]
+    },
+    {
+      "f": [
+        "borradh.io"
+      ],
+      "t": [
+        "borrah.com"
+      ]
+    },
+    {
+      "f": [
+        "carsensor.net",
+        "hotpepper.jp",
+        "jalan.net"
+      ],
+      "t": [
+        "point.recruit.co.jp"
+      ]
+    },
+    {
+      "f": [
+        "cleanshot.cloud"
+      ],
+      "t": [
+        "cleanshot.com"
+      ]
+    },
+    {
+      "f": [
+        "coachoutlet.com"
+      ],
+      "t": [
+        "coach.com"
+      ]
+    },
+    {
+      "f": [
+        "costco.ca"
+      ],
+      "t": [
+        "signin.costco.com"
+      ]
+    },
+    {
+      "f": [
+        "dhl.com"
+      ],
+      "t": [
+        "mydhl.express.dhl"
+      ]
+    },
+    {
+      "f": [
+        "digiromania.ro",
+        "rcs-rds.ro"
+      ],
+      "t": [
+        "digi.ro"
+      ]
+    },
+    {
+      "f": [
+        "discordapp.com"
+      ],
+      "t": [
+        "discord.com"
+      ]
+    },
+    {
+      "f": [
+        "discovercard.com"
+      ],
+      "t": [
+        "discover.com"
+      ]
+    },
+    {
+      "f": [
+        "dq.com"
+      ],
+      "t": [
+        "dairyqueen.com"
+      ]
+    },
+    {
+      "f": [
+        "ebay-kleinanzeigen.de"
+      ],
+      "t": [
+        "kleinanzeigen.de"
+      ]
+    },
+    {
+      "f": [
+        "eo.nl",
+        "gld.nl",
+        "kro-ncrv.nl",
+        "l1.nl",
+        "npo.nl",
+        "npoluister.nl",
+        "nporadio5.nl",
+        "omroepwest.nl",
+        "omroepzeeland.nl",
+        "omropfryslan.nl",
+        "oost.nl",
+        "rijnmond.nl",
+        "rtvdrenthe.nl",
+        "rtvnoord.nl",
+        "rtvutrecht.nl",
+        "wnl.tv"
+      ],
+      "t": [
+        "id.npo.nl"
+      ]
+    },
+    {
+      "f": [
+        "fancourier.ro"
+      ],
+      "t": [
+        "selfawb.ro"
+      ]
+    },
+    {
+      "f": [
+        "flaglerclerk.com"
+      ],
+      "t": [
+        "flaglerclerk.gov"
+      ]
+    },
+    {
+      "f": [
+        "flyblade.com"
+      ],
+      "t": [
+        "blade.com"
+      ]
+    },
+    {
+      "f": [
+        "gamechanger.com"
+      ],
+      "t": [
+        "gc.com"
+      ]
+    },
+    {
+      "f": [
+        "gamefaqs.com"
+      ],
+      "t": [
+        "gamefaqs.gamespot.com"
+      ]
+    },
+    {
+      "f": [
+        "gamepedia.com",
+        "wikia.com",
+        "wikia.org",
+        "wikicities.com"
+      ],
+      "t": [
+        "fandom.com"
+      ]
+    },
+    {
+      "f": [
+        "gazduire.com.ro",
+        "gazduire.net"
+      ],
+      "t": [
+        "admin.ro"
+      ]
+    },
+    {
+      "f": [
+        "hawaiianairlines.com"
+      ],
+      "t": [
+        "alaskaair.com"
+      ]
+    },
+    {
+      "f": [
+        "hbo.com",
+        "hbomax.com",
+        "hbonow.com"
+      ],
+      "t": [
+        "max.com"
+      ]
+    },
+    {
+      "f": [
+        "hdfcbank.com"
+      ],
+      "t": [
+        "hdfc.bank.in"
+      ]
+    },
+    {
+      "f": [
+        "heroku.com"
+      ],
+      "t": [
+        "verify.salesforce.com"
+      ]
+    },
+    {
+      "f": [
+        "hiive.com"
+      ],
+      "t": [
+        "clarity.com"
+      ]
+    },
+    {
+      "f": [
+        "hk.jobsdb.com",
+        "jobsdb.com",
+        "jobstreet.com",
+        "myjobstreet.jobstreet.co.id",
+        "myjobstreet.jobstreet.com.my",
+        "myjobstreet.jobstreet.com.ph",
+        "myjobstreet.jobstreet.com.sg",
+        "sg.jobsdb.com",
+        "th.jobsdb.com",
+        "www.seek.co.nz",
+        "www.seek.com.au"
+      ],
+      "t": [
+        "login.seek.com"
+      ]
+    },
+    {
+      "f": [
+        "ing.de"
+      ],
+      "t": [
+        "ing.com"
+      ]
+    },
+    {
+      "f": [
+        "kakao.com"
+      ],
+      "t": [
+        "daum.net"
+      ]
+    },
+    {
+      "f": [
+        "keypointcu.com"
+      ],
+      "t": [
+        "kpcu.com"
+      ]
+    },
+    {
+      "f": [
+        "kyomu0.gakumu.titech.ac.jp",
+        "portal.titech.ac.jp"
+      ],
+      "t": [
+        "portal.nap.gsic.titech.ac.jp"
+      ]
+    },
+    {
+      "f": [
+        "lendingclub.com"
+      ],
+      "t": [
+        "happen.com"
+      ]
+    },
+    {
+      "f": [
+        "letsdeel.com"
+      ],
+      "t": [
+        "deel.com"
+      ]
+    },
+    {
+      "f": [
+        "login.workflowmanager.app",
+        "workflowmanager.app"
+      ],
+      "t": [
+        "infotechexpress.com"
+      ]
+    },
+    {
+      "f": [
+        "mega.io"
+      ],
+      "t": [
+        "mega.nz"
+      ]
+    },
+    {
+      "f": [
+        "mercadolibre.cl",
+        "mercadolibre.co.cr",
+        "mercadolibre.com.ar",
+        "mercadolibre.com.bo",
+        "mercadolibre.com.co",
+        "mercadolibre.com.do",
+        "mercadolibre.com.ec",
+        "mercadolibre.com.gt",
+        "mercadolibre.com.hn",
+        "mercadolibre.com.mx",
+        "mercadolibre.com.ni",
+        "mercadolibre.com.pa",
+        "mercadolibre.com.pe",
+        "mercadolibre.com.py",
+        "mercadolibre.com.sv",
+        "mercadolibre.com.uy",
+        "mercadolibre.com.ve",
+        "mercadopago.cl",
+        "mercadopago.com.ar",
+        "mercadopago.com.co",
+        "mercadopago.com.ec",
+        "mercadopago.com.mx",
+        "mercadopago.com.pe",
+        "mercadopago.com.uy",
+        "mercadopago.com.ve"
+      ],
+      "t": [
+        "mercadolibre.com"
+      ]
+    },
+    {
+      "f": [
+        "mercadolivre.com.br",
+        "mercadopago.com.br"
+      ],
+      "t": [
+        "mercadolivre.com"
+      ]
+    },
+    {
+      "f": [
+        "moneybird.de",
+        "moneybird.nl"
+      ],
+      "t": [
+        "moneybird.com"
+      ]
+    },
+    {
+      "f": [
+        "nebula.app",
+        "watchnebula.com"
+      ],
+      "t": [
+        "nebula.tv"
+      ]
+    },
+    {
+      "f": [
+        "nextinpact.com"
+      ],
+      "t": [
+        "next.ink"
+      ]
+    },
+    {
+      "f": [
+        "nordpass.com",
+        "nordvpn.com"
+      ],
+      "t": [
+        "nordaccount.com"
+      ]
+    },
+    {
+      "f": [
+        "overstock.com"
+      ],
+      "t": [
+        "bedbathandbeyond.com"
+      ]
+    },
+    {
+      "f": [
+        "parkmobile.us"
+      ],
+      "t": [
+        "parkmobile.io"
+      ]
+    },
+    {
+      "f": [
+        "peacock.com"
+      ],
+      "t": [
+        "peacocktv.com"
+      ]
+    },
+    {
+      "f": [
+        "prog-8.com"
+      ],
+      "t": [
+        "progate.com"
+      ]
+    },
+    {
+      "f": [
+        "raywenderlich.com"
+      ],
+      "t": [
+        "kodeco.com"
+      ]
+    },
+    {
+      "f": [
+        "redblue.benjamincrozat.com"
+      ],
+      "t": [
+        "redblueonline.com"
+      ]
+    },
+    {
+      "f": [
+        "runtastic.com"
+      ],
+      "t": [
+        "adidas.com"
+      ]
+    },
+    {
+      "f": [
+        "scottscheapflights.com"
+      ],
+      "t": [
+        "going.com"
+      ]
+    },
+    {
+      "f": [
+        "smash.gg"
+      ],
+      "t": [
+        "start.gg"
+      ]
+    },
+    {
+      "f": [
+        "sncf-connect.com"
+      ],
+      "t": [
+        "auth.monidentifiant.sncf"
+      ]
+    },
+    {
+      "f": [
+        "szn.cz"
+      ],
+      "t": [
+        "seznam.cz"
+      ]
+    },
+    {
+      "f": [
+        "telegram.me"
+      ],
+      "t": [
+        "telegram.org"
+      ]
+    },
+    {
+      "f": [
+        "transferwise.com"
+      ],
+      "t": [
+        "wise.com"
+      ]
+    },
+    {
+      "f": [
+        "tvnow.at",
+        "tvnow.ch",
+        "tvnow.de"
+      ],
+      "t": [
+        "auth.rtl.de",
+        "rtlplus.com",
+        "rtlplus.de"
+      ]
+    },
+    {
+      "f": [
+        "twitter.com"
+      ],
+      "t": [
+        "x.com"
+      ]
+    },
+    {
+      "f": [
+        "wacom.eu"
+      ],
+      "t": [
+        "wacom.com"
+      ]
+    },
+    {
+      "f": [
+        "wizardingworld.com"
+      ],
+      "t": [
+        "harrypotter.com"
+      ]
+    },
+    {
+      "f": [
+        "www.vistaprint.ca"
+      ],
+      "t": [
+        "account.vistaprint.com"
+      ]
+    },
+    {
+      "f": [
+        "xiaomi.com"
+      ],
+      "t": [
+        "mi.com"
+      ]
+    },
+    {
+      "f": [
+        "youneedabudget.com"
+      ],
+      "t": [
+        "ynab.com"
+      ]
+    },
+    {
+      "s": [
+        "3docean.net",
+        "audiojungle.net",
+        "codecanyon.net",
+        "envato.com",
+        "graphicriver.net",
+        "photodune.net",
+        "placeit.net",
+        "themeforest.net",
+        "tutsplus.com",
+        "videohive.net"
+      ]
+    },
+    {
+      "s": [
+        "acmemarkets.com",
+        "albertsons.com",
+        "andronicos.com",
+        "balduccis.com",
+        "carrsqc.com",
+        "haggen.com",
+        "jewelosco.com",
+        "kingsfoodmarkets.com",
+        "pavilions.com",
+        "randalls.com",
+        "safeway.com",
+        "shaws.com",
+        "starmarket.com",
+        "tomthumb.com",
+        "vons.com"
+      ]
+    },
+    {
+      "s": [
+        "ad.nl",
+        "dpgmedia.nl"
+      ]
+    },
+    {
+      "s": [
+        "airbnb.at",
+        "airbnb.be",
+        "airbnb.ca",
+        "airbnb.ch",
+        "airbnb.cl",
+        "airbnb.co.cr",
+        "airbnb.co.id",
+        "airbnb.co.in",
+        "airbnb.co.kr",
+        "airbnb.co.nz",
+        "airbnb.co.uk",
+        "airbnb.co.ve",
+        "airbnb.com",
+        "airbnb.com.ar",
+        "airbnb.com.au",
+        "airbnb.com.bo",
+        "airbnb.com.br",
+        "airbnb.com.bz",
+        "airbnb.com.co",
+        "airbnb.com.ec",
+        "airbnb.com.gt",
+        "airbnb.com.hk",
+        "airbnb.com.hn",
+        "airbnb.com.mt",
+        "airbnb.com.my",
+        "airbnb.com.ni",
+        "airbnb.com.pa",
+        "airbnb.com.pe",
+        "airbnb.com.py",
+        "airbnb.com.sg",
+        "airbnb.com.sv",
+        "airbnb.com.tr",
+        "airbnb.com.tw",
+        "airbnb.cz",
+        "airbnb.de",
+        "airbnb.dk",
+        "airbnb.es",
+        "airbnb.fi",
+        "airbnb.fr",
+        "airbnb.gr",
+        "airbnb.gy",
+        "airbnb.hu",
+        "airbnb.ie",
+        "airbnb.is",
+        "airbnb.it",
+        "airbnb.jp",
+        "airbnb.mx",
+        "airbnb.nl",
+        "airbnb.no",
+        "airbnb.pl",
+        "airbnb.pt",
+        "airbnb.ru",
+        "airbnb.se"
+      ]
+    },
+    {
+      "s": [
+        "airfrance.com",
+        "airfranceklm.com",
+        "flyingblue.com",
+        "klm.com"
+      ]
+    },
+    {
+      "s": [
+        "airnewzealand.co.nz",
+        "airnewzealand.com",
+        "airnewzealand.com.au"
+      ]
+    },
+    {
+      "s": [
+        "albertsonsmarket.com",
+        "amigosunited.com",
+        "marketstreetunited.com",
+        "unitedsupermarkets.com"
+      ]
+    },
+    {
+      "s": [
+        "alelo.com.br",
+        "meualelo.com.br"
+      ]
+    },
+    {
+      "s": [
+        "alibaba.com",
+        "aliexpress.com",
+        "aliexpress.us"
+      ]
+    },
+    {
+      "s": [
+        "allegro.cz",
+        "allegro.pl"
+      ]
+    },
+    {
+      "s": [
+        "ana.co.jp",
+        "astyle.jp"
+      ]
+    },
+    {
+      "s": [
+        "anthem.com",
+        "sydneyhealth.com"
+      ]
+    },
+    {
+      "s": [
+        "app.onsign.com",
+        "app.onsign.tv"
+      ]
+    },
+    {
+      "s": [
+        "apptribu.com",
+        "mytribunews.com"
+      ]
+    },
+    {
+      "s": [
+        "askubuntu.com",
+        "mathoverflow.net",
+        "serverfault.com",
+        "stackapps.com",
+        "stackexchange.com",
+        "stackoverflow.com",
+        "superuser.com"
+      ]
+    },
+    {
+      "s": [
+        "auth.wikimedia.org",
+        "commons.wikimedia.org",
+        "incubator.wikimedia.org",
+        "mediawiki.org",
+        "meta.wikimedia.org",
+        "outreach.wikimedia.org",
+        "species.wikimedia.org",
+        "wikibooks.org",
+        "wikidata.org",
+        "wikimania.wikimedia.org",
+        "wikinews.org",
+        "wikipedia.org",
+        "wikiquote.org",
+        "wikisource.org",
+        "wikiversity.org",
+        "wikivoyage.org",
+        "wiktionary.org"
+      ]
+    },
+    {
+      "s": [
+        "bgg.cc",
+        "boardgamegeek.com",
+        "rpggeek.com",
+        "videogamegeek.com"
+      ]
+    },
+    {
+      "s": [
+        "bible.com",
+        "youversion.com"
+      ]
+    },
+    {
+      "s": [
+        "broman.group",
+        "motonet.fi"
+      ]
+    },
+    {
+      "s": [
+        "bsky.app",
+        "bsky.social"
+      ]
+    },
+    {
+      "s": [
+        "canadiantire.ca",
+        "triangle.com"
+      ]
+    },
+    {
+      "s": [
+        "candyrect.com",
+        "nekochat.cn"
+      ]
+    },
+    {
+      "s": [
+        "casemates.com",
+        "hammacher.com",
+        "mediocre.com",
+        "mediocre.org",
+        "meh.com",
+        "mercatalyst.com",
+        "morningsave.com",
+        "shop.univision.com",
+        "sidedeal.com",
+        "stores.com"
+      ]
+    },
+    {
+      "s": [
+        "centralfcu.com",
+        "centralfcu.org"
+      ]
+    },
+    {
+      "s": [
+        "chat.com",
+        "chatgpt.com",
+        "openai.com"
+      ]
+    },
+    {
+      "s": [
+        "check24.at",
+        "check24.com",
+        "check24.de",
+        "check24.es"
+      ]
+    },
+    {
+      "s": [
+        "chevrolet.com",
+        "gm.com"
+      ]
+    },
+    {
+      "s": [
+        "collecting.com",
+        "collectingcars.com",
+        "watchcollecting.com"
+      ]
+    },
+    {
+      "s": [
+        "community.pioneerdj.com",
+        "pioneerdj.com",
+        "rekordbox.com"
+      ]
+    },
+    {
+      "s": [
+        "coolblue.be",
+        "coolblue.de",
+        "coolblue.nl"
+      ]
+    },
+    {
+      "s": [
+        "dan.org",
+        "diversalertnetwork.org"
+      ]
+    },
+    {
+      "s": [
+        "discord.store",
+        "discordmerch.com"
+      ]
+    },
+    {
+      "s": [
+        "disney.com",
+        "disneyplus.com",
+        "disneystore.com",
+        "espn.com",
+        "go.com",
+        "hulu.com",
+        "shopdisney.com",
+        "starplus.com"
+      ]
+    },
+    {
+      "s": [
+        "dmsguild.com",
+        "drivethrucards.com",
+        "drivethrucomics.com",
+        "drivethrufiction.com",
+        "drivethrurpg.com",
+        "pathfinderinfinite.com",
+        "storytellersvault.com",
+        "wargamevault.com"
+      ]
+    },
+    {
+      "s": [
+        "dnt.abine.com",
+        "ironvest.com"
+      ]
+    },
+    {
+      "s": [
+        "e621.net",
+        "e926.net"
+      ]
+    },
+    {
+      "s": [
+        "ebay.at",
+        "ebay.be",
+        "ebay.ca",
+        "ebay.ch",
+        "ebay.cn",
+        "ebay.co.th",
+        "ebay.co.uk",
+        "ebay.com",
+        "ebay.com.au",
+        "ebay.com.hk",
+        "ebay.com.my",
+        "ebay.com.sg",
+        "ebay.com.tw",
+        "ebay.de",
+        "ebay.es",
+        "ebay.fr",
+        "ebay.ie",
+        "ebay.it",
+        "ebay.nl",
+        "ebay.ph",
+        "ebay.pl",
+        "ebay.vn"
+      ]
+    },
+    {
+      "s": [
+        "eki-net.com",
+        "jreast.co.jp",
+        "jrepoint.jp"
+      ]
+    },
+    {
+      "s": [
+        "epicgames.com",
+        "fortnite.com",
+        "twinmotion.com",
+        "unrealengine.com"
+      ]
+    },
+    {
+      "s": [
+        "eventbrite.at",
+        "eventbrite.be",
+        "eventbrite.ca",
+        "eventbrite.ch",
+        "eventbrite.cl",
+        "eventbrite.co",
+        "eventbrite.com",
+        "eventbrite.de",
+        "eventbrite.dk",
+        "eventbrite.es",
+        "eventbrite.fi",
+        "eventbrite.fr",
+        "eventbrite.hk",
+        "eventbrite.ie",
+        "eventbrite.in",
+        "eventbrite.it",
+        "eventbrite.my",
+        "eventbrite.nl",
+        "eventbrite.ph",
+        "eventbrite.pt",
+        "eventbrite.se",
+        "eventbrite.sg"
+      ]
+    },
+    {
+      "s": [
+        "express1040.com",
+        "freetaxusa.com",
+        "taxhawk.com"
+      ]
+    },
+    {
+      "s": [
+        "firecut.ai",
+        "firecut.com"
+      ]
+    },
+    {
+      "s": [
+        "gedi.it",
+        "repubblica.it"
+      ]
+    },
+    {
+      "s": [
+        "hejj.io",
+        "skoophr.com"
+      ]
+    },
+    {
+      "s": [
+        "instagram.com",
+        "threads.com",
+        "threads.net"
+      ]
+    },
+    {
+      "s": [
+        "koboldpress.com",
+        "labyrinth.talesofthevaliant.com"
+      ]
+    },
+    {
+      "s": [
+        "lrz.de",
+        "mwn.de",
+        "mytum.de",
+        "tum.de",
+        "tum.edu"
+      ]
+    },
+    {
+      "s": [
+        "makemytrip.com",
+        "makemytrip.global"
+      ]
+    },
+    {
+      "s": [
+        "melio.com",
+        "meliopayments.com"
+      ]
+    },
+    {
+      "s": [
+        "monarch.com",
+        "monarchmoney.com"
+      ]
+    },
+    {
+      "s": [
+        "odnoklassniki.ru",
+        "ok.ru"
+      ]
+    },
+    {
+      "s": [
+        "padmapper.com",
+        "zumper.com",
+        "zumperrentals.com"
+      ]
+    },
+    {
+      "s": [
+        "pinterest.at",
+        "pinterest.ca",
+        "pinterest.ch",
+        "pinterest.cl",
+        "pinterest.co.kr",
+        "pinterest.co.uk",
+        "pinterest.com",
+        "pinterest.com.au",
+        "pinterest.com.mx",
+        "pinterest.de",
+        "pinterest.dk",
+        "pinterest.es",
+        "pinterest.fr",
+        "pinterest.ie",
+        "pinterest.it",
+        "pinterest.jp",
+        "pinterest.nz",
+        "pinterest.ph",
+        "pinterest.pt",
+        "pinterest.ru",
+        "pinterest.se"
+      ]
+    },
+    {
+      "s": [
+        "playstation.com",
+        "sony.com",
+        "sonyentertainmentnetwork.com"
+      ]
+    },
+    {
+      "s": [
+        "plusmember.jp",
+        "tixplus.jp"
+      ]
+    },
+    {
+      "s": [
+        "portal.fitnesspassport.app",
+        "portal.fitnesspassport.co.nz",
+        "portal.fitnesspassport.com.au"
+      ]
+    },
+    {
+      "s": [
+        "postnl.be",
+        "postnl.nl"
+      ]
+    },
+    {
+      "s": [
+        "pretendo.cc",
+        "pretendo.network"
+      ]
+    },
+    {
+      "s": [
+        "profile.callofduty.com",
+        "s.activision.com"
+      ]
+    },
+    {
+      "s": [
+        "proton.me",
+        "protonmail.ch",
+        "protonmail.com",
+        "protonvpn.com"
+      ]
+    },
+    {
+      "s": [
+        "prtimes.com",
+        "prtimes.jp"
+      ]
+    },
+    {
+      "s": [
+        "quicken.com",
+        "simplifimoney.com"
+      ]
+    },
+    {
+      "s": [
+        "redis.com",
+        "redislabs.com"
+      ]
+    },
+    {
+      "s": [
+        "rentcafe.com",
+        "securecafe.com"
+      ]
+    },
+    {
+      "s": [
+        "steamcommunity.com",
+        "steamgames.com",
+        "steampowered.com"
+      ]
+    },
+    {
+      "s": [
+        "ting.com",
+        "tingmobile.com"
+      ]
+    },
+    {
+      "s": [
+        "uspowerboating.com",
+        "ussailing.org"
+      ]
+    }
+  ],
+  "appends": [
+    "auth.redhat.com",
+    "etrade.com",
+    "usaa.com"
+  ]
+}

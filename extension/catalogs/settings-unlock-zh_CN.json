@@ -1,0 +1,47 @@
+{
+  "recoveryTitle": {
+    "message": "输入恢复密钥"
+  },
+  "resetTitle": {
+    "message": "重设密码"
+  },
+  "wrongRecovery": {
+    "message": "恢复密钥不匹配"
+  },
+  "resetLead": {
+    "message": "用恢复密钥可以设置新的主密码。同时会生成新的恢复密钥；在你保存好它之前，什么都不会改变。"
+  },
+  "resetCodeNote": {
+    "message": "现在还没有任何改动：点下方“$1”之前，当前的恢复密钥和密码仍然有效。如果在那之前关闭此页，什么都不会改变，这个新恢复密钥也打不开任何东西。"
+  },
+  "resetChanged": {
+    "message": "在此期间，密码或恢复密钥已在另一个窗口中被更改，所以这里什么都没有改变，刚才显示的恢复密钥也不会生效。请重新开始。"
+  },
+  "lockPinWaiting": {
+    "message": "输一次主密码后，PIN 就能重新使用。"
+  },
+  "pinTitle": {
+    "message": "输入 PIN"
+  },
+  "pinTriesLeft": {
+    "message": "还可以试 $1 次，之后需要主密码。"
+  },
+  "pinWrong": {
+    "message": "PIN 不对，还可以再试 $1 次。"
+  },
+  "pinExhausted": {
+    "message": "PIN 输错次数过多，请输入主密码。"
+  },
+  "pinEnded": {
+    "message": "现在不能用 PIN，请输入主密码。"
+  },
+  "pinRetry": {
+    "message": "期间 Sixkey 已锁定，请重新输入 PIN。"
+  },
+  "useMasterPassword": {
+    "message": "使用主密码"
+  },
+  "usePin": {
+    "message": "使用 PIN"
+  }
+}

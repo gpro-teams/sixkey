@@ -1,0 +1,290 @@
+{
+  "deviceOnlyBody": {
+    "message": "Your accounts are protected only by a key stored next to them. That stops casual reading but not someone, or malware, with access to this browser profile. With a master password, a copy of the profile is as safe as the password you choose."
+  },
+  "enablePassword": {
+    "message": "Turn on master password"
+  },
+  "changePasswordTitle": {
+    "message": "Change master password"
+  },
+  "newCodeTitle": {
+    "message": "New recovery key"
+  },
+  "newCodeBody": {
+    "message": "Replaces the current key, which stops working."
+  },
+  "newCodeAction": {
+    "message": "Create new recovery key"
+  },
+  "rotateTitle": {
+    "message": "Replace the encryption key"
+  },
+  "rotateBody": {
+    "message": "Use this if you think an old copy of your data or key may have leaked. Everything is re-encrypted with a new key and you get a new recovery key."
+  },
+  "rotateAction": {
+    "message": "Replace key"
+  },
+  "autoLockTitle": {
+    "message": "Automatic lock"
+  },
+  "autoLockWhen": {
+    "message": "Lock"
+  },
+  "alIdle": {
+    "message": "after being idle"
+  },
+  "alSession": {
+    "message": "when the browser restarts"
+  },
+  "alAlways": {
+    "message": "every time the popup closes"
+  },
+  "autoLockNote": {
+    "message": "Applies when a master password is set. Updating or reloading the extension always locks it."
+  },
+  "residueWarning": {
+    "message": "Accounts you added before turning this on may still be recoverable from leftover data on disk until the browser compacts its storage. If this browser profile was ever copied or shared, re-issue those accounts' 2FA keys at each service."
+  },
+  "secLead": {
+    "message": "How your accounts are protected on this computer, and what happens when you lock."
+  },
+  "trustNoTrack": {
+    "message": "No tracking, no network"
+  },
+  "smTitle": {
+    "message": "Security mode"
+  },
+  "smLead": {
+    "message": "Two ready-made sets of the settings below, the same as the question when Sixkey was set up. Change any one of them and the mode shows as Custom."
+  },
+  "smCustomTitle": {
+    "message": "Custom"
+  },
+  "smCustomBody": {
+    "message": "Your own choice of the settings below. Pick a mode above to go back to it."
+  },
+  "smLocksNow": {
+    "message": "Changing when Sixkey locks also locks it right away. You then unlock it again with your master password."
+  },
+  "smLockedNow": {
+    "message": "Sixkey is locked now. Unlock it at the top of this page to go on."
+  },
+  "smClipNote": {
+    "message": "In a shared or automated profile, also clear the clipboard after each copy:"
+  },
+  "secNoticeBad": {
+    "message": "The security record can't be read."
+  },
+  "secLogLead": {
+    "message": "Wrong passwords, exports and key changes in this browser profile, with the time only. An alert, not evidence: anyone with a copy of the profile can change it."
+  },
+  "secLogCount": {
+    "message": "Wrong attempts not yet shown after an unlock: $1"
+  },
+  "secLogEmpty": {
+    "message": "Nothing recorded yet."
+  },
+  "secLogDamaged": {
+    "message": "It is damaged. The next entry starts a new one."
+  },
+  "secLogNewer": {
+    "message": "A newer version of Sixkey wrote it. This version does not add to it."
+  },
+  "secLogOlder": {
+    "message": "and $1 older"
+  },
+  "secLogClear": {
+    "message": "Clear record"
+  },
+  "secLogClearLead": {
+    "message": "Needs your master password. A wrong one is refused and recorded. One dated line stays."
+  },
+  "secKUnlockFailed": {
+    "message": "Wrong master password"
+  },
+  "secKRecoveryFailed": {
+    "message": "Wrong recovery key"
+  },
+  "secKRecoveryUsed": {
+    "message": "Recovery key accepted"
+  },
+  "secKExportEncrypted": {
+    "message": "Encrypted backup saved"
+  },
+  "secKExportPlain": {
+    "message": "Plain text list saved"
+  },
+  "secKExportSubset": {
+    "message": "Selected accounts exported"
+  },
+  "secKPasswordEnabled": {
+    "message": "Master password turned on"
+  },
+  "secKPasswordChanged": {
+    "message": "Master password changed"
+  },
+  "secKPasswordReset": {
+    "message": "Master password reset with the recovery key"
+  },
+  "secKKeyRotated": {
+    "message": "Encryption key replaced"
+  },
+  "secKRecoveryCodeNew": {
+    "message": "New recovery key made"
+  },
+  "secKLogCleared": {
+    "message": "Record cleared"
+  },
+  "secInvTitle": {
+    "message": "What Sixkey keeps in this browser profile"
+  },
+  "secInvKeysPw": {
+    "message": "Your accounts, encrypted, and the key that opens them, locked by your master password and by your recovery key."
+  },
+  "secInvKeysDevice": {
+    "message": "Your accounts, encrypted, and the key that opens them, kept beside them unlocked: a copy of this profile opens them."
+  },
+  "secInvSnaps": {
+    "message": "$1 older encrypted copies (the last 10 saves, one a day for 7 days)."
+  },
+  "secInvMirror": {
+    "message": "A second encrypted copy, and up to 7 daily ones, in this profile's IndexedDB."
+  },
+  "secInvNoMirror": {
+    "message": "No copy found in this profile's IndexedDB."
+  },
+  "secInvSettings": {
+    "message": "Settings: locking, display, language, theme, any install warning, an ID that orders edits, upkeep markers (no keys), and the last backup ($1)."
+  },
+  "secInvLogs": {
+    "message": "This record, notes of automatic restores, and a log of minor problems. None holds keys, codes or account names."
+  },
+  "secInvSession": {
+    "message": "While unlocked: the opened key, in the browser's memory-only session storage (not when locking every time)."
+  },
+  "secKSyncOn": {
+    "message": "Sync turned on in this profile"
+  },
+  "secKSyncOff": {
+    "message": "Sync turned off in this profile"
+  },
+  "secKIdentityRestored": {
+    "message": "This device's sync identity restored from its encrypted copy"
+  },
+  "secKKeysAdopted": {
+    "message": "Keys changed on another device were taken over here"
+  },
+  "secKDeviceApproved": {
+    "message": "A new device was approved from this profile"
+  },
+  "secKDeviceRevoked": {
+    "message": "A device was revoked from this profile"
+  },
+  "secKHistoryCleared": {
+    "message": "The server's history was cleared"
+  },
+  "secKPrfEnrolled": {
+    "message": "Unlock with Touch ID or Windows Hello added"
+  },
+  "secKPrfRemoved": {
+    "message": "Unlock with Touch ID or Windows Hello removed"
+  },
+  "secKPrfFailed": {
+    "message": "Unlocking with Touch ID or Windows Hello failed"
+  },
+  "secKeysInSyncTitle": {
+    "message": "Master password, recovery key and keys"
+  },
+  "secKeysInSyncBody": {
+    "message": "Sync is on, so these change in the Sync section: every device then gets the change."
+  },
+  "secKeysInSyncOpen": {
+    "message": "Open Sync"
+  },
+  "secKKeysAdoptedBack": {
+    "message": "Keys this device had used before were taken back from the server"
+  },
+  "pinBoxTitle": {
+    "message": "PIN quick unlock"
+  },
+  "pinLead": {
+    "message": "A PIN of 4 to 8 digits opens Sixkey again after it locks, also after the browser restarts. Don't reuse your phone or bank PIN."
+  },
+  "pinHonest": {
+    "message": "A PIN stops people at your computer: after 5 wrong tries only the master password opens Sixkey. It does not stop programs on this computer, or anyone who opens the browser's developer tools."
+  },
+  "pinRoot": {
+    "message": "The master password always works, and exports, key changes, deleting for good, and setting or changing the PIN still ask for it."
+  },
+  "pinClose": {
+    "message": "To lock whenever the popup closes, choose “$1” under Automatic lock. The PIN opens it again."
+  },
+  "pinOn": {
+    "message": "On ($1 digits)."
+  },
+  "pinWaiting": {
+    "message": "On ($1 digits). It works again after you next type the master password."
+  },
+  "pinShared": {
+    "message": "Not available: this profile is declared shared or controlled by scripts (Security mode), and they could read a PIN."
+  },
+  "pinNeedsPassword": {
+    "message": "Set a master password first."
+  },
+  "pinNew": {
+    "message": "New PIN"
+  },
+  "pinAgain": {
+    "message": "New PIN again"
+  },
+  "pinWeak": {
+    "message": "Too easy to guess. Avoid repeated digits, runs like 1234 and common PINs."
+  },
+  "pinDiffer": {
+    "message": "The two PINs differ."
+  },
+  "pinSet": {
+    "message": "Set PIN"
+  },
+  "pinChange": {
+    "message": "Change PIN"
+  },
+  "pinRemove": {
+    "message": "Remove PIN"
+  },
+  "pinSaved": {
+    "message": "PIN saved. It works now."
+  },
+  "pinRemoved": {
+    "message": "PIN removed."
+  },
+  "quickEndNow": {
+    "message": "End quick unlock and lock"
+  },
+  "quickEnded": {
+    "message": "Ended. Sixkey is locked, and the master password opens it."
+  },
+  "lockShortcutBody": {
+    "message": "Locks Sixkey from any page:"
+  },
+  "secKPinSet": {
+    "message": "PIN set"
+  },
+  "secKPinRemoved": {
+    "message": "PIN removed"
+  },
+  "secKPinFailed": {
+    "message": "Wrong PIN"
+  },
+  "secKQuickEnded": {
+    "message": "PIN quick unlock ended"
+  },
+  "sharesFoldTitle": {
+    "message": "Recovery key shares"
+  },
+  "secKSharesMade": {
+    "message": "Recovery key shares made"
+  }
+}

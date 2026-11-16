@@ -1,0 +1,47 @@
+{
+  "recoveryTitle": {
+    "message": "Enter recovery key"
+  },
+  "resetTitle": {
+    "message": "Reset password"
+  },
+  "wrongRecovery": {
+    "message": "That recovery key does not match"
+  },
+  "resetLead": {
+    "message": "Your recovery key lets you choose a new master password. You get a new recovery key with it, and nothing changes until you have saved that one."
+  },
+  "resetCodeNote": {
+    "message": "Nothing has changed yet: your current recovery key and password keep working until you press “$1” below. If you close this page before that, nothing changes, and this new key opens nothing."
+  },
+  "resetChanged": {
+    "message": "Your password or recovery key was changed in another window meanwhile, so nothing was changed here and the key that was shown will not work. Start again."
+  },
+  "lockPinWaiting": {
+    "message": "The PIN works again once you type the master password."
+  },
+  "pinTitle": {
+    "message": "Enter your PIN"
+  },
+  "pinTriesLeft": {
+    "message": "Tries left: $1. After that, the master password."
+  },
+  "pinWrong": {
+    "message": "Wrong PIN. Tries left: $1."
+  },
+  "pinExhausted": {
+    "message": "Too many wrong PINs. Enter the master password."
+  },
+  "pinEnded": {
+    "message": "The PIN can't be used now. Enter the master password."
+  },
+  "pinRetry": {
+    "message": "Sixkey locked meanwhile. Enter the PIN again."
+  },
+  "useMasterPassword": {
+    "message": "Use master password"
+  },
+  "usePin": {
+    "message": "Use PIN"
+  }
+}

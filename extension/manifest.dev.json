@@ -1,0 +1,9 @@
+{
+  "name": "Sixkey (dev)",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAix4/RyWf/VwkmqaGEwSTTKrI0q7V01o8mgVay7hojuNgc9+t53mIk7n+yqIR4NlU0O8n8T7M2tDty7gHs4/y1OKJg3ZOJaf98T94xDfuO/5zNw2P0X3EdeIgKvft1r8CKQP+VN0BRf69gGAN0BhInyOt/enbmQHUNBtzETdNfV+p27DjguknlVgWE24ChqjWKlmZl9QsoQdvHk7a6kfnnyAlh9kE8TtCle2VR5ACLqKQbrS8bU3u3g/w9QrvkRAhVNRhWNRS5TpkBiX6wLo6I88C+hRseripLV2IjRAEKVeMBOv+/51d84xzFw6uWIxSXqkSJd1kX/eBFbPH+UKGFQIDAQAB",
+  "optional_host_permissions": ["http://127.0.0.1:8787/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; default-src 'self'; connect-src http://127.0.0.1:8787; img-src 'self' data:; font-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+  },
+  "optional_permissions": ["clipboardRead", "clipboardWrite", "scripting"]
+}

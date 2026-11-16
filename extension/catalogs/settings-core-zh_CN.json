@@ -1,0 +1,500 @@
+{
+  "add": {
+    "message": "添加"
+  },
+  "back": {
+    "message": "返回"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "saved": {
+    "message": "已保存"
+  },
+  "delete": {
+    "message": "删除"
+  },
+  "copy": {
+    "message": "复制"
+  },
+  "copied": {
+    "message": "已复制"
+  },
+  "continue": {
+    "message": "继续"
+  },
+  "retry": {
+    "message": "重试"
+  },
+  "gotIt": {
+    "message": "知道了"
+  },
+  "settings": {
+    "message": "设置"
+  },
+  "lock": {
+    "message": "锁定"
+  },
+  "unlock": {
+    "message": "解锁"
+  },
+  "restore": {
+    "message": "恢复"
+  },
+  "generate": {
+    "message": "帮我生成"
+  },
+  "showPassword": {
+    "message": "显示"
+  },
+  "minutes": {
+    "message": "分钟"
+  },
+  "localOnly": {
+    "message": "本机"
+  },
+  "count": {
+    "message": "$1 个账户"
+  },
+  "lostTitle": {
+    "message": "无法读取已保存的数据"
+  },
+  "lostBody": {
+    "message": "Sixkey 读不到你保存的账户，也没有找到可用的副本。请从备份文件恢复。"
+  },
+  "newerTitle": {
+    "message": "需要更新"
+  },
+  "newerBody": {
+    "message": "这份数据由更新版本的 Sixkey 保存。请更新扩展后再打开，数据没有被改动。"
+  },
+  "errorTitle": {
+    "message": "发生了意外错误"
+  },
+  "errorBody": {
+    "message": "发生了意外错误。请重试；仍然失败的话，到 设置 › 高级 保存诊断信息。"
+  },
+  "lockedTitle": {
+    "message": "输入主密码"
+  },
+  "passwordLabel": {
+    "message": "主密码"
+  },
+  "recoveryLabel": {
+    "message": "恢复密钥"
+  },
+  "newPasswordLabel": {
+    "message": "新密码"
+  },
+  "wrongPassword": {
+    "message": "密码错误"
+  },
+  "badRecoveryFormat": {
+    "message": "这看起来不是恢复密钥"
+  },
+  "weakPassword": {
+    "message": "密码太弱"
+  },
+  "addTitle": {
+    "message": "添加账户"
+  },
+  "optionsLead": {
+    "message": "设置、备份和导入。所有数据都留在这台电脑上。"
+  },
+  "secTitle": {
+    "message": "安全"
+  },
+  "deviceOnlyTitle": {
+    "message": "还没有设置主密码"
+  },
+  "passwordLossWarning": {
+    "message": "忘记主密码且丢失恢复密钥，数据将无法找回，我们也无能为力。"
+  },
+  "confirmPasswordLabel": {
+    "message": "再输入一次"
+  },
+  "passwordsDiffer": {
+    "message": "两次输入的密码不一致"
+  },
+  "strengthHint": {
+    "message": "估算强度至少 $1 位。越长越好，随机短语也可以。"
+  },
+  "strengthOk": {
+    "message": "强度足够"
+  },
+  "strengthLow": {
+    "message": "估算强度 $1 / $2 位，还差 $3 位。请加长或避免常见组合。"
+  },
+  "oldPasswordLabel": {
+    "message": "当前密码"
+  },
+  "changePassword": {
+    "message": "修改密码"
+  },
+  "passwordChanged": {
+    "message": "密码已修改"
+  },
+  "unlockToManage": {
+    "message": "解锁后才能管理。"
+  },
+  "recoveryShownTitle": {
+    "message": "请保存你的恢复密钥"
+  },
+  "recoveryShownBody": {
+    "message": "忘记主密码时，这个恢复密钥是唯一的入口。它只显示这一次。请保存在电脑丢失后依然安全的地方，例如打印出来，或存进另一台设备上的密码管理器。"
+  },
+  "saveAsFile": {
+    "message": "保存为文件"
+  },
+  "recoverySavedCheck": {
+    "message": "我已保存恢复密钥"
+  },
+  "lockOnScreenLock": {
+    "message": "电脑锁屏时也锁定"
+  },
+  "addedN": {
+    "message": "已添加 $1 个账户"
+  },
+  "backupTitle": {
+    "message": "备份"
+  },
+  "exportEncrypted": {
+    "message": "保存加密备份"
+  },
+  "restoreTitle": {
+    "message": "从备份恢复"
+  },
+  "restoreBody": {
+    "message": "选择 Sixkey 备份文件，账户会原样恢复。"
+  },
+  "chooseFile": {
+    "message": "选择文件"
+  },
+  "backupPasswordLabel": {
+    "message": "备份密码"
+  },
+  "openBackup": {
+    "message": "打开备份"
+  },
+  "backupContains": {
+    "message": "包含 $1 个账户的备份，保存于 $2"
+  },
+  "backupWrongOrDamaged": {
+    "message": "密码错误，或文件已损坏"
+  },
+  "backupInvalid": {
+    "message": "这不是 Sixkey 备份文件"
+  },
+  "newerFormat": {
+    "message": "这份备份由更新版本的 Sixkey 创建"
+  },
+  "trashTitle": {
+    "message": "回收站"
+  },
+  "clipTitle": {
+    "message": "清空剪贴板"
+  },
+  "clipBody": {
+    "message": "复制验证码 30 秒后自动清空剪贴板，但只在剪贴板里仍是该验证码时才清。这需要浏览器授权读取和修改剪贴板。"
+  },
+  "clipEnable": {
+    "message": "开启"
+  },
+  "clipOn": {
+    "message": "已开启"
+  },
+  "advancedTitle": {
+    "message": "高级"
+  },
+  "invalidData": {
+    "message": "数据过长或格式不对，没有保存"
+  },
+  "languageLabel": {
+    "message": "语言"
+  },
+  "langAuto": {
+    "message": "自动（跟随浏览器）"
+  },
+  "needUnlock": {
+    "message": "Sixkey 已锁定"
+  },
+  "badState": {
+    "message": "目前无法执行"
+  },
+  "alreadyProtected": {
+    "message": "已经设置了主密码"
+  },
+  "protectionLabel": {
+    "message": "保护方式"
+  },
+  "protDevice": {
+    "message": "仅设备密钥"
+  },
+  "protLocked": {
+    "message": "已锁定"
+  },
+  "protNone": {
+    "message": "尚无保险库"
+  },
+  "accountsLabel": {
+    "message": "账户数"
+  },
+  "backupLabel": {
+    "message": "上次备份"
+  },
+  "backupNever": {
+    "message": "从未"
+  },
+  "backupToday": {
+    "message": "今天"
+  },
+  "backupDaysAgo": {
+    "message": "$1 天前"
+  },
+  "stepPassword": {
+    "message": "设置密码"
+  },
+  "stepRecovery": {
+    "message": "保存恢复密钥"
+  },
+  "navMenu": {
+    "message": "分区"
+  },
+  "syncLabel": {
+    "message": "同步"
+  },
+  "syncOff": {
+    "message": "未开启 · 仅本机"
+  },
+  "frSoloTitle": {
+    "message": "只有我用（标准）"
+  },
+  "frSoloBody": {
+    "message": "闲置 15 分钟或锁屏时锁定。"
+  },
+  "frSharedTitle": {
+    "message": "会被共享、云同步或脚本控制"
+  },
+  "frSharedBody": {
+    "message": "每次关闭 Sixkey 都锁定，验证码默认隐藏，不建议在此开启同步。"
+  },
+  "frRailLink": {
+    "message": "现在设置主密码"
+  },
+  "resetDone": {
+    "message": "主密码已重设。今后请使用新密码和新恢复密钥。"
+  },
+  "resetDoneLocked": {
+    "message": "主密码已重设。请用新密码解锁。"
+  },
+  "afsTitle": {
+    "message": "自动填写"
+  },
+  "instTitle": {
+    "message": "不是从 Chrome 应用商店安装的"
+  },
+  "instDetails": {
+    "message": "详情"
+  },
+  "instLong": {
+    "message": "此副本不会自动更新，请自己留意新版本。只从 Sixkey 在 Chrome 应用商店的页面安装，或者用你自己从该页面制作的文件安装。不要安装别人发来的文件。"
+  },
+  "instThisId": {
+    "message": "此副本的扩展 ID"
+  },
+  "instStoreId": {
+    "message": "Sixkey 在 Chrome 应用商店的 ID"
+  },
+  "instNoStoreYet": {
+    "message": "Sixkey 还没有上架 Chrome 应用商店，所以暂时没有可以核对的官方 ID。"
+  },
+  "instLimit": {
+    "message": "这项检查能发现不会自动更新的旧副本，但发现不了被改过的副本：那样的副本可以直接删掉这项检查。"
+  },
+  "lookTitle": {
+    "message": "外观"
+  },
+  "lookCodes": {
+    "message": "验证码"
+  },
+  "lookHide": {
+    "message": "在弹窗和侧边栏中隐藏验证码"
+  },
+  "lookShortcutNone": {
+    "message": "未设置"
+  },
+  "lookShortcutOpen": {
+    "message": "修改快捷键"
+  },
+  "expPwLead": {
+    "message": "每次导出都要重新输入主密码，即使 Sixkey 已解锁。"
+  },
+  "secLogTitle": {
+    "message": "安全记录"
+  },
+  "errLine": {
+    "message": "$1。$2"
+  },
+  "errRead": {
+    "message": "无法读取这台电脑上的 Sixkey 数据"
+  },
+  "errSave": {
+    "message": "这次改动没能保存，账户保持原样"
+  },
+  "errSpace": {
+    "message": "磁盘空间不足，无法保存"
+  },
+  "errNextRetry": {
+    "message": "请重试；仍然失败的话，到 $1 保存诊断信息。"
+  },
+  "errNextRestore": {
+    "message": "请重试；仍然失败的话，到 $1 从备份文件恢复。"
+  },
+  "errNextSpace": {
+    "message": "请先清理这台电脑的磁盘空间，然后重试。"
+  },
+  "errNextCheck": {
+    "message": "请检查后重试。"
+  },
+  "errNextWeak": {
+    "message": "请设得更长一些：几个随机词语就很好，也可以点“$1”。"
+  },
+  "errNextReload": {
+    "message": "请刷新此页面后重试。"
+  },
+  "errNextUnlock": {
+    "message": "请先用主密码解锁，然后重试。"
+  },
+  "errNextBackupPw": {
+    "message": "请输入保存这份备份时设置的密码，它可以与主密码不同。"
+  },
+  "errNextBackupFile": {
+    "message": "请选择用“$1”保存的文件。"
+  },
+  "errNextUpdate": {
+    "message": "请先更新 Sixkey，然后重试。数据没有被改动。"
+  },
+  "errSyncOn": {
+    "message": "此配置文件已开启同步，这项改动必须经同步进行"
+  },
+  "errNextSyncOn": {
+    "message": "请在同步设置中进行，这样每台设备都会更新。数据没有被改动。"
+  },
+  "errCleanupPending": {
+    "message": "这台电脑上还有一次密钥更改没有收尾"
+  },
+  "errNextCleanupPending": {
+    "message": "请先锁定 Sixkey 再解锁，然后重试。数据没有被改动。"
+  },
+  "strengthHintOwn": {
+    "message": "至少 $1 个字符。最好达到 $2 位以上：几个随机词语就很好。"
+  },
+  "strengthLowOwn": {
+    "message": "估算强度 $1 位，低于建议的 $2 位。"
+  },
+  "strengthShort": {
+    "message": "太短：至少 $1 个字符。"
+  },
+  "strengthCommon": {
+    "message": "太容易猜：和常见密码太像。"
+  },
+  "pwWeakWhy": {
+    "message": "拷走这个浏览器配置文件的人可以离线猜，不限次数：一张显卡大约 $1 就能猜出这种强度的密码，显卡越多越快。"
+  },
+  "pwUseAnyway": {
+    "message": "仍然使用"
+  },
+  "pwGroup": {
+    "message": "$1，第 $2 组，共 $3 组"
+  },
+  "pwPlainField": {
+    "message": "改用普通密码框"
+  },
+  "pwWordsHint": {
+    "message": "输入这 5 个词，用空格或连字符隔开都可以。"
+  },
+  "pwOwn": {
+    "message": "自己设置"
+  },
+  "strengthGenerated": {
+    "message": "已生成：$1 位，强度足够。"
+  },
+  "strengthFloor": {
+    "message": "太容易猜：请避开键盘连排、顺序和重复。"
+  },
+  "pwWhyChars": {
+    "message": "$1 个随机字符：约 $2 位，远高于 $3 位的门槛。"
+  },
+  "pwWhyWords": {
+    "message": "$1 个随机单词：约 $2 位，高于 $3 位的门槛。"
+  },
+  "pwSaveMaster": {
+    "message": "请存进你的密码管理器，或抄在纸上。"
+  },
+  "pwSaveFile": {
+    "message": "请存进你的密码管理器，或抄在纸上：没有它就打不开文件。"
+  },
+  "pwUseWords": {
+    "message": "改用单词（更好输入）"
+  },
+  "pwUseChars": {
+    "message": "改用字符"
+  },
+  "pwUseGenerated": {
+    "message": "改用生成的密码"
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinFormat": {
+    "message": "请输入 4 到 8 位数字。"
+  },
+  "eraseNeedsPassword": {
+    "message": "永久删除无法撤销，所以需要输入主密码。"
+  },
+  "railCsb": {
+    "message": "Chrome 同步"
+  },
+  "railCsbBrowser": {
+    "message": "浏览器同步"
+  },
+  "railCsbOff": {
+    "message": "未开启"
+  },
+  "railCsbOn": {
+    "message": "已开启"
+  },
+  "railCsbSaving": {
+    "message": "正在交给…"
+  },
+  "railCsbOk": {
+    "message": "已交给 · $1"
+  },
+  "railCsbSoon": {
+    "message": "稍后自动交给"
+  },
+  "railCsbFailed": {
+    "message": "没交给 · 会自动重试"
+  },
+  "railCsbStopped": {
+    "message": "备份已停"
+  },
+  "sharesInsteadLink": {
+    "message": "我有分片"
+  },
+  "sharesStopWarn": {
+    "message": "用当前恢复密钥做的分片也会一起失效。"
+  },
+  "sharesSwitched": {
+    "message": "已换成分片。请保留旧的恢复密钥，直到浏览器重启后“核对我的分片”通过。"
+  },
+  "grpAccounts": {
+    "message": "账户"
+  },
+  "secLockTab": {
+    "message": "锁定"
+  },
+  "secKeysTab": {
+    "message": "密码与恢复"
+  }
+}

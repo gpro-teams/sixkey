@@ -1,0 +1,254 @@
+{
+  "csTitle": {
+    "message": "自动备份到 Chrome 同步"
+  },
+  "csBody": {
+    "message": "加密后存进 Chrome 同步；同步开着时，它会把备份带到你登录同一 Google 账户的其他电脑。换电脑时，输入主密码就能恢复。免费，不用另外登录。"
+  },
+  "csBodyOther": {
+    "message": "加密后存进浏览器同步。换电脑时，输入主密码就能恢复，前提是这个浏览器会把它同步过去。免费，不用另外登录。"
+  },
+  "csOn": {
+    "message": "开启"
+  },
+  "csCost": {
+    "message": "能用主密码或恢复密钥打开。能进入你 Google 账户的人可以试着猜主密码，主密码越难猜越安全。"
+  },
+  "csCostOther": {
+    "message": "能用主密码或恢复密钥打开。能进入这个浏览器同步所用账户的人可以试着猜主密码，主密码越难猜越安全。"
+  },
+  "csCostRecovery": {
+    "message": "只能用恢复密钥打开，能进入你 Google 账户的人没有密码可猜。"
+  },
+  "csCostRecoveryOther": {
+    "message": "只能用恢复密钥打开，能进入这个浏览器同步所用账户的人没有密码可猜。"
+  },
+  "csSwitch": {
+    "message": "同步里的备份只能用恢复密钥打开"
+  },
+  "csShared": {
+    "message": "这个浏览器配置文件不只你在用：开启后，备份会存进这个 Chrome 登录的 Google 账户，那可能不是你的。"
+  },
+  "csSharedOther": {
+    "message": "这个浏览器配置文件不只你在用：开启后，备份会存进这个浏览器登录的账户，那可能不是你的。"
+  },
+  "csHonest": {
+    "message": "只有 Chrome 登录了 Google 账户、开着同步并勾选了“扩展程序”，才会上传。Sixkey 只能确认已交给 Chrome，看不到是否上传成功。"
+  },
+  "csBrowser": {
+    "message": "浏览器同步"
+  },
+  "csBrowserUnknown": {
+    "message": "这个浏览器的同步是否会带上扩展的数据，Sixkey 无法得知；换电脑时可能找不到这份备份。建议另存加密备份文件。"
+  },
+  "csSeen": {
+    "message": "这台电脑收到过其他电脑的备份，说明 Chrome 同步传送过。"
+  },
+  "csSaving": {
+    "message": "正在交给 Chrome 同步…"
+  },
+  "csEmpty": {
+    "message": "还没有账户：添加第一个账户后会自动交给 Chrome 同步。"
+  },
+  "csOk": {
+    "message": "已交给 Chrome 同步 · $1"
+  },
+  "csWaiting": {
+    "message": "有改动还没交给 Chrome 同步 · 稍后会自动完成"
+  },
+  "csFailed": {
+    "message": "没交给 Chrome 同步：$1 · 会自动重试"
+  },
+  "csErrBusy": {
+    "message": "写入太频繁，Chrome 同步暂时不收"
+  },
+  "csErrOther": {
+    "message": "浏览器暂时出错"
+  },
+  "csStale": {
+    "message": "已经 $1 天没交给 Chrome 同步：$2"
+  },
+  "csStaleQuiet": {
+    "message": "已经 $1 天没交给 Chrome 同步"
+  },
+  "csTooLarge": {
+    "message": "保险库超过了 Chrome 同步能放的大小（约 100 KB），这台电脑的备份停了。Sixkey 照常能用；请用下面的“加密备份”另存一份。"
+  },
+  "csNoRoom": {
+    "message": "Chrome 同步的空间被其他 Sixkey 备份占满了（$1 份，约 $2 KB），这台电脑的备份放不下，停了。Sixkey 照常能用。"
+  },
+  "csHeld": {
+    "message": "这台电脑的数据是从较早的副本恢复的，Chrome 同步里可能有更新的版本。合并后才继续备份。"
+  },
+  "csNoPassword": {
+    "message": "设置主密码后才能备份到 Chrome 同步。"
+  },
+  "csUnreadable": {
+    "message": "这台电脑上的数据读不出来，备份停了。"
+  },
+  "csUnsafeArea": {
+    "message": "这个浏览器不让 Sixkey 保护同步空间，网页里的脚本可能读到它，所以这里不备份。"
+  },
+  "csUsage": {
+    "message": "用了 Chrome 同步空间的 $1%（约 $2 KB / 100 KB）"
+  },
+  "csNearFull": {
+    "message": "Chrome 同步空间快满了：大约还能再放 $1 个账户。"
+  },
+  "csNow": {
+    "message": "立即备份"
+  },
+  "csOff": {
+    "message": "关闭"
+  },
+  "csOffHint": {
+    "message": "关闭后，这台电脑放在 Chrome 同步里的备份会删除；其他电脑的不受影响。"
+  },
+  "csOffHeld": {
+    "message": "现在关闭的话，这台电脑在 Chrome 同步里的备份会留着，因为它可能比这里的数据新。"
+  },
+  "csSaveFile": {
+    "message": "保存加密备份"
+  },
+  "csHeldMerge": {
+    "message": "合并并继续"
+  },
+  "csMergeClean": {
+    "message": "合并到这台电脑并删除它们"
+  },
+  "csMergeCleanHint": {
+    "message": "先用你输入的主密码或恢复密钥打开并合并，再从 Chrome 同步删除；打不开的不删，合并后这台电脑仍放不下时也不删。还在用的电脑会再存一份。"
+  },
+  "csOthers": {
+    "message": "Chrome 同步里还有 $1 份其他保险库的备份。"
+  },
+  "csMergeOthers": {
+    "message": "合并到这台电脑"
+  },
+  "csUnlockToMerge": {
+    "message": "解锁 Sixkey 后才能合并。"
+  },
+  "csMerge": {
+    "message": "合并"
+  },
+  "csCancel": {
+    "message": "取消"
+  },
+  "csMerged": {
+    "message": "已合并。"
+  },
+  "csAdded": {
+    "message": "新增 $1 个账户。"
+  },
+  "csRemoved": {
+    "message": "已从 Chrome 同步删除 $1 份备份。"
+  },
+  "csKept": {
+    "message": "有 $1 份没删：打不开，或合并时又变了。"
+  },
+  "csNotRemoved": {
+    "message": "合并后这台电脑的备份仍然放不进 Chrome 同步，所以没有删除任何副本。请保存加密备份。"
+  },
+  "csDropMerged": {
+    "message": "从 Chrome 同步删除它们"
+  },
+  "csDropHint": {
+    "message": "只删除刚才合并了、此后没有变过的备份。还在用的电脑会再存一份。"
+  },
+  "csNothing": {
+    "message": "Chrome 同步里现在没有要合并的备份。"
+  },
+  "csMergeAgain": {
+    "message": "这次没有合并完，请再试一次。"
+  },
+  "csFrBox": {
+    "message": "自动备份到 Chrome 同步（推荐）"
+  },
+  "csFrHint": {
+    "message": "以后可在 设置 › 账户 › 备份 中关闭。"
+  },
+  "csRestore": {
+    "message": "从 Chrome 同步恢复"
+  },
+  "csStep": {
+    "message": "从 Chrome 同步"
+  },
+  "csFoundAt": {
+    "message": "在 Chrome 同步里找到了 Sixkey 的备份（最近一份 $1）。"
+  },
+  "csArrived": {
+    "message": "Chrome 同步里刚到了一份 Sixkey 备份。"
+  },
+  "csLooking": {
+    "message": "正在查找 Chrome 同步里的备份…"
+  },
+  "csFound": {
+    "message": "找到 $1 份备份。输入主密码或恢复密钥打开。"
+  },
+  "csReadFailed": {
+    "message": "暂时读不到 Chrome 同步里的数据，有变化时会再读。"
+  },
+  "csNone": {
+    "message": "Chrome 同步里还没有 Sixkey 的备份。如果原来的电脑开着 Chrome 同步，备份可能还在路上，到了这里会提示。"
+  },
+  "csPartialOnly": {
+    "message": "备份还没同步完整，Chrome 同步完会自动继续。"
+  },
+  "csPartial": {
+    "message": "还有 $1 份备份没同步完整，这次没用上。"
+  },
+  "csSecret": {
+    "message": "主密码或恢复密钥"
+  },
+  "csOpen": {
+    "message": "打开"
+  },
+  "csWrong": {
+    "message": "打不开这些备份，请检查主密码或恢复密钥。"
+  },
+  "csKeyTypo": {
+    "message": "这像是恢复密钥，但有字符输错了，请再核对一下。"
+  },
+  "csAfter": {
+    "message": "这台电脑会接着恢复用的那份，继续备份到 Chrome 同步。"
+  },
+  "csBackupOn": {
+    "message": "已开启自动备份到 Chrome 同步。"
+  },
+  "csNewCopy": {
+    "message": "这台电脑的备份会另存一份新的，恢复用的那份留在 Chrome 同步里。"
+  },
+  "csFile": {
+    "message": "这是 Sixkey 自动备份的副本。输入主密码或恢复密钥打开。"
+  },
+  "csWrongFile": {
+    "message": "打不开这份备份，请检查主密码或恢复密钥。"
+  },
+  "csNeedPassword": {
+    "message": "已用恢复密钥打开：接下来请设一个新的主密码。"
+  },
+  "csOutdated": {
+    "message": "另一台电脑上的主密码比你输入的新。可以现在设一个新主密码，并在那台电脑上也改成它。"
+  },
+  "csOutdatedKey": {
+    "message": "你输入的恢复密钥已在另一台电脑上换过，这台电脑以后也用新的那把。"
+  },
+  "csSetNew": {
+    "message": "设置新主密码"
+  },
+  "csLater": {
+    "message": "以后再说"
+  },
+  "csNewSet": {
+    "message": "新主密码已设好。"
+  },
+  "csOlderKeys": {
+    "message": "另一份备份用的是旧的加密密钥；请在那台电脑上也更换加密密钥。"
+  },
+  "csOtherSecret": {
+    "message": "还有 $1 份备份用你输入的打不开。"
+  },
+  "csDamaged": {
+    "message": "$1 份备份已损坏或来自更新版本的 Sixkey，没有打开。"
+  }
+}

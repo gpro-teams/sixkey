@@ -1,0 +1,92 @@
+{
+  "ungrouped": {
+    "message": "Accounts"
+  },
+  "emptyTitle": {
+    "message": "No accounts yet"
+  },
+  "fieldGroup": {
+    "message": "Group"
+  },
+  "backupLead": {
+    "message": "Keep a copy outside the browser. An encrypted backup file is safe to store in cloud drive or email."
+  },
+  "exportEncryptedTitle": {
+    "message": "Encrypted backup"
+  },
+  "exportEncryptedBody": {
+    "message": "Protected by a password you choose here. It is separate from your master password, and without it the file cannot be opened."
+  },
+  "backupSaved": {
+    "message": "Encrypted backup created. Check that your browser actually saved the file."
+  },
+  "exportPlainTitle": {
+    "message": "Plain text list"
+  },
+  "exportPlainBody": {
+    "message": "A list of otpauth:// links that anyone can read, including all your secret keys. Use it only to move to another app, and delete it afterwards."
+  },
+  "exportPlainCheck": {
+    "message": "I understand this file is not encrypted"
+  },
+  "exportPlain": {
+    "message": "Save plain text list"
+  },
+  "plainSaved": {
+    "message": "Plain text list created. Check that it was saved, and delete it when you are done."
+  },
+  "importTitle": {
+    "message": "Import a backup"
+  },
+  "importBody": {
+    "message": "Choose a Sixkey backup file. A backup of this same vault is merged; one from another vault adds its accounts here. Exports from other apps open in Add account."
+  },
+  "importAction": {
+    "message": "Import"
+  },
+  "mergedBackup": {
+    "message": "Backup merged into your vault."
+  },
+  "loadedIntoAdd": {
+    "message": "This is not a Sixkey backup. Open it in"
+  },
+  "siteField": {
+    "message": "Sites"
+  },
+  "expNoPw": {
+    "message": "This vault has no master password for an export to ask for: anyone at this browser can save your secret keys. Turn one on under Security."
+  },
+  "expSubTitle": {
+    "message": "Export selected accounts"
+  },
+  "expSubBody": {
+    "message": "For a shared or vendor-cloud profile: whoever uses it gets only these accounts. The file has its own password; open it there with Restore or Import."
+  },
+  "expSubAll": {
+    "message": "Select all"
+  },
+  "expSubNone": {
+    "message": "Select none"
+  },
+  "expSubCount": {
+    "message": "$1 of $2 selected"
+  },
+  "expSubOnly": {
+    "message": "The file holds only these $1 account(s):"
+  },
+  "expSubSave": {
+    "message": "Save $1 account(s)"
+  },
+  "expSubSamePw": {
+    "message": "Use a password other than your master password: whoever opens the file will know it."
+  },
+  "expSubSaved": {
+    "message": "File with $1 account(s) created. Check that your browser saved it."
+  },
+  "expSubChanged": {
+    "message": "The selected accounts changed in another page. Nothing was saved: check the list and save again."
+  },
+  "fileLockedMeanwhile": {
+    "message": "Sixkey locked while the file was being read. Choose it again."
+  }
+}

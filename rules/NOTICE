@@ -1,0 +1,56 @@
+Sixkey site rules (the rules/ folder of the Sixkey repository)
+Copyright 2026 VIEW TECH LTD and Sixkey contributors
+
+LICENCE
+
+The files under rules/ are licensed under the GNU Affero General Public License, version 3 or (at your option) any later
+version (AGPL-3.0-or-later), except the upstream files named below. The licence text is LICENSES/AGPL-3.0-or-later.txt in
+the repository, and rules/LICENSE.txt in a Sixkey build that carries a bundle.
+
+That covers: the site rules (rules/sites/), their test pages (rules/fixtures/), the tools (rules/tools/), the upstream
+pins and exclusions (rules/upstream/SOURCES.json, rules/upstream/exclude.json), version.json, and every bundle built from
+them (rules/build/baseline.json, the copy a Sixkey build carries, and any bundle published for download). A bundle also
+holds Apple's data, under Apple's MIT notice below, so a bundle as a whole is under AGPL-3.0-or-later and MIT.
+
+Not covered: the Sixkey extension, including the code that reads and checks these files (extension/, MPL-2.0); the
+format's JSON Schemas (contract/rules/1/, CC0-1.0); the documents (*.md, CC-BY-4.0); and anyone's vault or accounts.
+
+HOW THE PROJECT READS IT (an engineering reading, not legal advice)
+
+A bundle is data. A program that reads a bundle as its input, as the Sixkey extension does, is not thereby a work based
+on the rules: the extension keeps its own licence, and so does any other program that reads the same format. Copying,
+changing or passing on the rules or a bundle is what this licence governs. If you give a changed bundle to others, in a
+build or as a download, give them the changed rule files, fixtures and tools as well, under AGPL-3.0-or-later, and say in
+the bundle's "source" field where they are.
+
+WHERE THE SOURCE IS
+
+Each bundle names its source in its "source" field: the repository at the tag rules-v<version>, where <version> is the
+bundle's own. A bundle built before the repository had a public address has an empty "source"; such a bundle is not
+for distribution in a store package.
+
+THIRD-PARTY DATA
+
+rules/upstream/apple/ holds these files of Apple's password-manager-resources
+(https://github.com/apple/password-manager-resources), unchanged, at the commit rules/upstream/SOURCES.json names:
+quirks/shared-credentials.json and quirks/websites-that-append-2fa-to-password.json. A bundle takes the shared sign-in
+groups and the hosts from them, as rules/tools/bundle.mjs writes them, less what rules/upstream/exclude.json takes out.
+They are used under this licence (rules/upstream/apple/LICENSE.md):
+
+  Copyright 2020 - 2026 Apple Inc.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+  documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+  persons to whom the Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+  Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+  OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+rules/tools/worklist.mjs can show a maintainer data of 2FA Directory (https://2fa.directory/, MIT, "Data sourced from 2FA
+Directory by 2factorauth") in a terminal. Nothing of it is stored in rules/, in a bundle or in Sixkey.

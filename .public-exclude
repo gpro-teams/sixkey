@@ -1,0 +1,6 @@
+# Paths that stay out of the public repository, in .gitignore syntax (docs/RELEASING-THE-TREE.md). When the first
+# public commit is made, these lines are copied into .git/info/exclude: the paths stay in the maintainer's working tree
+# and are never added. Everything .gitignore ignores stays out as well.
+
+# The maintainer's private decision notes. Their outcomes are in the public documents they affect.
+/OWNER-DECISIONS/

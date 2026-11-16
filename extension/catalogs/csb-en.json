@@ -1,0 +1,254 @@
+{
+  "csTitle": {
+    "message": "Automatic backup to Chrome Sync"
+  },
+  "csBody": {
+    "message": "Encrypted, then kept in Chrome Sync, which, while sync is on, carries it to your other computers signed in to the same Google account. On a new computer, your master password brings it back. Free, with no extra sign-in."
+  },
+  "csBodyOther": {
+    "message": "Encrypted, then kept in browser sync. On a new computer, your master password brings it back, if this browser syncs it there. Free, with no extra sign-in."
+  },
+  "csOn": {
+    "message": "Turn on"
+  },
+  "csCost": {
+    "message": "It opens with your master password or recovery key. Anyone who gets into your Google account could try to guess your master password; the harder it is to guess, the safer the backup."
+  },
+  "csCostOther": {
+    "message": "It opens with your master password or recovery key. Anyone who gets into the account this browser syncs to could try to guess your master password; the harder it is to guess, the safer the backup."
+  },
+  "csCostRecovery": {
+    "message": "Only your recovery key opens it, so someone in your Google account has no password to guess."
+  },
+  "csCostRecoveryOther": {
+    "message": "Only your recovery key opens it, so someone in the account this browser syncs to has no password to guess."
+  },
+  "csSwitch": {
+    "message": "Only the recovery key opens the backup in Chrome Sync"
+  },
+  "csShared": {
+    "message": "This browser profile isn't yours alone: the backup would go to the Google account this Chrome is signed in to, which may not be yours."
+  },
+  "csSharedOther": {
+    "message": "This browser profile isn't yours alone: the backup would go to the account this browser is signed in to, which may not be yours."
+  },
+  "csHonest": {
+    "message": "Chrome uploads it only while it is signed in to a Google account with sync on, extensions included. Sixkey can confirm it handed the backup to Chrome, but can't see whether Chrome uploaded it."
+  },
+  "csBrowser": {
+    "message": "browser sync"
+  },
+  "csBrowserUnknown": {
+    "message": "Sixkey can't tell whether this browser's sync carries an extension's data: on a new computer this backup may not be there. Also save an encrypted backup file."
+  },
+  "csSeen": {
+    "message": "This computer has received another computer's backup, so Chrome Sync has carried one here."
+  },
+  "csSaving": {
+    "message": "Handing to Chrome Sync…"
+  },
+  "csEmpty": {
+    "message": "No accounts yet: once you add one, it's handed to Chrome Sync automatically."
+  },
+  "csOk": {
+    "message": "Handed to Chrome Sync · $1"
+  },
+  "csWaiting": {
+    "message": "Changes not handed over yet · Sixkey does it shortly"
+  },
+  "csFailed": {
+    "message": "Not handed over: $1 · Sixkey will try again"
+  },
+  "csErrBusy": {
+    "message": "too many writes; Chrome Sync takes no more for now"
+  },
+  "csErrOther": {
+    "message": "the browser had a problem"
+  },
+  "csStale": {
+    "message": "Not handed to Chrome Sync for $1 days: $2"
+  },
+  "csStaleQuiet": {
+    "message": "Not handed to Chrome Sync for $1 days"
+  },
+  "csTooLarge": {
+    "message": "The vault is more than Chrome Sync can hold (about 100 KB), so this computer's backup stopped. Sixkey works as usual; save an encrypted backup file below instead."
+  },
+  "csNoRoom": {
+    "message": "Other Sixkey backups fill Chrome Sync's space ($1 of them, about $2 KB), so this computer's backup doesn't fit and stopped. Sixkey works as usual."
+  },
+  "csHeld": {
+    "message": "This computer's data came from an earlier copy, and Chrome Sync may hold a newer one. The backup continues after a merge."
+  },
+  "csNoPassword": {
+    "message": "Set a master password to back up to Chrome Sync."
+  },
+  "csUnreadable": {
+    "message": "The data on this computer can't be read, so the backup stopped."
+  },
+  "csUnsafeArea": {
+    "message": "This browser doesn't let Sixkey protect its sync storage from scripts in web pages, so Sixkey doesn't back up here."
+  },
+  "csUsage": {
+    "message": "Using $1% of Chrome Sync's space (about $2 KB of 100 KB)"
+  },
+  "csNearFull": {
+    "message": "Chrome Sync's space is nearly full: room for about $1 more account(s)."
+  },
+  "csNow": {
+    "message": "Back up now"
+  },
+  "csOff": {
+    "message": "Turn off"
+  },
+  "csOffHint": {
+    "message": "Turning off removes this computer's backup from Chrome Sync; other computers' stay."
+  },
+  "csOffHeld": {
+    "message": "Turning off now keeps this computer's backup in Chrome Sync: it may be newer than the data here."
+  },
+  "csSaveFile": {
+    "message": "Save encrypted backup"
+  },
+  "csHeldMerge": {
+    "message": "Merge and continue"
+  },
+  "csMergeClean": {
+    "message": "Merge them into this computer and remove them"
+  },
+  "csMergeCleanHint": {
+    "message": "They're opened with the master password or recovery key you type and merged first, then removed from Chrome Sync; any that don't open stay, and none is removed if this computer's backup still wouldn't fit after the merge. A computer still in use saves its own again."
+  },
+  "csOthers": {
+    "message": "Chrome Sync also holds $1 backup(s) of another vault."
+  },
+  "csMergeOthers": {
+    "message": "Merge into this computer"
+  },
+  "csUnlockToMerge": {
+    "message": "Unlock Sixkey to merge."
+  },
+  "csMerge": {
+    "message": "Merge"
+  },
+  "csCancel": {
+    "message": "Cancel"
+  },
+  "csMerged": {
+    "message": "Merged."
+  },
+  "csAdded": {
+    "message": "$1 account(s) added."
+  },
+  "csRemoved": {
+    "message": "Removed $1 backup(s) from Chrome Sync."
+  },
+  "csKept": {
+    "message": "$1 backup(s) stayed: they didn't open, or changed meanwhile."
+  },
+  "csNotRemoved": {
+    "message": "This computer's backup still wouldn't fit in Chrome Sync after the merge, so none was removed. Save an encrypted backup instead."
+  },
+  "csDropMerged": {
+    "message": "Remove them from Chrome Sync"
+  },
+  "csDropHint": {
+    "message": "Only the backups just merged, and not changed since, are removed. A computer still in use saves its own again."
+  },
+  "csNothing": {
+    "message": "Nothing in Chrome Sync to merge now."
+  },
+  "csMergeAgain": {
+    "message": "The merge didn't finish. Try again."
+  },
+  "csFrBox": {
+    "message": "Back up automatically to Chrome Sync (recommended)"
+  },
+  "csFrHint": {
+    "message": "You can turn it off later in Settings › Accounts › Backup."
+  },
+  "csRestore": {
+    "message": "Restore from Chrome Sync"
+  },
+  "csStep": {
+    "message": "From Chrome Sync"
+  },
+  "csFoundAt": {
+    "message": "Found a Sixkey backup in Chrome Sync (latest $1)."
+  },
+  "csArrived": {
+    "message": "A Sixkey backup just arrived through Chrome Sync."
+  },
+  "csLooking": {
+    "message": "Looking for backups in Chrome Sync…"
+  },
+  "csFound": {
+    "message": "Backups found: $1. Type your master password or recovery key to open them."
+  },
+  "csReadFailed": {
+    "message": "Chrome Sync couldn't be read just now. Sixkey reads it again when it changes."
+  },
+  "csNone": {
+    "message": "No Sixkey backup in Chrome Sync yet. If your other computer had Chrome Sync on, it may still be on its way; it shows here when it arrives."
+  },
+  "csPartialOnly": {
+    "message": "The backup hasn't fully arrived yet. This goes on by itself once Chrome finishes."
+  },
+  "csPartial": {
+    "message": "$1 backup(s) hadn't fully arrived and weren't used."
+  },
+  "csSecret": {
+    "message": "Master password or recovery key"
+  },
+  "csOpen": {
+    "message": "Open"
+  },
+  "csWrong": {
+    "message": "That doesn't open these backups. Check your master password or recovery key."
+  },
+  "csKeyTypo": {
+    "message": "That looks like a recovery key, but part of it is mistyped. Check it again."
+  },
+  "csAfter": {
+    "message": "This computer goes on backing up to Chrome Sync, continuing the copy it was restored from."
+  },
+  "csBackupOn": {
+    "message": "Automatic backup to Chrome Sync is on."
+  },
+  "csNewCopy": {
+    "message": "This computer's backup starts as a new copy; the one you restored from stays in Chrome Sync."
+  },
+  "csFile": {
+    "message": "A copy of Sixkey's automatic backup. Type your master password or recovery key to open it."
+  },
+  "csWrongFile": {
+    "message": "That doesn't open this backup. Check your master password or recovery key."
+  },
+  "csNeedPassword": {
+    "message": "Opened with your recovery key: set a new master password next."
+  },
+  "csOutdated": {
+    "message": "The master password on another computer is newer than the one you typed. You can set a new one now, and change that computer's to it too."
+  },
+  "csOutdatedKey": {
+    "message": "The recovery key you typed was replaced on another computer. Use the new one here too."
+  },
+  "csSetNew": {
+    "message": "Set a new master password"
+  },
+  "csLater": {
+    "message": "Later"
+  },
+  "csNewSet": {
+    "message": "New master password set."
+  },
+  "csOlderKeys": {
+    "message": "Another backup uses an older encryption key; replace the key on that computer too."
+  },
+  "csOtherSecret": {
+    "message": "$1 backup(s) don't open with what you typed."
+  },
+  "csDamaged": {
+    "message": "$1 backup(s) are damaged or from a newer Sixkey and were not opened."
+  }
+}

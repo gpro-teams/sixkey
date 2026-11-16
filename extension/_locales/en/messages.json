@@ -1,0 +1,1748 @@
+{
+  "appName": {
+    "message": "Sixkey"
+  },
+  "appDesc": {
+    "message": "A two-factor authenticator for Chrome: TOTP codes from an encrypted vault in your browser profile, with backups you control."
+  },
+  "add": {
+    "message": "Add"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "saved": {
+    "message": "Saved"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "edit": {
+    "message": "Edit"
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "continue": {
+    "message": "Continue"
+  },
+  "retry": {
+    "message": "Retry"
+  },
+  "gotIt": {
+    "message": "Got it"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "lock": {
+    "message": "Lock"
+  },
+  "unlock": {
+    "message": "Unlock"
+  },
+  "restore": {
+    "message": "Restore"
+  },
+  "generate": {
+    "message": "Generate for me"
+  },
+  "showPassword": {
+    "message": "Show"
+  },
+  "minutes": {
+    "message": "minutes"
+  },
+  "searchPlaceholder": {
+    "message": "type to search"
+  },
+  "results": {
+    "message": "results"
+  },
+  "ungrouped": {
+    "message": "Accounts"
+  },
+  "emptyList": {
+    "message": "Paste a setup link, key or QR screenshot with $1, or scan the QR code on this page."
+  },
+  "emptyTitle": {
+    "message": "No accounts yet"
+  },
+  "noMatches": {
+    "message": "No matching accounts"
+  },
+  "localOnly": {
+    "message": "local"
+  },
+  "count": {
+    "message": "$1 accounts"
+  },
+  "backupNow": {
+    "message": "back up now"
+  },
+  "copiedFor": {
+    "message": "Copied · $1"
+  },
+  "copiedNext": {
+    "message": "Under 3s left, copied the next code"
+  },
+  "copyFailed": {
+    "message": "Could not copy"
+  },
+  "clipboardClears": {
+    "message": "Clipboard clears in $1s"
+  },
+  "clipboardCleared": {
+    "message": "Clipboard cleared"
+  },
+  "hotpShort": {
+    "message": "counter"
+  },
+  "hotpTitle": {
+    "message": "Counter-based (HOTP) accounts are kept safe but cannot generate codes yet"
+  },
+  "movedToTrash": {
+    "message": "Moved to trash"
+  },
+  "deleteConfirm": {
+    "message": "Click again to delete"
+  },
+  "deleteForever": {
+    "message": "Delete forever"
+  },
+  "fieldIssuer": {
+    "message": "Issuer"
+  },
+  "fieldLabel": {
+    "message": "Account"
+  },
+  "fieldGroup": {
+    "message": "Group"
+  },
+  "fieldSecret": {
+    "message": "Secret key"
+  },
+  "fieldAlgorithm": {
+    "message": "Algorithm"
+  },
+  "fieldDigits": {
+    "message": "Digits"
+  },
+  "fieldPeriod": {
+    "message": "Period (s)"
+  },
+  "noPasswordNotice": {
+    "message": "Codes are only lightly protected on this computer. Set a master password."
+  },
+  "setPassword": {
+    "message": "Set password"
+  },
+  "recoveredTitle": {
+    "message": "Data restored automatically"
+  },
+  "recoveredBody": {
+    "message": "The stored copy was damaged. Restored to the state saved at $1."
+  },
+  "welcomeTitle": {
+    "message": "Welcome to Sixkey"
+  },
+  "welcomeBody": {
+    "message": "Your accounts are kept on this computer and never leave it unless you export them."
+  },
+  "welcomeRestore": {
+    "message": "Restore from a backup file"
+  },
+  "lostTitle": {
+    "message": "Stored data could not be read"
+  },
+  "lostBody": {
+    "message": "Sixkey could not read your saved accounts, and no usable copy was found. Restore from a backup file."
+  },
+  "lostRestore": {
+    "message": "Restore from backup"
+  },
+  "newerTitle": {
+    "message": "Update needed"
+  },
+  "newerBody": {
+    "message": "This data was saved by a newer version of Sixkey. Update the extension to open it. Nothing has been changed."
+  },
+  "errorTitle": {
+    "message": "Something unexpected went wrong"
+  },
+  "errorBody": {
+    "message": "Something unexpected went wrong. Try again. If it keeps failing, save diagnostics under Settings › Advanced."
+  },
+  "lockedTitle": {
+    "message": "Enter master password"
+  },
+  "recoveryTitle": {
+    "message": "Enter recovery key"
+  },
+  "resetTitle": {
+    "message": "Reset password"
+  },
+  "passwordLabel": {
+    "message": "Master password"
+  },
+  "recoveryLabel": {
+    "message": "Recovery key"
+  },
+  "newPasswordLabel": {
+    "message": "New password"
+  },
+  "useRecovery": {
+    "message": "Use recovery key"
+  },
+  "forgotPassword": {
+    "message": "Set a new password"
+  },
+  "wrongPassword": {
+    "message": "Wrong password"
+  },
+  "wrongRecovery": {
+    "message": "That recovery key does not match"
+  },
+  "badRecoveryFormat": {
+    "message": "That does not look like a recovery key"
+  },
+  "weakPassword": {
+    "message": "That password is too weak"
+  },
+  "lockHint": {
+    "message": "If you forget the master password and lose the recovery key, your data cannot be recovered. We cannot help either."
+  },
+  "addTitle": {
+    "message": "Add account"
+  },
+  "optScan": {
+    "message": "Scan QR code on this page"
+  },
+  "optScanD": {
+    "message": "Reads the visible part of the current tab"
+  },
+  "optUpload": {
+    "message": "Upload a QR image"
+  },
+  "optUploadD": {
+    "message": "Opens the settings page"
+  },
+  "optPaste": {
+    "message": "Paste otpauth:// links"
+  },
+  "optManual": {
+    "message": "Enter a key manually"
+  },
+  "optManualD": {
+    "message": "Secret, digits, period, algorithm"
+  },
+  "optGoogle": {
+    "message": "Import from Google Authenticator"
+  },
+  "optGoogleD": {
+    "message": "Supports batch export codes"
+  },
+  "scanNone": {
+    "message": "No QR code on the visible part of this page. Scroll it into view, or paste it."
+  },
+  "scanFailed": {
+    "message": "Could not capture this page"
+  },
+  "optionsLead": {
+    "message": "Settings, backups and importing. Everything stays on this computer."
+  },
+  "emptyOptions": {
+    "message": "No vault yet. First a master password, then a recovery key; nothing is saved until both are done."
+  },
+  "secTitle": {
+    "message": "Security"
+  },
+  "deviceOnlyTitle": {
+    "message": "No master password yet"
+  },
+  "deviceOnlyBody": {
+    "message": "Your accounts are protected only by a key stored next to them. That stops casual reading but not someone, or malware, with access to this browser profile. With a master password, a copy of the profile is as safe as the password you choose."
+  },
+  "passwordLossWarning": {
+    "message": "If you forget the master password and lose the recovery key, your data cannot be recovered. We cannot help either."
+  },
+  "confirmPasswordLabel": {
+    "message": "Repeat password"
+  },
+  "passwordsDiffer": {
+    "message": "The two passwords differ"
+  },
+  "enablePassword": {
+    "message": "Turn on master password"
+  },
+  "strengthHint": {
+    "message": "At least $1 bits estimated strength. Longer is better; a random phrase works."
+  },
+  "strengthOk": {
+    "message": "Strong enough"
+  },
+  "strengthLow": {
+    "message": "Estimated $1 of $2 bits: $3 bits short. Make it longer or less predictable."
+  },
+  "changePasswordTitle": {
+    "message": "Change master password"
+  },
+  "oldPasswordLabel": {
+    "message": "Current password"
+  },
+  "changePassword": {
+    "message": "Change password"
+  },
+  "passwordChanged": {
+    "message": "Password changed"
+  },
+  "newCodeTitle": {
+    "message": "New recovery key"
+  },
+  "newCodeBody": {
+    "message": "Replaces the current key, which stops working."
+  },
+  "newCodeAction": {
+    "message": "Create new recovery key"
+  },
+  "rotateTitle": {
+    "message": "Replace the encryption key"
+  },
+  "rotateBody": {
+    "message": "Use this if you think an old copy of your data or key may have leaked. Everything is re-encrypted with a new key and you get a new recovery key."
+  },
+  "rotateAction": {
+    "message": "Replace key"
+  },
+  "unlockToManage": {
+    "message": "Unlock to manage this."
+  },
+  "recoveryShownTitle": {
+    "message": "Save your recovery key"
+  },
+  "recoveryShownBody": {
+    "message": "If you forget the master password, this key is the only way back in. It is shown once. Keep it where it stays safe even if this computer is lost, such as a printout or a password manager on another device."
+  },
+  "saveAsFile": {
+    "message": "Save as file"
+  },
+  "recoverySavedCheck": {
+    "message": "I have saved my recovery key"
+  },
+  "autoLockTitle": {
+    "message": "Automatic lock"
+  },
+  "autoLockWhen": {
+    "message": "Lock"
+  },
+  "alIdle": {
+    "message": "after being idle"
+  },
+  "alSession": {
+    "message": "when the browser restarts"
+  },
+  "alAlways": {
+    "message": "every time the popup closes"
+  },
+  "lockOnScreenLock": {
+    "message": "Also lock when the computer's screen locks"
+  },
+  "autoLockNote": {
+    "message": "Applies when a master password is set. Updating or reloading the extension always locks it."
+  },
+  "pasteHelp": {
+    "message": "Paste otpauth:// links, Google Authenticator export links, or plain keys (a key alone, or name|key), one per line, or choose files below. Nothing is added until you confirm."
+  },
+  "chooseImages": {
+    "message": "Choose QR images"
+  },
+  "dropOrPasteImage": {
+    "message": "or drop files here: text, JSON or CSV exports (Aegis, 2FAS, andOTP, Raivo, Bitwarden) and QR images. Paste a screenshot with Ctrl+V."
+  },
+  "noQrIn": {
+    "message": "No QR code found in: $1"
+  },
+  "previewAdd": {
+    "message": "$1 to add"
+  },
+  "previewDup": {
+    "message": "$1 already in your list or repeated, skipped"
+  },
+  "previewFailed": {
+    "message": "Line $1 skipped: $2"
+  },
+  "previewIncomplete": {
+    "message": "Google export: $1 of $2 codes read. Still needed: $3."
+  },
+  "previewHotp": {
+    "message": "$1 counter-based account(s) will be kept but cannot generate codes yet."
+  },
+  "previewShort": {
+    "message": "$1 account(s) use a short key. They will work, but the service issued a weak key."
+  },
+  "addN": {
+    "message": "Add $1 account(s)"
+  },
+  "addedN": {
+    "message": "Added $1 account(s)"
+  },
+  "incompleteHint": {
+    "message": "Add the remaining codes first, or add what you have."
+  },
+  "rNotOtpauth": {
+    "message": "not a link or a key"
+  },
+  "rMalformed": {
+    "message": "could not be read"
+  },
+  "rType": {
+    "message": "unsupported type"
+  },
+  "rNoSecret": {
+    "message": "no secret key"
+  },
+  "rBadSecret": {
+    "message": "secret key is not valid"
+  },
+  "rAlg": {
+    "message": "unsupported algorithm"
+  },
+  "rDigits": {
+    "message": "unsupported number of digits"
+  },
+  "rPeriod": {
+    "message": "invalid period"
+  },
+  "rCounter": {
+    "message": "invalid counter"
+  },
+  "rTooLarge": {
+    "message": "too large"
+  },
+  "googleTitle": {
+    "message": "Moving from Google Authenticator"
+  },
+  "googleStep1": {
+    "message": "In Google Authenticator, choose Transfer accounts, then Export accounts. It shows one or more QR codes."
+  },
+  "googleStep2": {
+    "message": "Scan each code with the camera here, or take screenshots and choose or drop them above."
+  },
+  "googleStep3": {
+    "message": "Delete the screenshots and exported files afterwards: they contain your keys."
+  },
+  "backupTitle": {
+    "message": "Backup"
+  },
+  "backupLead": {
+    "message": "Keep a copy outside the browser. An encrypted backup file is safe to store in cloud drive or email."
+  },
+  "exportEncryptedTitle": {
+    "message": "Encrypted backup"
+  },
+  "exportEncryptedBody": {
+    "message": "Protected by a password you choose here. It is separate from your master password, and without it the file cannot be opened."
+  },
+  "exportEncrypted": {
+    "message": "Save encrypted backup"
+  },
+  "backupSaved": {
+    "message": "Encrypted backup created. Check that your browser actually saved the file."
+  },
+  "exportPlainTitle": {
+    "message": "Plain text list"
+  },
+  "exportPlainBody": {
+    "message": "A list of otpauth:// links that anyone can read, including all your secret keys. Use it only to move to another app, and delete it afterwards."
+  },
+  "exportPlainCheck": {
+    "message": "I understand this file is not encrypted"
+  },
+  "exportPlain": {
+    "message": "Save plain text list"
+  },
+  "plainSaved": {
+    "message": "Plain text list created. Check that it was saved, and delete it when you are done."
+  },
+  "restoreTitle": {
+    "message": "Restore from backup"
+  },
+  "restoreBody": {
+    "message": "Choose a Sixkey backup file. Your accounts come back exactly as they were."
+  },
+  "importTitle": {
+    "message": "Import a backup"
+  },
+  "importBody": {
+    "message": "Choose a Sixkey backup file. A backup of this same vault is merged; one from another vault adds its accounts here. Exports from other apps open in Add account."
+  },
+  "chooseFile": {
+    "message": "Choose file"
+  },
+  "backupPasswordLabel": {
+    "message": "Backup password"
+  },
+  "openBackup": {
+    "message": "Open backup"
+  },
+  "backupContains": {
+    "message": "Backup with $1 account(s), saved $2"
+  },
+  "importAction": {
+    "message": "Import"
+  },
+  "restored": {
+    "message": "Restored $1 account(s)."
+  },
+  "mergedBackup": {
+    "message": "Backup merged into your vault."
+  },
+  "backupWrongOrDamaged": {
+    "message": "Wrong password, or the file is damaged"
+  },
+  "backupInvalid": {
+    "message": "This is not a Sixkey backup file"
+  },
+  "newerFormat": {
+    "message": "This backup was made by a newer version of Sixkey"
+  },
+  "loadedIntoAdd": {
+    "message": "This is not a Sixkey backup. Open it in"
+  },
+  "trashTitle": {
+    "message": "Trash"
+  },
+  "trashLead": {
+    "message": "Deleted accounts stay here until you erase them for good. Nothing is erased automatically."
+  },
+  "trashEmpty": {
+    "message": "Nothing in the trash."
+  },
+  "purgedNote": {
+    "message": "Some accounts were erased for good. Only a marker remains so the deletion stays deleted."
+  },
+  "clipTitle": {
+    "message": "Clear clipboard"
+  },
+  "clipBody": {
+    "message": "After you copy a code, clear it from the clipboard 30 seconds later, but only if the clipboard still holds that code. This asks the browser for permission to read and change the clipboard."
+  },
+  "clipHistoryNote": {
+    "message": "Clipboard history tools (such as Windows Win+V) may keep their own copy, which Sixkey cannot remove."
+  },
+  "clipEnable": {
+    "message": "Turn on"
+  },
+  "clipDisable": {
+    "message": "Turn off"
+  },
+  "clipOn": {
+    "message": "On"
+  },
+  "clipOff": {
+    "message": "Off"
+  },
+  "advancedTitle": {
+    "message": "Advanced"
+  },
+  "clockTitle": {
+    "message": "Check your computer's clock"
+  },
+  "clockBody": {
+    "message": "Codes depend on the time. If your clock is off by more than about 15 seconds, codes fail. Turn on automatic time in your system settings. Sixkey makes no network requests, so it cannot check this itself."
+  },
+  "diagTitle": {
+    "message": "Diagnostics"
+  },
+  "diagBody": {
+    "message": "A local log of recoveries and non-fatal problems. It has no keys, codes or account names. Nothing is sent anywhere; save it and send it to us only if you want help."
+  },
+  "diagExport": {
+    "message": "Save diagnostics"
+  },
+  "startOverTitle": {
+    "message": "Start over with an empty vault"
+  },
+  "startOverBody": {
+    "message": "Only if you have no backup. This permanently discards whatever unreadable data remains."
+  },
+  "startOverType": {
+    "message": "Type $1 to confirm"
+  },
+  "startOverAction": {
+    "message": "Erase and start over"
+  },
+  "invalidData": {
+    "message": "That data is too long or not valid, so it was not saved"
+  },
+  "languageLabel": {
+    "message": "Language"
+  },
+  "langAuto": {
+    "message": "Automatic (follow the browser)"
+  },
+  "needUnlock": {
+    "message": "Sixkey is locked"
+  },
+  "badState": {
+    "message": "Not possible right now"
+  },
+  "alreadyProtected": {
+    "message": "A master password is already set"
+  },
+  "trashClearOld": {
+    "message": "Erase $1 item(s) older than $2 days for good"
+  },
+  "welcomeStartSecure": {
+    "message": "Start (set a master password first)"
+  },
+  "residueWarning": {
+    "message": "Accounts you added before turning this on may still be recoverable from leftover data on disk until the browser compacts its storage. If this browser profile was ever copied or shared, re-issue those accounts' 2FA keys at each service."
+  },
+  "secLead": {
+    "message": "How your accounts are protected on this computer, and what happens when you lock."
+  },
+  "addLead": {
+    "message": "Bring accounts in from links, files, QR images, the camera, or by typing a key. Nothing is added until you confirm."
+  },
+  "advLead": {
+    "message": "Clock, diagnostics, and recovery tools."
+  },
+  "protectionLabel": {
+    "message": "Protection"
+  },
+  "protDevice": {
+    "message": "Device key only"
+  },
+  "protLocked": {
+    "message": "Locked"
+  },
+  "protNone": {
+    "message": "No vault yet"
+  },
+  "accountsLabel": {
+    "message": "Accounts"
+  },
+  "backupLabel": {
+    "message": "Last backup"
+  },
+  "backupNever": {
+    "message": "Never"
+  },
+  "backupToday": {
+    "message": "Today"
+  },
+  "backupDaysAgo": {
+    "message": "$1 days ago"
+  },
+  "stepPassword": {
+    "message": "Set a password"
+  },
+  "stepRecovery": {
+    "message": "Save the recovery key"
+  },
+  "navMenu": {
+    "message": "Sections"
+  },
+  "trustLocal": {
+    "message": "Stays on this device"
+  },
+  "trustNoTrack": {
+    "message": "No tracking, no network"
+  },
+  "trustPerms": {
+    "message": "Fewest permissions"
+  },
+  "thisSite": {
+    "message": "This site"
+  },
+  "addPrivacy": {
+    "message": "Keys are read on this computer and never uploaded. QR images are not kept."
+  },
+  "clearSearch": {
+    "message": "Clear search"
+  },
+  "otpSpec": {
+    "message": "$1 digits · $2 s · $3"
+  },
+  "syncLabel": {
+    "message": "Sync"
+  },
+  "syncOff": {
+    "message": "Off · this device"
+  },
+  "clipRowTitle": {
+    "message": "Clear 30 seconds after copying"
+  },
+  "frTitle": {
+    "message": "Set up Sixkey"
+  },
+  "frRestoreLead": {
+    "message": "Choose the backup, then set a master password for this computer: the accounts are saved under it from the start."
+  },
+  "frStartOverLead": {
+    "message": "A new, empty vault with a master password. Nothing is erased until you finish."
+  },
+  "frStepFile": {
+    "message": "Backup file"
+  },
+  "frStepProfile": {
+    "message": "This profile"
+  },
+  "frStepAccount": {
+    "message": "First account"
+  },
+  "frPasswordTitle": {
+    "message": "Choose a master password"
+  },
+  "frPreparing": {
+    "message": "Preparing…"
+  },
+  "frCodeNote": {
+    "message": "Nothing is saved until you finish. If you close this page before that, this key will not open anything; you will get a new one."
+  },
+  "frRiskTitle": {
+    "message": "Is this browser profile used only by you?"
+  },
+  "frRiskBody": {
+    "message": "Could it be used by others, synced to an anti-detect browser vendor's cloud, or controlled by scripts or automation tools?"
+  },
+  "frSoloTitle": {
+    "message": "Only me (standard)"
+  },
+  "frSoloBody": {
+    "message": "Locks after 15 idle minutes or when the screen locks."
+  },
+  "frSharedTitle": {
+    "message": "Shared, cloud-synced or script-controlled"
+  },
+  "frSharedBody": {
+    "message": "Locks every time you close Sixkey, and codes are hidden by default. Do not turn on sync in such a profile."
+  },
+  "frRiskNote": {
+    "message": "You can change this later in Settings › Security › Security mode."
+  },
+  "frFinish": {
+    "message": "Finish"
+  },
+  "frClipLead": {
+    "message": "Recommended for a shared or automated profile."
+  },
+  "frChanged": {
+    "message": "Sixkey was set up or changed in another page meanwhile. Nothing was changed here."
+  },
+  "frRestoreInstead": {
+    "message": "Restore from a backup instead"
+  },
+  "frCreateInstead": {
+    "message": "Start with an empty vault instead"
+  },
+  "frReadyTitle": {
+    "message": "Sixkey is ready"
+  },
+  "frAddBelow": {
+    "message": "Add your first account below."
+  },
+  "frScanHint": {
+    "message": "You can also click the Sixkey icon on a website to read a QR code shown on the page."
+  },
+  "frRailLink": {
+    "message": "Set a master password now"
+  },
+  "resetLead": {
+    "message": "Your recovery key lets you choose a new master password. You get a new recovery key with it, and nothing changes until you have saved that one."
+  },
+  "resetCodeNote": {
+    "message": "Nothing has changed yet: your current recovery key and password keep working until you press “$1” below. If you close this page before that, nothing changes, and this new key opens nothing."
+  },
+  "resetChanged": {
+    "message": "Your password or recovery key was changed in another window meanwhile, so nothing was changed here and the key that was shown will not work. Start again."
+  },
+  "resetDone": {
+    "message": "Your master password was reset. Use the new password and the new recovery key from now on."
+  },
+  "resetDoneLocked": {
+    "message": "Your master password was reset. Unlock with the new password."
+  },
+  "siteAsk": {
+    "message": "Which account for $1?"
+  },
+  "sitePick": {
+    "message": "Choose"
+  },
+  "siteBound": {
+    "message": "This account is already remembered for $1. Remember only if this page is the same service."
+  },
+  "cmdFill": {
+    "message": "Fill the verification code on this page"
+  },
+  "fillTitleOk": {
+    "message": "Sixkey: code filled"
+  },
+  "fillTitleNoBox": {
+    "message": "Sixkey: no code box found on this page"
+  },
+  "fillTitleNoSite": {
+    "message": "Sixkey: no account is registered for this site"
+  },
+  "fillTitleChoose": {
+    "message": "Sixkey: open it to choose what to fill"
+  },
+  "fillTitleLocked": {
+    "message": "Sixkey is locked: open it to unlock"
+  },
+  "fillTitleBlocked": {
+    "message": "Sixkey cannot fill on this page"
+  },
+  "fillTitleInsecure": {
+    "message": "Sixkey: this page is not secure (http): open Sixkey to fill"
+  },
+  "fillTitleFailed": {
+    "message": "Sixkey: the page did not accept the code"
+  },
+  "fillTitleUnsure": {
+    "message": "Sixkey: the code may have been entered: check the page"
+  },
+  "fillTitleSlow": {
+    "message": "Sixkey: the page did not answer in time: try again"
+  },
+  "fillTitleOld": {
+    "message": "Sixkey: autofill needs Chrome 140 or later"
+  },
+  "lockFillFor": {
+    "message": "Unlock to fill the code on $1"
+  },
+  "afCanFill": {
+    "message": "Sixkey can fill the code here: press $1"
+  },
+  "afCanFillOpen": {
+    "message": "Sixkey can fill the code here: open Sixkey"
+  },
+  "afsTitle": {
+    "message": "Autofill"
+  },
+  "afsLead": {
+    "message": "Sites where you turned on code suggestions. On each, Chrome lets Sixkey read and change the site's pages; Sixkey looks only for the verification-code box and sends nothing anywhere. Secure (https) pages only."
+  },
+  "afsNone": {
+    "message": "No sites yet. After a fill on an https site, Sixkey offers to turn it on there."
+  },
+  "afsOff": {
+    "message": "Turned off in Chrome"
+  },
+  "afsAgain": {
+    "message": "Turn on again"
+  },
+  "afsRemove": {
+    "message": "Remove"
+  },
+  "afsChrome": {
+    "message": "Chrome keeps this list of sites in its own settings, unencrypted. Remove also gives back Chrome's access to that site; Chrome remembers that you allowed it once, so turning it on again does not ask again."
+  },
+  "afsOld": {
+    "message": "Code suggestions need Chrome 140 or later."
+  },
+  "pinLength": {
+    "message": "Your PIN has $1 digits. Type it again."
+  },
+  "afSugGo": {
+    "message": "Press Enter to fill the code on $1"
+  },
+  "afSugFill": {
+    "message": "Fill code with Sixkey · $1"
+  },
+  "afSugNo": {
+    "message": "Not now"
+  },
+  "afSugWait": {
+    "message": "One moment, then click again"
+  },
+  "listCodeHidden": {
+    "message": "Code hidden"
+  },
+  "listRevealHint": {
+    "message": "Click copies the code without showing it. Hold, or press Space, to show it for 5 seconds."
+  },
+  "listSecondsLeft": {
+    "message": "$1 seconds left"
+  },
+  "siteRelated": {
+    "message": "Possibly related"
+  },
+  "siteRemember": {
+    "message": "Remember: $1 belongs to this account"
+  },
+  "siteRememberTitle": {
+    "message": "Remember this site"
+  },
+  "siteRememberHelp": {
+    "message": "This account will show as “This site” on the address you choose and on every address under it. Choose a shorter one only if all of it belongs to this service, and do this only on the real site."
+  },
+  "siteRememberBtn": {
+    "message": "Remember"
+  },
+  "siteRemembered": {
+    "message": "Remembered $1"
+  },
+  "siteNone": {
+    "message": "$1 is shared by many unrelated sites, so it cannot be remembered."
+  },
+  "siteField": {
+    "message": "Sites"
+  },
+  "siteHelp": {
+    "message": "Shown as “This site” only on these addresses and the addresses under them."
+  },
+  "siteCurrent": {
+    "message": "This page:"
+  },
+  "siteAddOne": {
+    "message": "Add $1"
+  },
+  "siteRemove": {
+    "message": "Remove $1"
+  },
+  "siteInvalid": {
+    "message": "Enter a site address, such as example.com."
+  },
+  "siteShared": {
+    "message": "$1 is shared by many unrelated sites. Enter the full address, such as name.$1."
+  },
+  "siteTooMany": {
+    "message": "An account can have at most $1 sites."
+  },
+  "paZone": {
+    "message": "Paste a link, key or QR screenshot"
+  },
+  "paZoneHelp": {
+    "message": "An otpauth:// or Google export link, a key on its own, or a screenshot of the QR code. Nothing is added until you confirm."
+  },
+  "paPaste": {
+    "message": "Paste"
+  },
+  "paScan": {
+    "message": "Scan this page"
+  },
+  "paTitle": {
+    "message": "Check and add"
+  },
+  "paReading": {
+    "message": "Reading the image…"
+  },
+  "paNoQr": {
+    "message": "No QR code found in the image. Try a larger, sharper screenshot."
+  },
+  "paNothing": {
+    "message": "Nothing to add"
+  },
+  "paBadOne": {
+    "message": "Sixkey cannot use this: $1."
+  },
+  "paExists": {
+    "message": "Already in Sixkey as $1. Nothing to add."
+  },
+  "paSameKey": {
+    "message": "This key is already saved as $1. It may be the same QR code scanned twice."
+  },
+  "paRebind": {
+    "message": "You already have $1 with a different key. If the site gave you a new one, replace the old key."
+  },
+  "paKeepBoth": {
+    "message": "Keep both"
+  },
+  "paReplace": {
+    "message": "Replace: the old one goes to the trash"
+  },
+  "paSite": {
+    "message": "Show first on $1"
+  },
+  "paFromText": {
+    "message": "Read as a plain key: 6 digits every 30 seconds, the usual setting. Check that it is a real 2FA key."
+  },
+  "paNext": {
+    "message": "Next: enter this code on the website to finish. If the site says it is wrong, first check that your computer sets its clock automatically."
+  },
+  "paAddCopy": {
+    "message": "Add and copy code"
+  },
+  "paAddOnly": {
+    "message": "Add only"
+  },
+  "paAdded": {
+    "message": "Added $1"
+  },
+  "paColumns": {
+    "message": "These lines have several columns, such as name|key|password. In Settings you choose the key column, and the others are never saved. Paste them there."
+  },
+  "paSettings": {
+    "message": "Continue in Settings"
+  },
+  "paMore": {
+    "message": "Paste the next screenshot here, or continue in Settings."
+  },
+  "paTagExists": {
+    "message": "already added"
+  },
+  "paTagSame": {
+    "message": "same key as $1"
+  },
+  "paTagRebind": {
+    "message": "new key for $1"
+  },
+  "linesHelp": {
+    "message": "$1 line(s) have columns split by |. Only the key column and the name column are read. Every other column, such as a password, is dropped and never saved."
+  },
+  "linesKey": {
+    "message": "Key column"
+  },
+  "linesName": {
+    "message": "Name column"
+  },
+  "linesChoose": {
+    "message": "Choose a column"
+  },
+  "linesNoName": {
+    "message": "No name"
+  },
+  "linesColumn": {
+    "message": "Column $1 · $2 characters · a key in $3 of $4 lines"
+  },
+  "linesPending": {
+    "message": "Choose the key column: $1 line(s) are not added until you do."
+  },
+  "linesTag": {
+    "message": "text"
+  },
+  "linesFromText": {
+    "message": "$1 from plain text, set to 6 digits every 30 seconds, the usual setting. Check that each is a real 2FA key."
+  },
+  "linesUnnamed": {
+    "message": "$1 without a name. You can name them in the popup after adding."
+  },
+  "rNotKey": {
+    "message": "too short for a key (16 characters or more)"
+  },
+  "instTitle": {
+    "message": "Not from the Chrome Web Store"
+  },
+  "instBody": {
+    "message": "This copy does not update itself."
+  },
+  "instDetails": {
+    "message": "Details"
+  },
+  "instLong": {
+    "message": "This copy does not update itself, so check for new versions by hand. Install Sixkey only from its Chrome Web Store listing, or from a file you made yourself from that listing. Never install a file someone sends you."
+  },
+  "instThisId": {
+    "message": "This copy's extension ID"
+  },
+  "instStoreId": {
+    "message": "Sixkey's ID in the Chrome Web Store"
+  },
+  "instNoStoreYet": {
+    "message": "Sixkey is not in the Chrome Web Store yet, so there is no official ID to compare with yet."
+  },
+  "instLimit": {
+    "message": "This check finds old copies that never update. It cannot catch a modified copy: such a copy can simply remove the check."
+  },
+  "lookTitle": {
+    "message": "Appearance"
+  },
+  "lookLead": {
+    "message": "How Sixkey looks in this browser, and how the popup and the side panel list your accounts."
+  },
+  "lookTheme": {
+    "message": "Theme"
+  },
+  "lookThemeAuto": {
+    "message": "Follow the system"
+  },
+  "lookThemeLight": {
+    "message": "Light"
+  },
+  "lookThemeDark": {
+    "message": "Dark"
+  },
+  "lookThemeNote": {
+    "message": "Saved in this browser only, like the language. It is not part of a backup."
+  },
+  "lookDensity": {
+    "message": "Rows"
+  },
+  "lookDensityStandard": {
+    "message": "Standard"
+  },
+  "lookDensityCompact": {
+    "message": "Compact"
+  },
+  "lookDensityNote": {
+    "message": "Compact puts each account on one line, so about 12 fit in the popup. The current website's accounts keep the full size."
+  },
+  "lookSort": {
+    "message": "Order"
+  },
+  "lookSortManual": {
+    "message": "Manual"
+  },
+  "lookSortName": {
+    "message": "By name"
+  },
+  "lookSortNote": {
+    "message": "Manual is the order you drag accounts into. Either way, the current website's accounts come first."
+  },
+  "lookCodes": {
+    "message": "Codes"
+  },
+  "lookHide": {
+    "message": "Hide codes in the popup and the side panel"
+  },
+  "lookShortcutTitle": {
+    "message": "Keyboard shortcut"
+  },
+  "lookShortcutBody": {
+    "message": "Opens Sixkey on any page, as a click on its icon does:"
+  },
+  "lookShortcutNone": {
+    "message": "not set"
+  },
+  "lookShortcutOpen": {
+    "message": "Change shortcut"
+  },
+  "lookShortcutWhere": {
+    "message": "Or type $1 in the address bar."
+  },
+  "smTitle": {
+    "message": "Security mode"
+  },
+  "smLead": {
+    "message": "Two ready-made sets of the settings below, the same as the question when Sixkey was set up. Change any one of them and the mode shows as Custom."
+  },
+  "smCustomTitle": {
+    "message": "Custom"
+  },
+  "smCustomBody": {
+    "message": "Your own choice of the settings below. Pick a mode above to go back to it."
+  },
+  "smLocksNow": {
+    "message": "Changing when Sixkey locks also locks it right away. You then unlock it again with your master password."
+  },
+  "smLockedNow": {
+    "message": "Sixkey is locked now. Unlock it at the top of this page to go on."
+  },
+  "smClipNote": {
+    "message": "In a shared or automated profile, also clear the clipboard after each copy:"
+  },
+  "expPwLead": {
+    "message": "Every export asks for your master password again, even while Sixkey is unlocked."
+  },
+  "expNoPw": {
+    "message": "This vault has no master password for an export to ask for: anyone at this browser can save your secret keys. Turn one on under Security."
+  },
+  "expSubTitle": {
+    "message": "Export selected accounts"
+  },
+  "expSubBody": {
+    "message": "For a shared or vendor-cloud profile: whoever uses it gets only these accounts. The file has its own password; open it there with Restore or Import."
+  },
+  "expSubAll": {
+    "message": "Select all"
+  },
+  "expSubNone": {
+    "message": "Select none"
+  },
+  "expSubCount": {
+    "message": "$1 of $2 selected"
+  },
+  "expSubOnly": {
+    "message": "The file holds only these $1 account(s):"
+  },
+  "expSubSave": {
+    "message": "Save $1 account(s)"
+  },
+  "expSubSamePw": {
+    "message": "Use a password other than your master password: whoever opens the file will know it."
+  },
+  "expSubSaved": {
+    "message": "File with $1 account(s) created. Check that your browser saved it."
+  },
+  "expSubChanged": {
+    "message": "The selected accounts changed in another page. Nothing was saved: check the list and save again."
+  },
+  "secNoticeFailed": {
+    "message": "$1 wrong password, recovery key or PIN attempt(s) since you last saw this."
+  },
+  "secNoticeBad": {
+    "message": "The security record can't be read."
+  },
+  "secLogTitle": {
+    "message": "Security record"
+  },
+  "secLogLead": {
+    "message": "Wrong passwords, exports and key changes in this browser profile, with the time only. An alert, not evidence: anyone with a copy of the profile can change it."
+  },
+  "secLogCount": {
+    "message": "Wrong attempts not yet shown after an unlock: $1"
+  },
+  "secLogEmpty": {
+    "message": "Nothing recorded yet."
+  },
+  "secLogDamaged": {
+    "message": "It is damaged. The next entry starts a new one."
+  },
+  "secLogNewer": {
+    "message": "A newer version of Sixkey wrote it. This version does not add to it."
+  },
+  "secLogOlder": {
+    "message": "and $1 older"
+  },
+  "secLogClear": {
+    "message": "Clear record"
+  },
+  "secLogClearLead": {
+    "message": "Needs your master password. A wrong one is refused and recorded. One dated line stays."
+  },
+  "secKUnlockFailed": {
+    "message": "Wrong master password"
+  },
+  "secKRecoveryFailed": {
+    "message": "Wrong recovery key"
+  },
+  "secKRecoveryUsed": {
+    "message": "Recovery key accepted"
+  },
+  "secKExportEncrypted": {
+    "message": "Encrypted backup saved"
+  },
+  "secKExportPlain": {
+    "message": "Plain text list saved"
+  },
+  "secKExportSubset": {
+    "message": "Selected accounts exported"
+  },
+  "secKPasswordEnabled": {
+    "message": "Master password turned on"
+  },
+  "secKPasswordChanged": {
+    "message": "Master password changed"
+  },
+  "secKPasswordReset": {
+    "message": "Master password reset with the recovery key"
+  },
+  "secKKeyRotated": {
+    "message": "Encryption key replaced"
+  },
+  "secKRecoveryCodeNew": {
+    "message": "New recovery key made"
+  },
+  "secKLogCleared": {
+    "message": "Record cleared"
+  },
+  "secInvTitle": {
+    "message": "What Sixkey keeps in this browser profile"
+  },
+  "secInvKeysPw": {
+    "message": "Your accounts, encrypted, and the key that opens them, locked by your master password and by your recovery key."
+  },
+  "secInvKeysDevice": {
+    "message": "Your accounts, encrypted, and the key that opens them, kept beside them unlocked: a copy of this profile opens them."
+  },
+  "secInvSnaps": {
+    "message": "$1 older encrypted copies (the last 10 saves, one a day for 7 days)."
+  },
+  "secInvMirror": {
+    "message": "A second encrypted copy, and up to 7 daily ones, in this profile's IndexedDB."
+  },
+  "secInvNoMirror": {
+    "message": "No copy found in this profile's IndexedDB."
+  },
+  "secInvSettings": {
+    "message": "Settings: locking, display, language, theme, any install warning, an ID that orders edits, upkeep markers (no keys), and the last backup ($1)."
+  },
+  "secInvLogs": {
+    "message": "This record, notes of automatic restores, and a log of minor problems. None holds keys, codes or account names."
+  },
+  "secInvSession": {
+    "message": "While unlocked: the opened key, in the browser's memory-only session storage (not when locking every time)."
+  },
+  "errLine": {
+    "message": "$1. $2"
+  },
+  "errRead": {
+    "message": "Sixkey could not read its data on this computer"
+  },
+  "errSave": {
+    "message": "This change could not be saved, and your accounts are as they were"
+  },
+  "errSpace": {
+    "message": "There is not enough free disk space to save"
+  },
+  "errNextRetry": {
+    "message": "Try again. If it keeps failing, save diagnostics under $1."
+  },
+  "errNextRestore": {
+    "message": "Try again. If it keeps failing, restore from a backup file under $1."
+  },
+  "errNextSpace": {
+    "message": "Free up some disk space on this computer, then try again."
+  },
+  "errNextCheck": {
+    "message": "Check it and try again."
+  },
+  "errNextWeak": {
+    "message": "Make it longer: a few random words work well, or use “$1”."
+  },
+  "errNextReload": {
+    "message": "Reload this page and try again."
+  },
+  "errNextUnlock": {
+    "message": "Unlock it with your master password, then try again."
+  },
+  "errNextBackupPw": {
+    "message": "Enter the password this backup was saved with. It can differ from your master password."
+  },
+  "errNextBackupFile": {
+    "message": "Choose a file saved with “$1”."
+  },
+  "errNextUpdate": {
+    "message": "Update Sixkey, then try again. Nothing has been changed."
+  },
+  "addNothing": {
+    "message": "Paste links, choose a file or scan a QR code first."
+  },
+  "camStart": {
+    "message": "Scan with camera"
+  },
+  "camStop": {
+    "message": "Stop camera"
+  },
+  "camSource": {
+    "message": "Camera"
+  },
+  "camHint": {
+    "message": "Hold the QR code up to the camera."
+  },
+  "camDenied": {
+    "message": "Sixkey is not allowed to use the camera. Allow it with the camera icon in the address bar or in this extension's site settings (on a Mac, also in System Settings › Privacy & Security › Camera)."
+  },
+  "camFailed": {
+    "message": "The camera could not be started: there is none, or another app is using it."
+  },
+  "camOther": {
+    "message": "This code is from another Google Authenticator export. Finish this one first, or add what you have."
+  },
+  "camNotOtp": {
+    "message": "Not a 2FA QR code."
+  },
+  "fileTooBig": {
+    "message": "Too large to import."
+  },
+  "fileNotText": {
+    "message": "Not a text, JSON, CSV or image file."
+  },
+  "fileZip": {
+    "message": "A ZIP archive. Unzip it, then choose the file inside."
+  },
+  "fileEncrypted": {
+    "message": "An encrypted $1 export, which Sixkey cannot open. Export it again without encryption, then choose that file."
+  },
+  "fileIsBackup": {
+    "message": "A Sixkey backup: import it under Backup."
+  },
+  "fileNothing": {
+    "message": "No accounts found in it."
+  },
+  "fileHtml": {
+    "message": "A web page export: its codes are only pictures. Scan them with the camera, or choose screenshots of them."
+  },
+  "fileSkipType": {
+    "message": "$1 skipped: Sixkey cannot make $2 codes."
+  },
+  "skipNamed": {
+    "message": "$1 skipped: $2"
+  },
+  "delAsk": {
+    "message": "$1 holds your secret keys in plain text. Delete it now?"
+  },
+  "delPlain": {
+    "message": "$1 holds your secret keys in plain text."
+  },
+  "delNote": {
+    "message": "Deleting does not guarantee it cannot be recovered."
+  },
+  "delLeft": {
+    "message": "Accounts in it not imported: $1. Deleting the file loses them."
+  },
+  "delHotp": {
+    "message": "Counter-based (HOTP) accounts from it: $1. Sixkey keeps them but cannot make their codes yet."
+  },
+  "delYes": {
+    "message": "Delete file"
+  },
+  "delKeep": {
+    "message": "Keep it"
+  },
+  "delDone": {
+    "message": "Deleted $1."
+  },
+  "delNot": {
+    "message": "$1 was not deleted."
+  },
+  "delChanged": {
+    "message": "$1 changed after Sixkey read it, so it was not deleted."
+  },
+  "delManual": {
+    "message": "Delete it yourself: move it to the Trash or Recycle Bin, then empty it."
+  },
+  "errSyncOn": {
+    "message": "Sync is on in this profile, so this change has to go through sync"
+  },
+  "errNextSyncOn": {
+    "message": "Make it from the sync settings, so that every device gets it. Nothing was changed."
+  },
+  "errCleanupPending": {
+    "message": "An earlier key change is still being finished on this computer"
+  },
+  "errNextCleanupPending": {
+    "message": "Lock Sixkey and unlock it again, then try again. Nothing was changed."
+  },
+  "secKSyncOn": {
+    "message": "Sync turned on in this profile"
+  },
+  "secKSyncOff": {
+    "message": "Sync turned off in this profile"
+  },
+  "secKIdentityRestored": {
+    "message": "This device's sync identity restored from its encrypted copy"
+  },
+  "secKKeysAdopted": {
+    "message": "Keys changed on another device were taken over here"
+  },
+  "secKDeviceApproved": {
+    "message": "A new device was approved from this profile"
+  },
+  "secKDeviceRevoked": {
+    "message": "A device was revoked from this profile"
+  },
+  "secKHistoryCleared": {
+    "message": "The server's history was cleared"
+  },
+  "secKPrfEnrolled": {
+    "message": "Unlock with Touch ID or Windows Hello added"
+  },
+  "secKPrfRemoved": {
+    "message": "Unlock with Touch ID or Windows Hello removed"
+  },
+  "secKPrfFailed": {
+    "message": "Unlocking with Touch ID or Windows Hello failed"
+  },
+  "frJoinSync": {
+    "message": "Join a synced vault instead"
+  },
+  "syncBadgeTitle": {
+    "message": "Sixkey · devices waiting for approval: $1"
+  },
+  "secKeysInSyncTitle": {
+    "message": "Master password, recovery key and keys"
+  },
+  "secKeysInSyncBody": {
+    "message": "Sync is on, so these change in the Sync section: every device then gets the change."
+  },
+  "secKeysInSyncOpen": {
+    "message": "Open Sync"
+  },
+  "secKKeysAdoptedBack": {
+    "message": "Keys this device had used before were taken back from the server"
+  },
+  "lockPasswordElsewhere": {
+    "message": "The master password was changed on another device. Here, unlock with your previous one, then take the new one in Settings › Sync."
+  },
+  "lockKeysElsewhere": {
+    "message": "The keys were changed on another device. Here, unlock with the master password this device last used, then enter the current one in Settings › Sync."
+  },
+  "lockOpenSync": {
+    "message": "Open Sync"
+  },
+  "lockPendingChange": {
+    "message": "A new master password set in Settings may not have reached this device yet. If yours fails here, unlock in Settings › Sync with the one you set."
+  },
+  "trashKeptUnchecked": {
+    "message": "$1 vault(s) this profile kept from before a sync join could not be checked here, so an account you erased may still be in them. Delete them in Settings › Sync if it must be gone everywhere."
+  },
+  "startOverKept": {
+    "message": "This profile also keeps $1 vault(s) from before a sync join. Starting over does not erase them; delete them in Settings › Sync if you want them gone."
+  },
+  "strengthHintOwn": {
+    "message": "At least $1 characters. $2 bits or more is best: a few random words work well."
+  },
+  "strengthLowOwn": {
+    "message": "Estimated $1 bits, below the $2 we recommend."
+  },
+  "strengthShort": {
+    "message": "Too short: at least $1 characters."
+  },
+  "strengthCommon": {
+    "message": "Too easy to guess: too close to a common password."
+  },
+  "pwWeakWhy": {
+    "message": "Someone who copies this browser profile can guess offline, with no limit on tries: one graphics card finds a password this strong in about $1, and more cards are faster."
+  },
+  "pwUseAnyway": {
+    "message": "Use anyway"
+  },
+  "lockPinWaiting": {
+    "message": "The PIN works again once you type the master password."
+  },
+  "pwGroup": {
+    "message": "$1, group $2 of $3"
+  },
+  "pwPlainField": {
+    "message": "Use a plain password field"
+  },
+  "pwWordsHint": {
+    "message": "Type the 5 words; spaces or hyphens both work."
+  },
+  "pwOwn": {
+    "message": "Choose my own"
+  },
+  "strengthGenerated": {
+    "message": "Generated: $1 bits. Strong enough."
+  },
+  "strengthFloor": {
+    "message": "Too predictable: avoid keyboard runs, sequences and repeats."
+  },
+  "pwWhyChars": {
+    "message": "$1 random characters: about $2 bits, well above the $3-bit bar."
+  },
+  "pwWhyWords": {
+    "message": "$1 random words: about $2 bits, above the $3-bit bar."
+  },
+  "pwSaveMaster": {
+    "message": "Save it in your password manager or write it on paper."
+  },
+  "pwSaveFile": {
+    "message": "Save it in your password manager or write it on paper: the file cannot be opened without it."
+  },
+  "pwUseWords": {
+    "message": "Easier to type: words"
+  },
+  "pwUseChars": {
+    "message": "Use characters instead"
+  },
+  "pwUseGenerated": {
+    "message": "Use a generated password instead"
+  },
+  "cmdLock": {
+    "message": "Lock Sixkey"
+  },
+  "pinTitle": {
+    "message": "Enter your PIN"
+  },
+  "pinLabel": {
+    "message": "PIN"
+  },
+  "pinTriesLeft": {
+    "message": "Tries left: $1. After that, the master password."
+  },
+  "pinWrong": {
+    "message": "Wrong PIN. Tries left: $1."
+  },
+  "pinExhausted": {
+    "message": "Too many wrong PINs. Enter the master password."
+  },
+  "pinEnded": {
+    "message": "The PIN can't be used now. Enter the master password."
+  },
+  "pinRetry": {
+    "message": "Sixkey locked meanwhile. Enter the PIN again."
+  },
+  "useMasterPassword": {
+    "message": "Use master password"
+  },
+  "usePin": {
+    "message": "Use PIN"
+  },
+  "pinBoxTitle": {
+    "message": "PIN quick unlock"
+  },
+  "pinLead": {
+    "message": "A PIN of 4 to 8 digits opens Sixkey again after it locks, also after the browser restarts. Don't reuse your phone or bank PIN."
+  },
+  "pinHonest": {
+    "message": "A PIN stops people at your computer: after 5 wrong tries only the master password opens Sixkey. It does not stop programs on this computer, or anyone who opens the browser's developer tools."
+  },
+  "pinRoot": {
+    "message": "The master password always works, and exports, key changes, deleting for good, and setting or changing the PIN still ask for it."
+  },
+  "pinClose": {
+    "message": "To lock whenever the popup closes, choose “$1” under Automatic lock. The PIN opens it again."
+  },
+  "pinOn": {
+    "message": "On ($1 digits)."
+  },
+  "pinWaiting": {
+    "message": "On ($1 digits). It works again after you next type the master password."
+  },
+  "pinShared": {
+    "message": "Not available: this profile is declared shared or controlled by scripts (Security mode), and they could read a PIN."
+  },
+  "pinNeedsPassword": {
+    "message": "Set a master password first."
+  },
+  "pinNew": {
+    "message": "New PIN"
+  },
+  "pinAgain": {
+    "message": "New PIN again"
+  },
+  "pinFormat": {
+    "message": "Use 4 to 8 digits."
+  },
+  "pinWeak": {
+    "message": "Too easy to guess. Avoid repeated digits, runs like 1234 and common PINs."
+  },
+  "pinDiffer": {
+    "message": "The two PINs differ."
+  },
+  "pinSet": {
+    "message": "Set PIN"
+  },
+  "pinChange": {
+    "message": "Change PIN"
+  },
+  "pinRemove": {
+    "message": "Remove PIN"
+  },
+  "pinSaved": {
+    "message": "PIN saved. It works now."
+  },
+  "pinRemoved": {
+    "message": "PIN removed."
+  },
+  "quickEndNow": {
+    "message": "End quick unlock and lock"
+  },
+  "quickEnded": {
+    "message": "Ended. Sixkey is locked, and the master password opens it."
+  },
+  "lockShortcutBody": {
+    "message": "Locks Sixkey from any page:"
+  },
+  "secKPinSet": {
+    "message": "PIN set"
+  },
+  "secKPinRemoved": {
+    "message": "PIN removed"
+  },
+  "secKPinFailed": {
+    "message": "Wrong PIN"
+  },
+  "secKQuickEnded": {
+    "message": "PIN quick unlock ended"
+  },
+  "eraseNeedsPassword": {
+    "message": "Deleting for good cannot be undone, so it asks for your master password."
+  },
+  "viewAuto": {
+    "message": "Auto"
+  },
+  "viewHide": {
+    "message": "Hide codes"
+  },
+  "railCsb": {
+    "message": "Chrome Sync"
+  },
+  "railCsbBrowser": {
+    "message": "browser sync"
+  },
+  "railCsbOff": {
+    "message": "Off"
+  },
+  "railCsbOn": {
+    "message": "On"
+  },
+  "railCsbSaving": {
+    "message": "Handing over…"
+  },
+  "railCsbOk": {
+    "message": "Handed over · $1"
+  },
+  "railCsbSoon": {
+    "message": "Handing over soon"
+  },
+  "railCsbFailed": {
+    "message": "Not handed over · will retry"
+  },
+  "railCsbStopped": {
+    "message": "Backup stopped"
+  },
+  "sharesInsteadLink": {
+    "message": "I have shares instead"
+  },
+  "sharesFoldTitle": {
+    "message": "Recovery key shares"
+  },
+  "sharesStopWarn": {
+    "message": "Shares made of the current recovery key stop working too."
+  },
+  "sharesSwitched": {
+    "message": "Switched to your shares. Keep the old recovery key until “Check my shares” passes after a browser restart."
+  },
+  "secKSharesMade": {
+    "message": "Recovery key shares made"
+  },
+  "sharesRemind": {
+    "message": "Check your recovery key shares once now. When they pass, destroy the old recovery key."
+  },
+  "sharesRemindGo": {
+    "message": "Check my shares"
+  },
+  "fileLockedMeanwhile": {
+    "message": "Sixkey locked while the file was being read. Choose it again."
+  },
+  "grpAccounts": {
+    "message": "Accounts"
+  },
+  "secLockTab": {
+    "message": "Locking"
+  },
+  "secKeysTab": {
+    "message": "Password & recovery"
+  },
+  "lookOpen": {
+    "message": "Clicking the icon opens"
+  },
+  "lookOpenPopup": {
+    "message": "Popup"
+  },
+  "lookOpenPanel": {
+    "message": "Side panel"
+  },
+  "lookOpenNote": {
+    "message": "The side panel stays open beside the page, and the keyboard shortcut opens it too. While it is open, Sixkey locks after 15 minutes without use, even if Automatic lock allows longer."
+  },
+  "lookOpenShared": {
+    "message": "The side panel is not offered in a shared profile (Security mode)."
+  },
+  "openPanel": {
+    "message": "Open in side panel"
+  },
+  "panelTabHint": {
+    "message": "Click the Sixkey icon on this tab to match its site and scan it."
+  },
+  "countOne": {
+    "message": "1 account"
+  },
+  "fillTitleAsk": {
+    "message": "Sixkey: open it and click Fill code"
+  }
+}

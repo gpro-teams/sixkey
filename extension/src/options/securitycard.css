@@ -1,0 +1,65 @@
+/* Settings page > Security: the security record and what is stored (SecurityCard.tsx). Built on the options.css tokens
+   and boxes, so both themes follow them; no animation of its own. */
+#security-log .callout.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+#security-log .callout.warn .ic {
+  color: var(--warn);
+}
+.sec-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.sec-log li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.sec-log li:last-child {
+  border-bottom: 0;
+}
+.sec-log li.bad span {
+  color: var(--danger);
+  font-weight: 500;
+}
+.sec-log time {
+  font: 12px/1.5 var(--f-num);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sec-log li.more {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.sec-clear {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sec-inv {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.sec-inv li::marker {
+  color: var(--faint);
+}
+.sec-inv li.net {
+  color: var(--good);
+  font-weight: 500;
+}

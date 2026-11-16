@@ -1,0 +1,41 @@
+# Developer Certificate of Origin: every commit of a pull request carries a "Signed-off-by:" line with its author's own
+# name and address (CONTRIBUTING.md, DCO.txt). Merge commits are skipped.
+#
+# Its `uses:` is pinned to a release's full commit SHA, with the release's tag as a comment, as ci.yml's header says.
+name: dco
+
+on:
+  pull_request:
+
+# No token permissions by default; the job only reads the repository.
+permissions: {}
+
+jobs:
+  sign-off:
+    name: every commit is signed off by its author
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Check the sign-offs
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -eu
+          missing=0
+          for c in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            author="$(git log -1 --format='%an <%ae>' "$c")"
+            if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$c" | grep -qxF "$author"; then
+              # (the author's name is not echoed: it is the pull request's text, and could carry workflow commands)
+              echo "::error::commit $c has no Signed-off-by line with its author's name and address (git commit --amend -s, or git rebase --signoff)"
+              missing=1
+            fi
+          done
+          exit "$missing"

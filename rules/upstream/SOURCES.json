@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "id": "apple-shared-credentials",
+      "source": "apple",
+      "url": "https://github.com/apple/password-manager-resources",
+      "commit": "e6a7cf40fe91aa8897b1be07b0ab416332c31488",
+      "path": "quirks/shared-credentials.json",
+      "vendored": "apple/shared-credentials.json",
+      "use": "aliases",
+      "sha256": "c79bfc702783df253ce4c33bd5c61d4ea7e1be6e51d93418a3685a559ac2f1ce",
+      "license": "MIT",
+      "fetched": "2026-11-04"
+    },
+    {
+      "id": "apple-append-2fa",
+      "source": "apple",
+      "url": "https://github.com/apple/password-manager-resources",
+      "commit": "e6a7cf40fe91aa8897b1be07b0ab416332c31488",
+      "path": "quirks/websites-that-append-2fa-to-password.json",
+      "vendored": "apple/websites-that-append-2fa-to-password.json",
+      "use": "appends",
+      "sha256": "0b7049bd13629a13491d516455aadacb5056a7764f34aff4b2de10165e20f9ac",
+      "license": "MIT",
+      "fetched": "2026-11-04"
+    },
+    {
+      "id": "apple-license",
+      "source": "apple",
+      "url": "https://github.com/apple/password-manager-resources",
+      "commit": "e6a7cf40fe91aa8897b1be07b0ab416332c31488",
+      "path": "LICENSE.md",
+      "vendored": "apple/LICENSE.md",
+      "use": "licence",
+      "sha256": "3c3ec19af02df4372c1da21197c99f40a2bc5ef1b0cb972a095aacb292d872b1",
+      "license": "MIT",
+      "fetched": "2026-11-04"
+    }
+  ]
+}

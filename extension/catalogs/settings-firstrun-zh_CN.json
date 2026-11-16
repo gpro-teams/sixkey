@@ -1,0 +1,71 @@
+{
+  "emptyOptions": {
+    "message": "还没有保险库。先设主密码，再保存恢复密钥；两步都完成之前什么都不会保存。"
+  },
+  "restored": {
+    "message": "已恢复 $1 个账户。"
+  },
+  "frTitle": {
+    "message": "开始使用 Sixkey"
+  },
+  "frRestoreLead": {
+    "message": "先选择备份，再为这台电脑设置主密码：账户从一开始就在主密码的保护下保存。"
+  },
+  "frStartOverLead": {
+    "message": "新建一个有主密码的空保险库。完成之前不会清除任何数据。"
+  },
+  "frStepFile": {
+    "message": "备份文件"
+  },
+  "frStepProfile": {
+    "message": "这个配置文件"
+  },
+  "frStepAccount": {
+    "message": "第一个账户"
+  },
+  "frPasswordTitle": {
+    "message": "设置主密码"
+  },
+  "frPreparing": {
+    "message": "正在准备…"
+  },
+  "frCodeNote": {
+    "message": "完成之前什么都不会保存。如果在那之前关闭此页，这个恢复密钥打不开任何东西，下次会给你一个新的。"
+  },
+  "frRiskTitle": {
+    "message": "这个浏览器配置文件只有你在用吗？"
+  },
+  "frRiskBody": {
+    "message": "会不会被别人使用、同步到指纹浏览器厂商的云端，或由脚本 / 自动化工具控制？"
+  },
+  "frRiskNote": {
+    "message": "以后可在 设置 › 安全 › 安全模式 中更改。"
+  },
+  "frFinish": {
+    "message": "完成"
+  },
+  "frClipLead": {
+    "message": "共享或自动化的配置文件建议开启。"
+  },
+  "frChanged": {
+    "message": "另一个页面在此期间完成了设置或改动了数据，这里没有做任何改动。"
+  },
+  "frRestoreInstead": {
+    "message": "改为从备份恢复"
+  },
+  "frCreateInstead": {
+    "message": "改为从空保险库开始"
+  },
+  "frReadyTitle": {
+    "message": "Sixkey 已准备就绪"
+  },
+  "frAddBelow": {
+    "message": "在下面添加第一个账户。"
+  },
+  "frScanHint": {
+    "message": "也可以在网站页面上点 Sixkey 图标，识别页面上的二维码。"
+  },
+  "frJoinSync": {
+    "message": "改为加入已同步的保险库"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "pxBadTag": {
+    "message": "Sixkey 无法核对已保存的自动填写设置。请把自动填写关闭再打开一次，重新保存。"
+  },
+  "pxRecent": {
+    "message": "最近的请求"
+  },
+  "pxLogOk": {
+    "message": "已为网页提供验证码"
+  },
+  "pxLogLocked": {
+    "message": "未提供验证码：Sixkey 已锁定"
+  },
+  "pxLogOff": {
+    "message": "未提供验证码：自动填写已关闭"
+  },
+  "pxLogOther": {
+    "message": "未提供验证码"
+  },
+  "pxAfName": {
+    "message": "自动填写"
+  },
+  "pxAfOff": {
+    "message": "关闭时，Sixkey 交还在网页中运行的权限和对各网站的访问权限。网站列表会保留，重新打开时继续使用。"
+  },
+  "pxTryAgain": {
+    "message": "Sixkey 还在完成上一项更改，请稍后重试。"
+  }
+}

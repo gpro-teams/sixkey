@@ -1,0 +1,756 @@
+{
+ "source": {
+  "what": "Derived from SLIP-39's official test vectors, decoded by its reference implementation, for the share arithmetic only",
+  "repository": "https://github.com/trezor/python-shamir-mnemonic",
+  "commit": "1ff7b9a9d675ab69945c84a50848d704ce1c78b7",
+  "pypiVersion": "0.3.0",
+  "vectorsSha256": "13ebecebdd869dd2bc2cdf69e7ce3a158cf106cac76c39d17682b1c6cdabbdc4",
+  "licence": "MIT (Copyright 2018 Andrew R. Kozlik; Copyright 2019 SatoshiLabs)",
+  "passphrase": "TREZOR",
+  "generator": "extension/test/fixtures/shares-slip39-gen.py"
+ },
+ "official": [
+  {
+   "description": "1. Valid mnemonic without sharing (128 bits)",
+   "identifier": 7945,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "11bc609d21747c49ba78c0701293e417"
+      }
+     ]
+    }
+   ],
+   "ems": "11bc609d21747c49ba78c0701293e417",
+   "masterSecret": "bb54aac4b89dc868ba37d9cc21b2cece"
+  },
+  {
+   "description": "4. Basic sharing 2-of-3 (128 bits)",
+   "identifier": 25653,
+   "extendable": false,
+   "iterationExponent": 2,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "06ab48fef4bedc8ce58baeef0a73f76e"
+      },
+      {
+       "x": 2,
+       "y": "08fb14b66e692e25dfe2edf53289ed62"
+      }
+     ]
+    }
+   ],
+   "ems": "cdc017fddc829e791b1371780be0605a",
+   "masterSecret": "b43ceb7e57a0ea8766221624d01b0864"
+  },
+  {
+   "description": "5. Basic sharing 2-of-3 (128 bits)",
+   "identifier": 25653,
+   "extendable": false,
+   "iterationExponent": 2,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 2,
+       "y": "08fb14b66e692e25dfe2edf53289ed62"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "11. Mnemonics with duplicate member indices (128 bits)",
+   "identifier": 6907,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 2,
+       "y": "fb03efd650b002749183e0270f128714"
+      },
+      {
+       "x": 2,
+       "y": "e726c2e030534d35b6c80dd1c703dcbe"
+      }
+     ]
+    }
+   ],
+   "error": "duplicate"
+  },
+  {
+   "description": "13. Mnemonics giving an invalid digest (128 bits)",
+   "identifier": 13375,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "c8b9d27853c7dee68be5457014f07057"
+      },
+      {
+       "x": 1,
+       "y": "61695b5315b3dfc1dce0ab914325af00"
+      }
+     ]
+    }
+   ],
+   "error": "digest"
+  },
+  {
+   "description": "14. Insufficient number of groups (128 bits, case 1)",
+   "identifier": 9497,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "0b99753280a6da02952584800234d7be"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "15. Insufficient number of groups (128 bits, case 2)",
+   "identifier": 9497,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "44e95c567b0b73d470f78e2cc4f206ee"
+      },
+      {
+       "x": 1,
+       "y": "7de3cd7710c8938b67328217664ccadb"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "16. Threshold number of groups, but insufficient number of members in one group (128 bits)",
+   "identifier": 9497,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "0b99753280a6da02952584800234d7be"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 2,
+       "y": "36fd6514ad96a86a5e66965a9b958584"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "17. Threshold number of groups and members in each group (128 bits, case 1)",
+   "identifier": 9497,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 2,
+     "memberThreshold": 3,
+     "shares": [
+      {
+       "x": 0,
+       "y": "9e6afad0e741c8c1c65b2785a942808a"
+      },
+      {
+       "x": 2,
+       "y": "fc119ebfe32da3d688dc1f26c22c7ffc"
+      },
+      {
+       "x": 4,
+       "y": "90f25bc998346d039203971999669e96"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "44e95c567b0b73d470f78e2cc4f206ee"
+      },
+      {
+       "x": 4,
+       "y": "a0c12ed2cc2adeb32ccebec07a3c1b3a"
+      }
+     ]
+    }
+   ],
+   "ems": "c2d2e26ad06023c60145f150abe2dd2b",
+   "masterSecret": "7c3397a292a5941682d7a4ae2d898d11"
+  },
+  {
+   "description": "18. Threshold number of groups and members in each group (128 bits, case 2)",
+   "identifier": 9497,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "0b99753280a6da02952584800234d7be"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 1,
+       "y": "7de3cd7710c8938b67328217664ccadb"
+      },
+      {
+       "x": 4,
+       "y": "a0c12ed2cc2adeb32ccebec07a3c1b3a"
+      }
+     ]
+    }
+   ],
+   "ems": "c2d2e26ad06023c60145f150abe2dd2b",
+   "masterSecret": "7c3397a292a5941682d7a4ae2d898d11"
+  },
+  {
+   "description": "19. Threshold number of groups and members in each group (128 bits, case 3)",
+   "identifier": 9497,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "528f189b171d073b3b36b5da48f36b51"
+      }
+     ]
+    },
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "0b99753280a6da02952584800234d7be"
+      }
+     ]
+    }
+   ],
+   "ems": "c2d2e26ad06023c60145f150abe2dd2b",
+   "masterSecret": "7c3397a292a5941682d7a4ae2d898d11"
+  },
+  {
+   "description": "20. Valid mnemonic without sharing (256 bits)",
+   "identifier": 29172,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "d772fee46424e100bec16d165f1fcc346d1e8d909da580f9f9f04ea5c788d212"
+      }
+     ]
+    }
+   ],
+   "ems": "d772fee46424e100bec16d165f1fcc346d1e8d909da580f9f9f04ea5c788d212",
+   "masterSecret": "989baf9dcaad5b10ca33dfd8cc75e42477025dce88ae83e75a230086a0e00e92"
+  },
+  {
+   "description": "23. Basic sharing 2-of-3 (256 bits)",
+   "identifier": 14279,
+   "extendable": false,
+   "iterationExponent": 2,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 1,
+       "y": "19e366e9b2e34851e52132c31c2b2c957321bf5ce6c9c1410ea1ddf5fef92c27"
+      },
+      {
+       "x": 2,
+       "y": "81e5473f4b7f66094f888d2f98fe0ded6a692dc72c65dc498d6e28bee6ebdfcc"
+      }
+     ]
+    }
+   ],
+   "ems": "0204622ff84267b5dae0ca4e0c1328d6611b96b92b11692e5a7542314f7a54ee",
+   "masterSecret": "c938b319067687e990e05e0da0ecce1278f75ff58d9853f19dcaeed5de104aae"
+  },
+  {
+   "description": "24. Basic sharing 2-of-3 (256 bits)",
+   "identifier": 14279,
+   "extendable": false,
+   "iterationExponent": 2,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 2,
+       "y": "81e5473f4b7f66094f888d2f98fe0ded6a692dc72c65dc498d6e28bee6ebdfcc"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "30. Mnemonics with duplicate member indices (256 bits)",
+   "identifier": 11127,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 2,
+       "y": "d729fa6d0da3cc8eef8cd7d11bb256c3"
+      },
+      {
+       "x": 2,
+       "y": "14f53462994c08a7ea992d76a9149027"
+      }
+     ]
+    }
+   ],
+   "error": "duplicate"
+  },
+  {
+   "description": "32. Mnemonics giving an invalid digest (256 bits)",
+   "identifier": 24454,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "3c59ea2a38b713c8f0eda4907c558602"
+      },
+      {
+       "x": 1,
+       "y": "7409621999e03973ca7ba0fdbfba28b1"
+      }
+     ]
+    }
+   ],
+   "error": "digest"
+  },
+  {
+   "description": "33. Insufficient number of groups (256 bits, case 1)",
+   "identifier": 32134,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "6b4b917c4263ba9978a28eee6c214dfa1ae31bacdf3d515516c6b508c3cb8204"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "34. Insufficient number of groups (256 bits, case 2)",
+   "identifier": 32134,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 1,
+       "y": "094ed0a7c9b50a3dcecc037bb4e34eb5b158a8ee3f8ea661e76521e07629e663"
+      },
+      {
+       "x": 4,
+       "y": "a187959bc2cf66cf57e28540dcd4834947e83cac83aee5f6a8028c5bc304c96d"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "35. Threshold number of groups, but insufficient number of members in one group (256 bits)",
+   "identifier": 32134,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "6b4b917c4263ba9978a28eee6c214dfa1ae31bacdf3d515516c6b508c3cb8204"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 2,
+       "y": "98091ab3396a2e9ab9d6889b6507fce1e3c12dd0a2676ee52bb1b389ec320a90"
+      }
+     ]
+    }
+   ],
+   "error": "count"
+  },
+  {
+   "description": "36. Threshold number of groups and members in each group (256 bits, case 1)",
+   "identifier": 32134,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 2,
+     "memberThreshold": 3,
+     "shares": [
+      {
+       "x": 0,
+       "y": "82a363ed145a49a4e37311253c105846c0afb13b74e5ddda9cc25d7aae49bc89"
+      },
+      {
+       "x": 1,
+       "y": "d127f1f9bc12e3856fb3983104783b71480d249d80101568def4a41100177dfb"
+      },
+      {
+       "x": 4,
+       "y": "4bde8a604105f3a6c32f2f547131aafea756725a28e80a14d59d8f05c4adcca5"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 1,
+       "y": "094ed0a7c9b50a3dcecc037bb4e34eb5b158a8ee3f8ea661e76521e07629e663"
+      },
+      {
+       "x": 2,
+       "y": "98091ab3396a2e9ab9d6889b6507fce1e3c12dd0a2676ee52bb1b389ec320a90"
+      }
+     ]
+    }
+   ],
+   "ems": "c41d5cf80fed71a008a3a0ae0458ff0c6d621b1a5522bccbfedbcfad87005c06",
+   "masterSecret": "5385577c8cfc6c1a8aa0f7f10ecde0a3318493262591e78b8c14c6686167123b"
+  },
+  {
+   "description": "37. Threshold number of groups and members in each group (256 bits, case 2)",
+   "identifier": 32134,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "6b4b917c4263ba9978a28eee6c214dfa1ae31bacdf3d515516c6b508c3cb8204"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 1,
+       "y": "094ed0a7c9b50a3dcecc037bb4e34eb5b158a8ee3f8ea661e76521e07629e663"
+      },
+      {
+       "x": 4,
+       "y": "a187959bc2cf66cf57e28540dcd4834947e83cac83aee5f6a8028c5bc304c96d"
+      }
+     ]
+    }
+   ],
+   "ems": "c41d5cf80fed71a008a3a0ae0458ff0c6d621b1a5522bccbfedbcfad87005c06",
+   "masterSecret": "5385577c8cfc6c1a8aa0f7f10ecde0a3318493262591e78b8c14c6686167123b"
+  },
+  {
+   "description": "38. Threshold number of groups and members in each group (256 bits, case 3)",
+   "identifier": 32134,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 2,
+   "groupCount": 4,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "bc41d7aec90d616217e3d505413186c5a96f1b78aea3ef47f6da666337107b86"
+      }
+     ]
+    },
+    {
+     "index": 1,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "6b4b917c4263ba9978a28eee6c214dfa1ae31bacdf3d515516c6b508c3cb8204"
+      }
+     ]
+    }
+   ],
+   "ems": "c41d5cf80fed71a008a3a0ae0458ff0c6d621b1a5522bccbfedbcfad87005c06",
+   "masterSecret": "5385577c8cfc6c1a8aa0f7f10ecde0a3318493262591e78b8c14c6686167123b"
+  },
+  {
+   "description": "41. Valid mnemonics which can detect some errors in modular arithmetic",
+   "identifier": 13899,
+   "extendable": false,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 3,
+     "shares": [
+      {
+       "x": 0,
+       "y": "0d5f0655e0645fad705c1e128887678f"
+      },
+      {
+       "x": 7,
+       "y": "3ed2fa64acf769131509ca05437606b1"
+      },
+      {
+       "x": 9,
+       "y": "58ccc8f63e2232eb372d91241e61506b"
+      }
+     ]
+    }
+   ],
+   "ems": "369fea28d93fc048e6173ce2cf366fa6",
+   "masterSecret": "ad6f2ad8b59bbbaa01369b9006208d9a"
+  },
+  {
+   "description": "42. Valid extendable mnemonic without sharing (128 bits)",
+   "identifier": 29019,
+   "extendable": true,
+   "iterationExponent": 3,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "9e8773c7313b11d3bfe219291976433b"
+      }
+     ]
+    }
+   ],
+   "ems": "9e8773c7313b11d3bfe219291976433b",
+   "masterSecret": "1679b4516e0ee5954351d288a838f45e"
+  },
+  {
+   "description": "43. Extendable basic sharing 2-of-3 (128 bits)",
+   "identifier": 9066,
+   "extendable": true,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "a5a69aa82af0f8068a01d8e8c095ddf3"
+      },
+      {
+       "x": 2,
+       "y": "00d13191fb007cabfc4883edfa14552e"
+      }
+     ]
+    }
+   ],
+   "ems": "644c905b0c4da21692f06fff3ed8b3e1",
+   "masterSecret": "48b1a4b80b8c209ad42c33672bdaa428"
+  },
+  {
+   "description": "44. Valid extendable mnemonic without sharing (256 bits)",
+   "identifier": 14691,
+   "extendable": true,
+   "iterationExponent": 3,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 1,
+     "shares": [
+      {
+       "x": 0,
+       "y": "6b6b8928127943557885034b146d4dcecade143e9fe23eb43c85b9be2c3d50a2"
+      }
+     ]
+    }
+   ],
+   "ems": "6b6b8928127943557885034b146d4dcecade143e9fe23eb43c85b9be2c3d50a2",
+   "masterSecret": "8340611602fe91af634a5f4608377b5235fa2d757c51d720c0c7656249a3035f"
+  },
+  {
+   "description": "45. Extendable basic sharing 2-of-3 (256 bits)",
+   "identifier": 32065,
+   "extendable": true,
+   "iterationExponent": 0,
+   "groupThreshold": 1,
+   "groupCount": 1,
+   "groups": [
+    {
+     "index": 0,
+     "memberThreshold": 2,
+     "shares": [
+      {
+       "x": 0,
+       "y": "b4290e56271e919a44596794aef75071b07536ee113e1529299a08b19190ed81"
+      },
+      {
+       "x": 2,
+       "y": "daef18f6bfd2792749905e41a402dae0365bc2434e455226096a99f941d203bf"
+      }
+     ]
+    }
+   ],
+   "ems": "c45ead80f047443382179457805dc18515d76efe43e02f104027fcb245bd229a",
+   "masterSecret": "8dc652d6d6cd370d8c963141f6d79ba440300f25c467302c1d966bff8f62300d"
+  }
+ ]
+}

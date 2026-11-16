@@ -1,0 +1,28 @@
+/* Settings › Security › Unlock with Touch ID / Windows Hello (DeviceBox.tsx), loaded with its lazy chunk. Tokens only, so
+   both themes draw it without rules of their own. */
+.dv-list,
+.dv-actions {
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dv-list p {
+  margin: 2px 0 0;
+}
+.dv-tag {
+  margin-inline-start: 8px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.dv-actions li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}

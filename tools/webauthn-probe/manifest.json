@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Sixkey WebAuthn probe (dev only, remove after use)",
+  "version": "0.1.2",
+  "description": "Measures what Touch ID and Windows Hello passkeys can do from an extension page. Sends nothing anywhere.",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage"],
+  "background": { "service_worker": "sw.js", "type": "module" },
+  "action": { "default_popup": "probe.html", "default_title": "Sixkey WebAuthn probe" },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; connect-src 'none'; img-src 'none'; font-src 'none'; base-uri 'none'; form-action 'none'"
+  }
+}

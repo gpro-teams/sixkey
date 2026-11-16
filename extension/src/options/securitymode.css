@@ -1,0 +1,104 @@
+/* Settings page > Security > Security mode (SecurityMode.tsx). Built on options.css tokens and boxes; the cards look like
+   the first-run question's (firstrun.css), since they are the same two answers. */
+.sm-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
+}
+.sm-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--line-2);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.sm-card:hover {
+  border-color: var(--faint);
+}
+.sm-card.on {
+  border-color: var(--accent);
+  box-shadow: var(--sh-1);
+}
+.sm-card.custom {
+  cursor: default;
+  border-style: dashed;
+}
+.sm-card:focus-within {
+  box-shadow: var(--ring-focus);
+}
+.sm-card span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.sm-card b {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.sm-card small {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.options .sm-card input[type="radio"] {
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-2);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.options .sm-card input[type="radio"]:checked {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 4px var(--surface),
+    inset 0 0 0 9px var(--accent);
+}
+.options .sm-card input[type="radio"]:disabled {
+  cursor: default;
+}
+.options .sm-card input[type="radio"]:focus {
+  outline: none;
+}
+
+.sm-lead {
+  text-wrap: pretty;
+}
+.sm-sub {
+  margin: 6px 0 -2px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.sm-clip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+.sm-clip .ic {
+  flex: none;
+  margin-top: 3px;
+  color: var(--muted);
+}
+.sm-clip a {
+  color: var(--brass-ink);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}

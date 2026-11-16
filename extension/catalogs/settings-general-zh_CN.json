@@ -1,0 +1,71 @@
+{
+  "listRevealHint": {
+    "message": "点击即复制，不显示数字；按住或按空格键可显示 5 秒。"
+  },
+  "lookLead": {
+    "message": "Sixkey 在这个浏览器里的样子，以及弹窗和侧边栏怎样列出你的账户。"
+  },
+  "lookTheme": {
+    "message": "主题"
+  },
+  "lookThemeAuto": {
+    "message": "跟随系统"
+  },
+  "lookThemeLight": {
+    "message": "浅色"
+  },
+  "lookThemeDark": {
+    "message": "深色"
+  },
+  "lookThemeNote": {
+    "message": "和语言一样只保存在这个浏览器里，不包含在备份中。"
+  },
+  "lookDensity": {
+    "message": "密度"
+  },
+  "lookDensityStandard": {
+    "message": "标准"
+  },
+  "lookDensityCompact": {
+    "message": "紧凑"
+  },
+  "lookDensityNote": {
+    "message": "紧凑模式下每个账户只占一行，弹窗里约能显示 12 个。当前网站的账户保持原来的大小。"
+  },
+  "lookSort": {
+    "message": "排序"
+  },
+  "lookSortManual": {
+    "message": "手动"
+  },
+  "lookSortName": {
+    "message": "按名称"
+  },
+  "lookSortNote": {
+    "message": "手动就是你拖动排列的顺序。无论哪种，当前网站的账户都排在最前。"
+  },
+  "lookShortcutTitle": {
+    "message": "快捷键"
+  },
+  "lookShortcutBody": {
+    "message": "在任何页面打开 Sixkey，与点击图标相同："
+  },
+  "lookShortcutWhere": {
+    "message": "也可以在地址栏输入 $1。"
+  },
+  "lookOpen": {
+    "message": "点击图标时打开"
+  },
+  "lookOpenPopup": {
+    "message": "弹窗"
+  },
+  "lookOpenPanel": {
+    "message": "侧边栏"
+  },
+  "lookOpenNote": {
+    "message": "侧边栏会一直开在网页旁边，快捷键打开的也是它。侧边栏开着时，Sixkey 闲置 15 分钟就会锁定，即使自动锁定允许更久。"
+  },
+  "lookOpenShared": {
+    "message": "共享的配置文件中不提供侧边栏（安全模式）。"
+  }
+}
