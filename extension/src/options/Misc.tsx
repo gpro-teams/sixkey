@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { isPurged, trashEntries, type Entry } from "../core/vault/model";
+import { accountsOf, markedSites, markSite, unmarkSite } from "../core/autofill-marks";
+import { aliveEntries, isPurged, trashEntries, type Entry } from "../core/vault/model";
 import { parseHlc } from "../core/vault/hlc";
 import { restoreEntry } from "../core/vault/ops";
 import {
@@ -12,7 +13,6 @@ import {
   SITES_KEY,
 } from "../platform/autofill-sites";
 import { readDiag } from "../platform/diag";
-import { keptVaultCount } from "../platform/runtime";
 import { storageClosed } from "../platform/storage-access";
 import { formatDate, formatDateTime, t } from "../ui/i18n";
 import { Avatar } from "../ui/art";
@@ -35,8 +35,6 @@ export function Trash({ rt, vault, status, reload }: Ctx) {
     if (!unlocked) setPw(""); // not left in the field for whoever sits down next
   }, [unlocked]);
   const canErase = unlocked && (!needsPw || pw.length > 0);
-  // vaults kept from before a sync join that "delete forever" could not check (under a key this profile no longer holds)
-  const [unchecked, setUnchecked] = useState(0);
   const deletedAt = (e: Entry) => (e.dhlc ? (parseHlc(e.dhlc)?.wall ?? 0) : 0);
 
   const oldOnes = trash.filter((e) => deletedAt(e) > 0 && Date.now() - deletedAt(e) > TRASH_DAYS * 86_400_000);
@@ -53,9 +51,8 @@ export function Trash({ rt, vault, status, reload }: Ctx) {
   }
   async function erase(ids: string[]) {
     setError(null);
-    setUnchecked(0);
     try {
-      setUnchecked((await rt.service.purgeForever(ids, pw)).keptUnchecked);
+      await rt.service.purgeForever(ids, pw);
       setPw("");
       await reload();
     } catch (e) {
@@ -69,12 +66,6 @@ export function Trash({ rt, vault, status, reload }: Ctx) {
           <Icon name="alert" size={15} />
           {error}
         </div>
-      )}
-      {unchecked > 0 && (
-        <p class="callout warn" role="status" id="trash-kept-unchecked">
-          <Icon name="alert" size={16} />
-          <span>{t("trashKeptUnchecked", unchecked)}</span>
-        </p>
       )}
       {needsPw && trash.length > 0 && (
         <MasterField
@@ -258,6 +249,41 @@ export function Autofill(ctx: Ctx) {
       chrome.permissions?.onRemoved?.removeListener(grantsChanged);
     };
   }, []);
+  // The list across computers (core/autofill-marks.ts; the owner's request of 2026-11-18): this computer's sites are
+  // marked on their accounts in the vault, which the backup in Chrome sync carries; the sites marked on another computer
+  // and not on this one are offered below, each turned on by a click (Chrome's prompt, then this computer's list).
+  const { rt, vault, status, reload } = ctx;
+  const unlocked = status.state === "unlocked" && vault !== null;
+  const live = vault ? aliveEntries(vault) : [];
+  const marked = markedSites(live);
+  const others = rows ? marked.filter((h) => !rows.some((r) => r.host === h)) : [];
+  const marking = useRef("");
+  useEffect(() => {
+    if (!unlocked || !rows) return;
+    const todo = rows
+      .map((r) => r.host)
+      .filter((h) => !marked.includes(h))
+      .map((h) => [h, accountsOf(live, h).map((e) => e.id)] as const)
+      .filter(([, ids]) => ids.length > 0);
+    const key = todo.map(([h]) => h).join(" ");
+    if (!todo.length || marking.current === key) return; // (once per set of sites: a refused write is not retried here)
+    marking.current = key;
+    void rt.service
+      .mutate((v, c) => todo.reduce((n, [h, ids]) => markSite(n, ids, h, c), v))
+      .then(reload, () => undefined);
+  }, [unlocked, rows, vault]);
+  /** A site of another computer, turned on here: Chrome's prompt FIRST, in the click, then this computer's list. */
+  function here(host: string): void {
+    const asked = requestSite(host);
+    void asked
+      .catch(() => false)
+      .then((granted) => answered(host, granted))
+      .then(read, read);
+  }
+  /** Taken off the list of every computer (its mark); each computer's own list keeps it until removed there. */
+  async function forget(host: string): Promise<void> {
+    if (unlocked) await rt.service.mutate((v, c) => unmarkSite(v, host, c)).then(reload, () => undefined);
+  }
   /** "Turn on again": Chrome's prompt FIRST, in the click itself (a gesture spent on an await is gone). */
   function again(host: string): void {
     const asked = requestSite(host);
@@ -301,7 +327,11 @@ export function Autofill(ctx: Ctx) {
                   )}{" "}
                   <button
                     class="btn sm ghost danger-text afs-remove"
-                    onClick={() => void removeSite(r.host).then(read, read)}
+                    onClick={() =>
+                      void removeSite(r.host)
+                        .then(() => forget(r.host))
+                        .then(read, read)
+                    }
                   >
                     {t("afsRemove")}
                   </button>
@@ -310,6 +340,33 @@ export function Autofill(ctx: Ctx) {
             ))}
           </tbody>
         </table>
+      )}
+      {others.length > 0 && !off && (
+        <div class="box" id="afs-others">
+          <BoxTitle icon="sync">{t("afsOthersTitle")}</BoxTitle>
+          <p class="muted">{t("afsOthersLead")}</p>
+          <table class="tlist">
+            <tbody>
+              {others.map((h) => (
+                <tr key={h} data-host={h}>
+                  <td class="tw">
+                    <b>{h}</b>
+                  </td>
+                  <td>
+                    {closed === true && (
+                      <button class="btn sm afs-here" onClick={() => here(h)}>
+                        {t("afsHere")}
+                      </button>
+                    )}{" "}
+                    <button class="btn sm ghost danger-text afs-forget" onClick={() => void forget(h)}>
+                      {t("afsRemove")}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {typeof __RULES_UPDATE__ === "boolean" && __RULES_UPDATE__ ? (
         <>
@@ -326,11 +383,6 @@ export function Autofill(ctx: Ctx) {
 /** `onSetup`: starting over continues in the first-run wizard; nothing is erased until it finishes. */
 export function Advanced({ rt, status, onSetup }: Ctx & { onSetup: (s: SetupStart) => void }) {
   const [confirm, setConfirm] = useState("");
-  // start over erases the unreadable vault, not the vaults a sync join kept aside: the box says so when there are any
-  const [kept, setKept] = useState(0);
-  useEffect(() => {
-    if (status.state === "lost") void keptVaultCount(rt).then(setKept);
-  }, [status.state]);
   return (
     <Panel id="advanced" icon="sliders" title={t("advancedTitle")} lead={t("advLead")}>
       <div class="cards">
@@ -368,11 +420,6 @@ export function Advanced({ rt, status, onSetup }: Ctx & { onSetup: (s: SetupStar
         <div class="box danger">
           <BoxTitle icon="alert">{t("startOverTitle")}</BoxTitle>
           <p>{t("startOverBody")}</p>
-          {kept > 0 && (
-            <p class="muted" id="so-kept">
-              {t("startOverKept", kept)}
-            </p>
-          )}
           <div class="field">
             <label for="so-confirm">{t("startOverType", "DELETE")}</label>
             <input

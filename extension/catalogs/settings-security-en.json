@@ -164,27 +164,6 @@
   "secInvSession": {
     "message": "While unlocked: the opened key, in the browser's memory-only session storage (not when locking every time)."
   },
-  "secKSyncOn": {
-    "message": "Sync turned on in this profile"
-  },
-  "secKSyncOff": {
-    "message": "Sync turned off in this profile"
-  },
-  "secKIdentityRestored": {
-    "message": "This device's sync identity restored from its encrypted copy"
-  },
-  "secKKeysAdopted": {
-    "message": "Keys changed on another device were taken over here"
-  },
-  "secKDeviceApproved": {
-    "message": "A new device was approved from this profile"
-  },
-  "secKDeviceRevoked": {
-    "message": "A device was revoked from this profile"
-  },
-  "secKHistoryCleared": {
-    "message": "The server's history was cleared"
-  },
   "secKPrfEnrolled": {
     "message": "Unlock with Touch ID or Windows Hello added"
   },
@@ -193,18 +172,6 @@
   },
   "secKPrfFailed": {
     "message": "Unlocking with Touch ID or Windows Hello failed"
-  },
-  "secKeysInSyncTitle": {
-    "message": "Master password, recovery key and keys"
-  },
-  "secKeysInSyncBody": {
-    "message": "Sync is on, so these change in the Sync section: every device then gets the change."
-  },
-  "secKeysInSyncOpen": {
-    "message": "Open Sync"
-  },
-  "secKKeysAdoptedBack": {
-    "message": "Keys this device had used before were taken back from the server"
   },
   "pinBoxTitle": {
     "message": "PIN quick unlock"

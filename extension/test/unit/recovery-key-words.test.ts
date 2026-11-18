@@ -105,15 +105,22 @@ describe("the recovery key's name in the text", () => {
     expect(cat("catalogs/shares-zh_CN.json").shPaperTitle!.message).toBe("Sixkey 恢复密钥分片 第 $1 份，共 $2 份");
   });
 
-  it("the file a new recovery key is saved as is named for the key (the settings page and the Sync section)", () => {
+  it("the file a new recovery key is saved as is named for the key, in its one place (the settings page's shared box)", () => {
     const src = join(EXT, "src");
     const walk = (d: string): string[] =>
       readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : [join(d, n)]));
-    const names = walk(src)
+    const found = walk(src)
       .filter((p) => /\.tsx?$/.test(p))
       .flatMap((p) =>
-        [...readFileSync(p, "utf8").matchAll(/download\(\s*`(sixkey-recovery-[a-z]+)-/g)].map((m) => m[1]),
+        [...readFileSync(p, "utf8").matchAll(/download\(\s*`(sixkey-recovery-[a-z]+)-/g)].map(
+          (m) =>
+            `${p
+              .slice(src.length + 1)
+              .split("\\")
+              .join("/")}: ${m[1]}`,
+        ),
       );
-    expect(names).toEqual(["sixkey-recovery-key", "sixkey-recovery-key"]);
+    // (the settings page's Sync section saved one too, until it went from every build: OWNER-DECISIONS/25)
+    expect(found).toEqual(["options/shared.tsx: sixkey-recovery-key"]);
   });
 });

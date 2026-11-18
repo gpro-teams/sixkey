@@ -1,9 +1,9 @@
 // scripts/check-dist.mjs's and scripts/build.mjs's rules for the budget relief (docs/design/notes/BUDGET-NOTES.md) against
 // real builds: the settings page loads its text in parts (one chunk per part and language, each within its budget,
 // exactly the generated file, reached lazily by the settings page and never by the popup), no chunk of a full catalog
-// exists, Chrome's getMessage keys have text, and the Sync section's two catalogs follow the section's rules. Each
-// altered copy breaks one rule and must fail with that rule's message (as m5-check-dist.test.ts and m6-check-dist.test.ts
-// do for theirs).
+// exists, and Chrome's getMessage keys have text. (The Sync section's two catalogs, which had rules here too, are gone
+// from every build with the section: no-sync-section.test.ts.) Each altered copy breaks one rule and must fail with that
+// rule's message (as m5-check-dist.test.ts does for its own).
 import { spawnSync } from "node:child_process";
 import {
   cpSync,
@@ -192,51 +192,6 @@ describe("check-dist and the settings page's text parts", () => {
       (d) => edit(d, "sw.js", (t) => `${t}\nchrome.i18n.getMessage("noSuchBadge");`),
       /sw\.js: chrome\.i18n\.getMessage\("noSuchBadge"\) has no text in _locales\/en/,
     ],
-    [
-      "the managing screens' catalog in a build whose gate keeps the section out",
-      "prod",
-      (d) => writeFileSync(join(d, "assets/sync-manage-locale-en-AbC123.js"), "var e={};export{e as default};"),
-      /assets\/sync-manage-locale-en-AbC123\.js: the sync user interface in a build whose release gate keeps it out/,
-    ],
-    [
-      "a managing screens' key named in a build whose gate keeps the section out",
-      "prod",
-      (d) =>
-        edit(
-          d,
-          `assets/${asset(d, /^options-[\w-]+\.js$/)}`,
-          (t) => `${t}\nconst k="${keysOf("catalogs/sync-manage-en.json")[0]}";`,
-        ),
-      /names the Sync section's text \(sync\w+\) in a build whose release gate keeps it out/,
-    ],
-    [
-      "the managing screens' Chinese catalog missing",
-      "e2e",
-      (d) => unlinkSync(join(d, "assets", asset(d, /^sync-manage-locale-zh_CN-[\w-]+\.js$/))),
-      /locale zh_CN: expected one Sync section catalog chunk assets\/sync-manage-locale-zh_CN-\*\.js, found 0/,
-    ],
-    [
-      "the managing screens' catalog over its limit",
-      "e2e",
-      (d) => writeFileSync(join(d, "assets", asset(d, /^sync-manage-locale-en-[\w-]+\.js$/)), noise(500)),
-      /sync-manage catalog en is \d+ B gz, over its limit of 12288 B/,
-    ],
-    [
-      // the managing screens' catalog grown to 5.6 KB, within its own 12 KB: both together over 12 KB
-      "the Sync section's two catalogs together over 12 KB",
-      "e2e",
-      (d) => writeFileSync(join(d, "assets", asset(d, /^sync-manage-locale-zh_CN-[\w-]+\.js$/)), noise(60, 5)),
-      /the Sync section \(zh_CN\) loads \d+ B gz of text together, over its limit of 12288 B/,
-    ],
-    [
-      "a key in both of the section's catalogs",
-      "e2e",
-      (d) =>
-        edit(d, `assets/${asset(d, /^sync-manage-locale-en-[\w-]+\.js$/)}`, (t) =>
-          t.replace("var e={", `var e={${keysOf("catalogs/sync-en.json")[0]}:{message:\`x\`},`),
-        ),
-      /sync-manage catalog en: \w+ is also in sync/,
-    ],
   ];
   it.each(cases)("fails on %s", (_name, f, alter, message) => {
     const r = mutant(f, alter);
@@ -305,12 +260,6 @@ describe("the build and the settings page's text", () => {
         if (r.status !== 0) throw new Error(r.stderr);
       },
       /settings page code mentions message keys no settings catalog has: cancel \(/,
-    ],
-    [
-      "the managing screens' catalog imported where the gate is closed",
-      (d: string) =>
-        prepend(d, "src/options/App.tsx", 'import __m from "../../catalogs/sync-manage-en.json";\nvoid __m;'),
-      /a prod build must not contain the developer sync page or the enrolment code: catalogs\/sync-manage-en\.json/,
     ],
   ])(
     "stops on %s",

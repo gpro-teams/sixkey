@@ -1,6 +1,6 @@
 // A 28-character code as typed (the recovery code, the pairing code of an approval join): read the way the code is read
 // (core/crypto/recovery-code.ts normalizeRecoveryInput: any case, spaces and hyphens ignored, O as 0, I and L as 1), and
-// grouped for showing. Shared by the settings page's one code input (shared.tsx CodeField) and the Sync section.
+// grouped for showing. Used by the settings page's one code input (shared.tsx CodeField).
 import { normalizeRecoveryInput } from "../core/crypto/recovery-code";
 
 /** Symbols in a code: 7 groups of 4. */

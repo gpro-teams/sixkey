@@ -674,12 +674,6 @@
   "otpSpec": {
     "message": "$1 位 · $2 秒 · $3"
   },
-  "syncLabel": {
-    "message": "同步"
-  },
-  "syncOff": {
-    "message": "未开启 · 仅本机"
-  },
   "clipRowTitle": {
     "message": "复制 30 秒后自动清空"
   },
@@ -759,10 +753,7 @@
     "message": "现在设置主密码"
   },
   "resetLead": {
-    "message": "用恢复密钥可以设置新的主密码。同时会生成新的恢复密钥；在你保存好它之前，什么都不会改变。"
-  },
-  "resetCodeNote": {
-    "message": "现在还没有任何改动：点下方“$1”之前，当前的恢复密钥和密码仍然有效。如果在那之前关闭此页，什么都不会改变，这个新恢复密钥也打不开任何东西。"
+    "message": "用恢复密钥设置新的主密码。恢复密钥不变，继续有效。"
   },
   "resetChanged": {
     "message": "在此期间，密码或恢复密钥已在另一个窗口中被更改，所以这里什么都没有改变，刚才显示的恢复密钥也不会生效。请重新开始。"
@@ -781,6 +772,15 @@
   },
   "siteBound": {
     "message": "这个账户已记住 $1。确认这里也是它的网站再点“记住”。"
+  },
+  "afsOthersTitle": {
+    "message": "在你其他电脑上开启的网站"
+  },
+  "afsOthersLead": {
+    "message": "Chrome 要求每台电脑各自允许一次，在这里点一下就能在这台电脑开启。"
+  },
+  "afsHere": {
+    "message": "在这台电脑开启"
   },
   "cmdFill": {
     "message": "在此页面填入验证码"
@@ -865,6 +865,18 @@
   },
   "afSugWait": {
     "message": "稍等片刻，再点一次"
+  },
+  "autoGroup": {
+    "message": "一键分组"
+  },
+  "autoGroupTip": {
+    "message": "按名称分组：同一服务的账户各归成一组。已经在分组里的账户不动。"
+  },
+  "autoGrouped": {
+    "message": "已把 $2 个账户分成 $1 组"
+  },
+  "autoGroupUndo": {
+    "message": "撤销分组"
   },
   "listCodeHidden": {
     "message": "验证码已隐藏"
@@ -954,7 +966,7 @@
     "message": "这个密钥已保存为 $1，可能是重复扫描了同一个二维码。"
   },
   "paRebind": {
-    "message": "你已有一个密钥不同的 $1。如果网站给了新密钥，可以替换旧的。"
+    "message": "已有同名的 $1，但密钥不同。替换旧的，还是两个都保留？"
   },
   "paKeepBoth": {
     "message": "保留两个"
@@ -1316,6 +1328,51 @@
   "errNextUpdate": {
     "message": "请先更新 Sixkey，然后重试。数据没有被改动。"
   },
+  "fakeSiteTitle": {
+    "message": "这可能是仿冒网站"
+  },
+  "fakeSite": {
+    "message": "$1 很像 $2 的网站 $3，但不是。不要在这里输入 $2 的验证码。"
+  },
+  "fakeSiteMore": {
+    "message": "（还有 $1 个账户）"
+  },
+  "fakeCopyAgain": {
+    "message": "这个页面像是仿冒这个账户的网站。要复制的话，再点一次。"
+  },
+  "httpSiteTitle": {
+    "message": "这个网页不安全"
+  },
+  "httpSite": {
+    "message": "$1 使用 http：在这里输入的验证码可能在传输途中被读取。"
+  },
+  "welcomeStartAlone": {
+    "message": "不恢复，新建一个独立的保险库"
+  },
+  "toPopup": {
+    "message": "改用弹窗"
+  },
+  "groupsTitle": {
+    "message": "分组"
+  },
+  "groupsLead": {
+    "message": "勾选账户，再移到一个分组。每个分组在弹窗列表里单独成一段；新建的分组排在最后。"
+  },
+  "groupsSearch": {
+    "message": "按名称、账户或分组搜索"
+  },
+  "groupsMove": {
+    "message": "把 $1 个移到这个分组"
+  },
+  "groupsClear": {
+    "message": "移出分组"
+  },
+  "groupsMoved": {
+    "message": "已把 $1 个账户移到「$2」。"
+  },
+  "groupsCleared": {
+    "message": "已把 $1 个账户移出分组。"
+  },
   "addNothing": {
     "message": "请先粘贴链接、选择文件或扫描二维码。"
   },
@@ -1403,38 +1460,14 @@
   "delManual": {
     "message": "请自行删除：把它移到废纸篓或回收站，再清空。"
   },
-  "errSyncOn": {
-    "message": "此配置文件已开启同步，这项改动必须经同步进行"
-  },
-  "errNextSyncOn": {
-    "message": "请在同步设置中进行，这样每台设备都会更新。数据没有被改动。"
+  "delAuto": {
+    "message": "添加后会删除 $1（里面是明文密钥）。Chrome 会先请你允许。"
   },
   "errCleanupPending": {
     "message": "这台电脑上还有一次密钥更改没有收尾"
   },
   "errNextCleanupPending": {
     "message": "请先锁定 Sixkey 再解锁，然后重试。数据没有被改动。"
-  },
-  "secKSyncOn": {
-    "message": "在此配置文件中开启了同步"
-  },
-  "secKSyncOff": {
-    "message": "在此配置文件中关闭了同步"
-  },
-  "secKIdentityRestored": {
-    "message": "从加密副本恢复了本设备的同步身份"
-  },
-  "secKKeysAdopted": {
-    "message": "采用了在另一台设备上更改的密钥"
-  },
-  "secKDeviceApproved": {
-    "message": "从此配置文件批准了一台新设备"
-  },
-  "secKDeviceRevoked": {
-    "message": "从此配置文件吊销了一台设备"
-  },
-  "secKHistoryCleared": {
-    "message": "清除了服务器上的历史版本"
   },
   "secKPrfEnrolled": {
     "message": "添加了用 Touch ID 或 Windows Hello 解锁"
@@ -1444,42 +1477,6 @@
   },
   "secKPrfFailed": {
     "message": "用 Touch ID 或 Windows Hello 解锁失败"
-  },
-  "frJoinSync": {
-    "message": "改为加入已同步的保险库"
-  },
-  "syncBadgeTitle": {
-    "message": "Sixkey · 等待批准的设备：$1"
-  },
-  "secKeysInSyncTitle": {
-    "message": "主密码、恢复密钥与密钥"
-  },
-  "secKeysInSyncBody": {
-    "message": "同步已开启，这些改动要在“同步”一节进行，这样每台设备都会更新。"
-  },
-  "secKeysInSyncOpen": {
-    "message": "打开同步"
-  },
-  "secKKeysAdoptedBack": {
-    "message": "从服务器取回了本机以前用过的密钥"
-  },
-  "lockPasswordElsewhere": {
-    "message": "主密码已在另一台设备上修改。请在这里用原来的密码解锁，再到“设置 › 同步”采用新密码。"
-  },
-  "lockKeysElsewhere": {
-    "message": "密钥已在另一台设备上更新。请在这里用本机上次使用的主密码解锁，再到“设置 › 同步”输入当前的主密码。"
-  },
-  "lockOpenSync": {
-    "message": "打开同步"
-  },
-  "lockPendingChange": {
-    "message": "在“设置”里设置的新主密码可能还没有写入本机。如果你的密码在这里解不开，请到“设置 › 同步”用你设置的那个密码解锁。"
-  },
-  "trashKeptUnchecked": {
-    "message": "本配置文件在加入同步库之前保留的 $1 个保险库无法在这里检查，你永久删除的账户可能仍在其中。如果它必须从所有地方消失，请到“设置 › 同步”删除它们。"
-  },
-  "startOverKept": {
-    "message": "本配置文件还保留着加入同步库之前的 $1 个保险库。重新开始不会删除它们；如果不想保留，请到“设置 › 同步”删除。"
   },
   "strengthHintOwn": {
     "message": "至少 $1 个字符。最好达到 $2 位以上：几个随机词语就很好。"
@@ -1685,8 +1682,23 @@
   "railCsbStopped": {
     "message": "备份已停"
   },
+  "paChoose": {
+    "message": "同名的账户请先选择：替换旧的，还是两个都保留。"
+  },
+  "sameName": {
+    "message": "同名 $1"
+  },
+  "sameNameSet": {
+    "message": "同名账户 · $1 个"
+  },
+  "fieldNote": {
+    "message": "备注"
+  },
+  "fieldNoteHint": {
+    "message": "用来和同名账户区分，比如「商户A」"
+  },
   "sharesInsteadLink": {
-    "message": "我有分片"
+    "message": "我把恢复密钥分成了几份（分片）"
   },
   "sharesFoldTitle": {
     "message": "恢复密钥分片"
@@ -1705,6 +1717,18 @@
   },
   "sharesRemindGo": {
     "message": "核对我的分片"
+  },
+  "shiftBack": {
+    "message": "上一个验证码"
+  },
+  "shiftNext": {
+    "message": "下一个验证码"
+  },
+  "shiftReset": {
+    "message": "回到当前验证码"
+  },
+  "shiftBy": {
+    "message": "$1 秒"
   },
   "fileLockedMeanwhile": {
     "message": "读取文件时 Sixkey 已锁定，请重新选择这个文件。"

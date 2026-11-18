@@ -1,6 +1,6 @@
 // Vault data model (PLAN §3). An entry is three independent last-writer-wins registers, so a rename on one
 // device and a reorder or delete on another all survive a merge:
-//   content   (hlc)  issuer, label, secret, algorithm, digits, period, type, counter, domains
+//   content   (hlc)  issuer, label, secret, algorithm, digits, period, type, counter, domains, note, autofill
 //   placement (phlc) group, order
 //   deletion  (dhlc) deleted
 import type { Algorithm, Digits } from "../totp/hotp";
@@ -20,6 +20,14 @@ export type Entry = {
   period: number;
   counter?: number; // hotp; merged with max, never goes backwards
   domains?: string[];
+  /** The person's own words to tell an account from another of the same name (the owner's report of 2026-11-18). */
+  note?: string;
+  /**
+   * The sites with code suggestions turned on for this account on some computer (the owner's request of 2026-11-18: the
+   * autofill list across computers). Each computer's own list and Chrome's grant stay its own (platform/autofill-sites.ts):
+   * these are only offered there (Settings › Autofill), and turned on by a click.
+   */
+  autofill?: string[];
   hlc: Hlc;
 
   group?: string;

@@ -21,6 +21,7 @@ import {
   Backup,
   Clipboard,
   FirstRun,
+  Groups,
   loadParts,
   partsFor,
   partsReady,
@@ -35,23 +36,22 @@ import {
 } from "./parts";
 import { Rail, SubNav, type RailCsb, type RailSection } from "./Rail";
 import type { ResetOutcome } from "./Reset";
-import { DEFAULT_LEAF, groupOf, leafOfHash, leavesOf, nextPicked, panelOfHash } from "./route";
+import { DEFAULT_LEAF, groupOf, LEAVES, leafOfHash, nextPicked, panelOfHash } from "./route";
 import { BoxTitle, errText, RecoveryCodeBox, type Ctx } from "./shared";
 import { watchSettings } from "./settings-store";
-import { SYNC_UI, SyncHost, type SyncRail } from "./SyncHost";
 
 // The rail's groups (route.ts GROUPS has the leaves of each, one of which is on the page at a time): [id, title key, icon].
 const SECTIONS: readonly RailSection[] = [
   ["accounts", "grpAccounts", "key"],
   ["security", "secTitle", "shield"],
   ["appearance", "lookTitle", "sun"],
-  ...(SYNC_UI ? [["sync", "syncLabel", "sync"] as const] : []), // the release gate (scripts/sync-ui.mjs)
   ["advanced", "advancedTitle", "sliders"],
 ];
 /** The groups that have leaves of their own, with their titles: [leaf id, title key] (the links under the page's title). */
 const TABS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
   accounts: [
     ["add", "addTitle"],
+    ["groups", "groupsTitle"],
     ["backup", "backupTitle"],
     ["trash", "trashTitle"],
   ],
@@ -64,7 +64,6 @@ const TABS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
   ],
 };
 const TABS_TITLE: Readonly<Record<string, string>> = { accounts: "grpAccounts", security: "secTitle" };
-const LEAVES = leavesOf(SYNC_UI);
 
 /**
  * #setup and #setup-restore come from the popup's welcome screen, and #setup-csb (the restore from Chrome Sync) from its
@@ -76,8 +75,6 @@ const setupFromHash = (): SetupStart => ({
 const clearSetupHash = () => {
   if (location.hash.startsWith("#setup")) history.replaceState(null, "", location.pathname + location.search);
 };
-/** #sync/join: join a synced vault instead of making a new one (a profile with no vault yet). */
-const joinFromHash = () => SYNC_UI && location.hash === "#sync/join";
 /** #reset comes from the popup's "Set a new password" (A4R-1): the reset runs here, where the page survives a focus change. */
 const clearResetHash = () => {
   if (location.hash === "#reset") history.replaceState(null, "", location.pathname + location.search);
@@ -88,8 +85,8 @@ export function App() {
   const [status, setStatus] = useState<ServiceStatus | null>(null);
   const [vault, setVault] = useState<Vault | null>(null);
   const [lastBackup, setLastBackup] = useState<number | null>(null);
-  // the backup in Chrome sync's records: the rail's line for it (a build without the Sync section), and while it runs
-  // (on, not stopped) the rail's backup line is no reminder, as the popup's is not
+  // the backup in Chrome sync's records: the rail's line for it, and while it runs (on, not stopped) the rail's backup
+  // line is no reminder, as the popup's is not
   const [csb, setCsb] = useState<RailCsb>(null);
   const readBackup = useCallback(async () => {
     const [at, r] = await Promise.all([
@@ -116,12 +113,6 @@ export function App() {
   const [ready, setReady] = useState<SetupDone | null>(null);
   const [resetting, setResetting] = useState(() => location.hash === "#reset"); // shown only while the vault is locked
   const [resetDone, setResetDone] = useState<ResetOutcome>(null);
-  // An empty profile joining a synced vault instead of running the wizard (the Sync section's join, alone on the page).
-  const [joining, setJoining] = useState(joinFromHash);
-  // the join's own screen still up once the vault exists (its follow-ups, or an unconfirmed join): the section stays
-  // alone on the page until that screen closes
-  const [joinHeld, setJoinHeld] = useState(false);
-  const [syncRail, setSyncRail] = useState<SyncRail>(undefined);
   // The leaf the hash names (null: none, so the default). Back and Forward, the rail's links and every link to a part of
   // the page change the hash, and with it this: the page shows what its address says.
   const [picked, setPicked] = useState(() => leafOfHash(location.hash, LEAVES));
@@ -290,12 +281,9 @@ export function App() {
     );
   const ctx: Ctx = { rt, status, vault, reload };
   const group = groupOf(leaf);
-  const syncOn = syncRail === null ? null : syncRail?.on === true;
   // reload() pins the wizard in the same render that first shows "empty", so `setup` alone decides. Leaving it waits for
   // the new status first; otherwise one render would still see "empty" and could show a fresh wizard over the new vault.
-  // While a profile with no vault joins a synced one instead (SyncHost joinOnly), the wizard is set aside: the join
-  // makes the vault, and the page then goes straight to the settings, never back through the wizard.
-  const wizard = joining ? null : setup;
+  const wizard = setup;
   const leave = async () => {
     clearSetupHash();
     await reload();
@@ -315,28 +303,17 @@ export function App() {
     setResetDone(outcome);
     void reload();
   };
-  // the join made the vault (the section has reloaded the page's state): the wizard is over too
-  const joined = () => {
-    setSetup(null);
-    setJoining(false);
-    setJoinHeld(false);
-    // the join is the Sync section's own: the page goes on there, whatever hash it was opened with
-    history.replaceState(null, "", `${location.pathname}${location.search}#sync`);
-    setPicked("sync");
-  };
-  const joinAlone = joining && (status.state === "empty" || joinHeld);
 
   return (
     <div class="shell">
       <Rail
-        sections={wizard || joinAlone || codePending ? [] : SECTIONS}
+        sections={wizard || codePending ? [] : SECTIONS}
         current={group?.id ?? leaf}
         status={status}
         vault={vault}
         lastBackup={lastBackup}
         csb={csb}
         langLocked={holding || codePending}
-        syncLine={syncRail}
       />
       <main>
         <header class="top">
@@ -353,22 +330,12 @@ export function App() {
             {problem}
           </div>
         )}
-        {joinAlone ? (
-          <SyncHost
-            ctx={ctx}
-            onRail={setSyncRail}
-            joinOnly
-            onLeave={() => setJoining(false)}
-            onJoined={joined}
-            onHold={() => setJoinHeld(true)}
-          />
-        ) : wizard ? (
+        {wizard ? (
           <FirstRun
             key={wizard.mode}
             rt={rt}
             start={wizard}
             {...(status.state === "empty" ? { onSwitch: setSetup } : {})}
-            {...(SYNC_UI && status.state === "empty" ? { onJoin: () => setJoining(true) } : {})}
             onExit={() => void leave()}
             onDone={(r) => void finished(r)}
             onRefresh={reload}
@@ -420,20 +387,15 @@ export function App() {
               />
             )}
             {leaf === "security" && <Security {...ctx} keys={keys} />}
-            {leaf === "security-keys" && <SecurityKeys {...ctx} keys={keys} syncOn={syncOn} />}
+            {leaf === "security-keys" && <SecurityKeys {...ctx} keys={keys} />}
             {leaf === "security-log" && <SecurityRecord {...ctx} />}
-            {/* Mounted, hidden, whichever leaf is shown: the rail's sync line and the page's own rounds need it (SyncHost.tsx) */}
-            {SYNC_UI && (
-              <div hidden={leaf !== "sync"}>
-                <SyncHost ctx={ctx} onRail={setSyncRail} shown={leaf === "sync"} />
-              </div>
-            )}
             {leaf === "add" && (
               <>
                 {ready && <SetupReady rt={rt} {...ready} />}
                 <AddAccounts {...ctx} />
               </>
             )}
+            {leaf === "groups" && <Groups {...ctx} />}
             {leaf === "backup" && <Backup {...ctx} onSetup={setSetup} />}
             {leaf === "trash" && <Trash {...ctx} />}
             {leaf === "appearance" && (

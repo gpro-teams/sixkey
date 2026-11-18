@@ -3,7 +3,7 @@
 // (src/options/PinBox.tsx), so none of it, nor the PIN policy, is in the popup's bundle. The unlock side (the lock
 // screens, the PIN's record) is pin-restart-count.ts's and pin-restart-steps.ts's.
 //
-// It reuses the service's own steps, taken from the service itself by element access (as sync-flows.ts does; TypeScript
+// It reuses the service's own steps, taken from the service itself by element access (as device-unlock.ts does; TypeScript
 // allows it for exactly this): the session, the PIN store, the security record, requireVk, the hard lock. So there is one
 // copy of each rule, and test/unit/m2-source-rules.test.ts allows this access in these two files only.
 import { CryptoError } from "../crypto/bytes";

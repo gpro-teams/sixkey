@@ -4,6 +4,8 @@ import { displayOf, profileOf } from "../../core/service/types";
 import type { StorageEvent } from "../../core/storage/format";
 import { aliveEntries, type Entry } from "../../core/vault/model";
 import { deleteEntry, editEntry, moveEntry, setGroup } from "../../core/vault/ops";
+import { markSite } from "../../core/autofill-marks";
+import { lookalikeOf } from "../../core/lookalike";
 import { armClipboardClear, CLEAR_AFTER_MS } from "../../platform/clipboard";
 import type { PopupRuntime } from "../../platform/runtime-base";
 import { useCodes } from "../../ui/hooks";
@@ -16,9 +18,22 @@ import type { Screen } from "../load";
 import { surface } from "../surface";
 import { inputOf, pasteKey, type AddInput } from "./add-input";
 import { List } from "./List";
-import { aliasKey, askHost, buildSections, filterRows, normalizeQuery, type Order } from "./model";
+import {
+  aliasKey,
+  askHost,
+  autoGroups,
+  buildSections,
+  byUse,
+  sameNames,
+  sameTogether,
+  filterRows,
+  normalizeQuery,
+  userFirst,
+  type Order,
+} from "./model";
 import { Notices } from "./Notices";
 import { scanTab } from "./scan";
+import { countUse, readUses } from "./uses";
 import { siteRules } from "./site-rules";
 
 const BACKUP_REMINDER_MS = 7 * 86_400_000;
@@ -90,6 +105,9 @@ export function Main({
   // into "this site" under the pointer just after opening), null when there is none.
   const [tabHost, setHost] = useState<string | null | undefined>(undefined);
   const host = tabHost ?? null;
+  // the page is not secure: http, but not this computer's own address (127.x.x.x, ::1) (the owner's request of
+  // 2026-11-18): said at the top
+  const [plainHttp, setPlainHttp] = useState(false);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "add" | "confirm">("list");
@@ -151,12 +169,31 @@ export function Main({
   // before the first paint and runs alongside the first codes. The side panel reads it again whenever the active tab may
   // have changed (a tab it was not opened on reads as no address: the browser gives none without a new click).
   const win = useRef<number>();
+  // the user name already typed on that page (platform/page-user.ts, a lazy chunk): its account is listed first
+  const [pageUserName, setPageUser] = useState<string | null>(null);
+  // how often each account was used here (./uses.ts): read at the opening and at each look at the tab, never after a click
+  const [uses, setUses] = useState(readUses);
   useLayoutEffect(() => {
     const ask = () =>
       chrome.tabs.query({ active: true, currentWindow: true }).then(
         (tabs) => {
           win.current = tabs[0]?.windowId;
           setHost(hostOf(tabs[0]?.url));
+          setPlainHttp(
+            /^http:/i.test(tabs[0]?.url ?? "") && !/^(127(\.\d+){3}|\[::1\])$/.test(hostOf(tabs[0]?.url) ?? ""),
+          );
+          setPageUser(null);
+          setUses(readUses());
+          const id = tabs[0]?.id;
+          if (hostOf(tabs[0]?.url))
+            void import("../../platform/page-user").then(
+              (m) =>
+                m.pageUser(id).then((u) => {
+                  setPageUser(u);
+                  m.armScripting(); // not held: asked for in the first click, for the next opening
+                }),
+              () => undefined,
+            );
         },
         () => setHost(null),
       );
@@ -165,6 +202,8 @@ export function Main({
   }, []);
 
   const entries = useMemo(() => aliveEntries(vault), [vault]);
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
   const hide = display.hideCodes;
   useEffect(() => setShownId(null), [hide]); // hiding again (the View menu) ends a reveal, as a lock does
   useEffect(() => void (view !== "list" && setMenu(null)), [view]); // the menu belongs to the list
@@ -193,20 +232,43 @@ export function Main({
   const rows = useMemo(() => filterRows(entries, q, host, shown), [entries, q, host, shown]);
   const sections = useMemo(
     () =>
+      // the account the page's user name names first, in the site's sections, whatever the order
       buildSections(
         rows,
         q,
         host,
         { results: t("results"), ungrouped: t("ungrouped"), related: t("siteRelated") },
         order,
-      ),
-    [rows, q, host, order],
+      )
+        .map((s) =>
+          s.key === "site" || s.key === "related"
+            ? { ...s, rows: userFirst(byUse(s.rows, uses), pageUserName) }
+            : s.key === "results"
+              ? { ...s, rows: userFirst(s.rows, pageUserName) }
+              : s,
+        )
+        // the accounts of one name side by side, in every section (List frames them)
+        .map((s) => ({ ...s, rows: sameTogether(s.rows) })),
+    [rows, q, host, order, pageUserName, uses],
   );
   const site = sections[0]?.key === "site" ? sections[0] : undefined;
   useEffect(() => {
     // the Fill chunk gets the vault key through the platform's gate only (MOD-PLATFORM §7.2 Option I; W1b)
     if ((site || resume) && !fillMod)
-      void fillView().then((m) => (m.connect(() => rt.service.grantKeys()), setFillMod(m)));
+      void fillView().then(
+        (m) => (
+          m.connect(
+            () => rt.service.grantKeys(),
+            // a site with code suggestions, marked on its account once (core/autofill-marks.ts): no write if it is
+            (id, host) => {
+              const e = entriesRef.current.find((x) => x.id === id); // as they are now, not as at this effect
+              if (e && !e.autofill?.includes(host))
+                void mutate((v, c) => markSite(v, [id], host, c)).catch(() => undefined);
+            },
+          ),
+          setFillMod(m)
+        ),
+      );
   }, [!!site, !!resume]);
   const rememberHost = canRegister(host) ? host : null;
   const askAbout = askHost(sections, q, host);
@@ -231,6 +293,37 @@ export function Main({
     return [...flat.map((r) => r.entry), ...entries.filter((e) => !listed.has(e.id))];
   }, [flat, entries]);
   const { codes, now } = useCodes(ordered);
+  // Another period's code for one account (List's arrows; the owner's request of 2026-11-18): `n` periods from the current
+  // one, worked out for the period it falls in, again whenever that period changes. Copying that row copies it.
+  const [shiftOf, setShiftOf] = useState<{ id: string; n: number } | null>(null);
+  const [shiftCode, setShiftCode] = useState<string | undefined>();
+  const shiftEntry = shiftOf ? entries.find((e) => e.id === shiftOf.id) : undefined;
+  const shiftAt =
+    shiftEntry && shiftOf ? (Math.floor(now / 1000 / shiftEntry.period) + shiftOf.n) * shiftEntry.period * 1000 : 0;
+  const shiftRef = useRef<{ e: Entry; at: number } | null>(null);
+  shiftRef.current = shiftEntry ? { e: shiftEntry, at: shiftAt } : null;
+  const shiftId = shiftEntry
+    ? `${shiftEntry.id} ${shiftEntry.secret} ${shiftEntry.digits} ${shiftEntry.algorithm}`
+    : "";
+  useEffect(() => {
+    setShiftCode(undefined);
+    const e = shiftRef.current?.e;
+    if (!e) return;
+    let live = true;
+    codeAt(e, shiftAt).then(
+      (c) => live && setShiftCode(c),
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [shiftId, shiftAt]); // the account's code-making fields, not its object: a reload must not blank the code
+  const onShift = useCallback((id: string, by: -1 | 1 | 0) => {
+    setShiftOf((cur) => {
+      const n = by === 0 ? 0 : Math.max(-10, Math.min(10, (cur?.id === id ? cur.n : 0) + by));
+      return n === 0 ? null : { id, n };
+    });
+  }, []);
   // "Same sign-in", once there is a code to show, on a page no account is registered for, when some account has a site
   // (aliases.ts reads only the usable ones); asked again when the page or the accounts change, not on a reload of the same
   // ones. aliases.ts redraws the list when the answer comes within 300 ms and changes something
@@ -264,14 +357,23 @@ export function Main({
   const copy = useCallback(
     async (e: Entry) => {
       if (!canGenerate(e)) return;
-      const next = remaining(e, Date.now()) < 3;
-      const code = await codeAt(e, Date.now() + (next ? e.period * 1000 : 0));
+      // the page looks like this account's site and is not it: the first click warns, a second within 6 s copies
+      if (fakeIds.current.has(e.id) && !(armed.current?.id === e.id && Date.now() - armed.current.at < 6000)) {
+        armed.current = { id: e.id, at: Date.now() };
+        say(t("fakeCopyAgain"), "alert", "bad");
+        return;
+      }
+      armed.current = null;
+      const sh = shiftRef.current?.e.id === e.id ? shiftRef.current : null; // shown at another period: that code
+      const next = !sh && remaining(e, Date.now()) < 3;
+      const code = await codeAt(e, sh ? sh.at : Date.now() + (next ? e.period * 1000 : 0));
       try {
         await navigator.clipboard.writeText(code);
       } catch {
         say(t("copyFailed"), "alert", "bad");
         return;
       }
+      countUse(e.id);
       setFlash(e.id);
       window.setTimeout(() => setFlash(null), 450);
       say(next ? t("copiedNext") : t("copiedFor", e.issuer));
@@ -410,6 +512,46 @@ export function Main({
     await reload();
   }
 
+  // Grouping by name in one click (model.ts autoGroups; the owner's report of 2026-11-18), offered in the footer while
+  // there is something to group and no search; undone from the same place while this popup stays open (or in Settings ›
+  // Groups). One write each way, touching only the accounts it grouped that are still in the group it gave them.
+  const grouping = useMemo(() => (q ? null : autoGroups(entries)), [entries, q]);
+  // The accounts whose site this page looks like without being it (core/lookalike.ts), with the site it imitates: said at
+  // the top, and copying one of their codes here takes a second click (`armed`) within a few seconds.
+  const fakes = useMemo(
+    () =>
+      host
+        ? entries.flatMap((e) => {
+            const like = lookalikeOf(e, host);
+            return like ? [{ e, like }] : [];
+          })
+        : [],
+    [entries, host],
+  );
+  const fakeIds = useRef(new Set<string>());
+  fakeIds.current = new Set(fakes.map((f) => f.e.id));
+  const armed = useRef<{ id: string; at: number } | null>(null);
+  const dups = useMemo(() => sameNames(entries), [entries]);
+  const [grouped, setGrouped] = useState<Map<string, string> | null>(null);
+  async function regroup(plan: Map<string, string>, undo: boolean) {
+    try {
+      await mutate((v, c) => {
+        let next = v;
+        for (const e of aliveEntries(v)) {
+          const g = plan.get(e.id);
+          if (g === undefined) continue;
+          if (!undo && !e.group) next = setGroup(next, e.id, g, c);
+          if (undo && e.group === g) next = setGroup(next, e.id, undefined, c);
+        }
+        return next;
+      });
+      setGrouped(undo ? null : plan);
+      if (!undo) say(t("autoGrouped", new Set(plan.values()).size, plan.size));
+    } catch {
+      say(t("errorTitle"), "alert", "bad");
+    }
+  }
+
   /** Drag and drop: put `fromId` where `targetId` is, taking on its group. */
   async function move(fromId: string | null, targetId: string) {
     if (!fromId || fromId === targetId) return;
@@ -455,6 +597,15 @@ export function Main({
         () => window.close(),
         () => say(t("errorTitle"), "alert", "bad"),
       );
+  }
+
+  // The side panel's way back (the panel makes the icon open it, src/sidepanel/main.tsx): the icon opens the popup again,
+  // written before the panel closes.
+  function toPopup() {
+    chrome.storage.local.remove("sk_opener").then(
+      () => window.close(),
+      () => say(t("errorTitle"), "alert", "bad"),
+    );
   }
 
   async function ack(ev: StorageEvent) {
@@ -567,6 +718,11 @@ export function Main({
             <Icon name="panel" />
           </button>
         )}
+        {surface.panel && (
+          <button class="tb" id="to-popup" aria-label={t("toPopup")} title={t("toPopup")} onClick={toPopup}>
+            <Icon name="panel" />
+          </button>
+        )}
         <button class="tb" aria-label={t("settings")} title={t("settings")} onClick={() => openOptions()}>
           <Icon name="sliders" />
         </button>
@@ -625,6 +781,31 @@ export function Main({
       {Menu && <Menu rt={rt} display={display} reload={reload} onClose={() => setMenu(null)} />}
 
       <Notices events={events} onAck={ack} noPassword={!screen.protected && entries.length > 0} extra={extra} />
+      {fakes.length > 0 && (
+        <div class="note bad" role="alert" id="site-fake">
+          <span class="ni">
+            <Icon name="alert" size={16} />
+          </span>
+          <span class="nt">
+            <b>{t("fakeSiteTitle")}</b>
+            <span>
+              {t("fakeSite", host ?? "", fakes[0]!.e.issuer || fakes[0]!.e.label, fakes[0]!.like)}
+              {fakes.length > 1 ? ` ${t("fakeSiteMore", fakes.length - 1)}` : ""}
+            </span>
+          </span>
+        </div>
+      )}
+      {plainHttp && fakes.length === 0 && (
+        <div class="note warn" role="status" id="site-http">
+          <span class="ni">
+            <Icon name="alert" size={16} />
+          </span>
+          <span class="nt">
+            <b>{t("httpSiteTitle")}</b>
+            <span>{t("httpSite", host ?? "")}</span>
+          </span>
+        </div>
+      )}
 
       {fillMod && site && <fillMod.FillBar host={site.label} rows={site.rows} />}
       {fillMod && (site || resume) && (
@@ -643,6 +824,9 @@ export function Main({
           compact={display.density === "compact"}
           hide={display.hideCodes}
           shownId={shownId}
+          dups={dups}
+          shift={shiftOf ? { ...shiftOf, ...(shiftCode ? { code: shiftCode } : {}) } : null}
+          onShift={onShift}
           onHover={setSel}
           onCopy={copy}
           onEdit={setEditing}
@@ -716,6 +900,23 @@ export function Main({
           })()
         )}
         <span class="sp" />
+        {grouped ? (
+          <button class="btn sm ghost" id="auto-undo" onClick={() => void regroup(grouped, true)}>
+            {t("autoGroupUndo")}
+          </button>
+        ) : (
+          grouping &&
+          grouping.size > 0 && (
+            <button
+              class="btn sm ghost"
+              id="auto-group"
+              title={t("autoGroupTip")}
+              onClick={() => void regroup(grouping, false)}
+            >
+              {t("autoGroup")}
+            </button>
+          )
+        )}
         <button
           class="btn sm add"
           onClick={() => {

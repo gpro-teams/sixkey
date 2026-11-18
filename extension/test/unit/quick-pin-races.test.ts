@@ -90,7 +90,7 @@ describe("a same-key password change pauses the PIN even if the page dies after 
 });
 
 describe("committed()'s rule, by record kind: the gate's arming ends; the PIN's record pauses only when its keys change", () => {
-  type Committed = (kind: string | null, vk: unknown, o?: Record<string, unknown>) => Promise<void>;
+  type Committed = (kind: string, vk: unknown, o?: Record<string, unknown>) => Promise<void>;
   async function vkOf(w: QuickWorld) {
     const { vkFromRaw } = await import("../../src/core/crypto/vk");
     const { fromB64 } = await import("../../src/core/crypto/bytes");
@@ -100,24 +100,18 @@ describe("committed()'s rule, by record kind: the gate's arming ends; the PIN's 
     const k = (await w.ctx().service.currentGeneration())!.keyring;
     await w.area.setQuick(armDevice(await vkOf(w), k.vaultId, w.t.now, wrapsTag(k)));
   }
-  for (const kind of ["keys_adopted", "keys_adopted_back", "sync_on", "password_changed", "recovery_code_new"])
+  // (the server sync's kinds, keys_adopted, keys_adopted_back and sync_on, were here too: no commit records them since
+  // its client went, DV-0b)
+  for (const kind of ["password_changed", "recovery_code_new", "password_reset", "password_enabled"])
     it(`${kind}, with the same vault key and wraps, ends the gate's sk_quick and leaves the PIN's record`, async () => {
       const w = await quickWorld();
       await gateArmed(w);
       const kept = JSON.stringify(rec(w));
       const svc = w.ctx().service as unknown as { committed: Committed };
-      await svc.committed(kind, await vkOf(w), { held: [], session: false });
+      await svc.committed(kind, await vkOf(w), { session: false });
       expect(await w.area.getQuick()).toBeNull();
       expect(JSON.stringify(rec(w))).toBe(kept);
     });
-  it("no kind and the same key (the keyring's times floored before a first upload) keeps both", async () => {
-    const w = await quickWorld();
-    await gateArmed(w);
-    const svc = w.ctx().service as unknown as { committed: Committed };
-    await svc.committed(null, await vkOf(w), { held: [], session: false });
-    expect(await w.area.getQuick()).not.toBeNull();
-    expect(rec(w)!.wrap).not.toBeNull();
-  });
 });
 
 describe("the 5-try limit under fan-out (many pages guessing at once)", () => {

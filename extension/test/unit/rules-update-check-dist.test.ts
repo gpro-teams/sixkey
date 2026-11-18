@@ -260,9 +260,7 @@ describe("gate open (the e2e build): each mark where it belongs, and nowhere els
       m.content_security_policy.extension_pages = to(m.content_security_policy.extension_pages);
       writeFileSync(join(dir, "manifest.json"), JSON.stringify(m, null, 2));
     };
-    expect(readFileSync(join(built.e2e, "manifest.json"), "utf8")).toContain(
-      "connect-src http://127.0.0.1:8787 https://rules.fix.test/v1/;",
-    );
+    expect(readFileSync(join(built.e2e, "manifest.json"), "utf8")).toContain("connect-src https://rules.fix.test/v1/;");
     for (const [what, to] of [
       ["without the path", (c: string) => c.replace(" https://rules.fix.test/v1/", "")],
       ["the whole origin", (c: string) => c.replace("https://rules.fix.test/v1/", "https://rules.fix.test")],
@@ -276,12 +274,10 @@ describe("gate open (the e2e build): each mark where it belongs, and nowhere els
       expect(r.out, what).toContain("unexpected extension_pages CSP");
     }
   });
-  it("the worker's fetch: the sync transport's and the updater's, no third", () => {
+  it("the worker's fetch: the updater's, no second (the server sync's transport went with its client: DV-0b)", () => {
     const r = mutant("e2e", append("sw.js", "fetch"));
     expect(r.ok).toBe(false);
-    expect(r.out).toContain(
-      "sw.js: `fetch` appears 3 times; only sw.js may use it, 2 times (the sync transport, the site rules' updater)",
-    );
+    expect(r.out).toContain("sw.js: `fetch` appears 2 times; only sw.js may use it, 1 times (the site rules' updater)");
   });
   it("the format's checker: in the reader and the worker; the e2e build's reserved test hosts accepted in both", () => {
     const list = /\[\s*"test",\s*"example",\s*"invalid",\s*"localhost"\s*\]/;
@@ -301,7 +297,7 @@ describe("gate open (the e2e build): each mark where it belongs, and nowhere els
     const r = mutant("e2e", append(fill("e2e"), "https://rules.fix.test/v1/manifest.json"));
     expect(r.ok).toBe(false);
     expect(r.out).toContain(
-      `${fill("e2e")}: URL in shipped code that is not the API origin: https://rules.fix.test/v1/manifest.json`,
+      `${fill("e2e")}: URL in shipped code that is not one it may hold: https://rules.fix.test/v1/manifest.json`,
     );
   });
 });

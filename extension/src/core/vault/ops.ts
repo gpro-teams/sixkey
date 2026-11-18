@@ -16,9 +16,9 @@ export class OpError extends Error {
 export type NewEntry = Pick<
   OtpParams,
   "type" | "issuer" | "label" | "secret" | "algorithm" | "digits" | "period" | "counter"
-> & { group?: string; domains?: string[] };
+> & { group?: string; domains?: string[]; note?: string };
 export type ContentPatch = Partial<
-  Pick<Entry, "issuer" | "label" | "algorithm" | "digits" | "period" | "domains" | "counter">
+  Pick<Entry, "issuer" | "label" | "algorithm" | "digits" | "period" | "domains" | "counter" | "note" | "autofill">
 >;
 
 const LONG_KEY = 32;
@@ -87,6 +87,7 @@ export function addEntry(
     period: input.period,
     counter: input.type === "hotp" ? (input.counter ?? 0) : undefined,
     domains: input.domains,
+    note: input.note,
     hlc: h,
     group: input.group,
     order: orderBetween(tail?.order ?? null, null),
@@ -198,7 +199,18 @@ export function restoreEntry(v: Vault, id: string, clock: Clock): Vault {
 export function purgeEntry(v: Vault, id: string, clock: Clock): Vault {
   const e = get(v, id);
   const h = stampAfter(clock, e);
-  const cleared = strip({ ...e, issuer: "", label: "", secret: "", domains: undefined, counter: undefined, hlc: h });
+  // (a note and the sites turned on for code suggestions are the account's details too: erased with them)
+  const cleared = strip({
+    ...e,
+    issuer: "",
+    label: "",
+    secret: "",
+    domains: undefined,
+    note: undefined,
+    autofill: undefined,
+    counter: undefined,
+    hlc: h,
+  });
   return replace(v, { ...cleared, deleted: true, dhlc: succHlc(h, clock.device) }); // dhlc > hlc keeps it dead
 }
 

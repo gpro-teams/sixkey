@@ -100,7 +100,7 @@ function csbSyncRule(src: readonly { path: string; text: string }[]): string[] {
     if (path !== "platform/csb-worker.ts" && /["'`][^"'`]*\/csb-area(?:\.ts)?["'`]/.test(c))
       out.push(`${path}: imports csb-area`);
     if (
-      /^(?:options|popup|sidepanel|ui|devsync|offscreen|inject)\//.test(path) &&
+      /^(?:options|popup|sidepanel|ui|offscreen|inject)\//.test(path) &&
       /["'`][^"'`]*\/csb-worker(?:\.ts)?["'`]/.test(c)
     )
       out.push(`${path}: a page imports the worker's backup`);
@@ -279,7 +279,7 @@ describe("source rules", () => {
     expect(calls.length).toBe(3); // enable, new code, rotate (options/Security.tsx)
   });
 
-  it("A4R-1: the popup does not reset; its button opens the settings tab, where the code is shown before anything is written", () => {
+  it("A4R-1: the popup does not reset; its button opens the settings tab, where the reset keeps the recovery key", () => {
     const popup = files.filter((f) => f.path.startsWith("popup/"));
     expect(
       popup.filter((f) => /\.(prepareReset|commitReset|resetPasswordWithRecovery)\(/.test(f.text)).map((f) => f.path),
@@ -287,16 +287,12 @@ describe("source rules", () => {
     expect(popup.find((f) => f.path === "popup/screens/Locked.tsx")!.text).toMatch(/openOptions\("#reset"\)/);
     expect(sites(/resetPasswordWithRecovery/)).toEqual([]); // no one-call reset left anywhere (A4R-5)
     const reset = files.find((f) => f.path === "options/Reset.tsx")!.text;
+    // the owner's report of 2026-11-18: the recovery key goes on working, so there is no new key to show and save; the
+    // master password's gate comes first, then the reset is prepared and written
     expect(reset.match(/\.prepareReset\(/g)).toHaveLength(1);
     expect(reset.match(/\.commitReset\(/g)).toHaveLength(1);
-    const body = (name: string) => {
-      const at = reset.slice(reset.indexOf(name));
-      return at.slice(0, at.indexOf("\n  };\n"));
-    };
-    expect(body("const prepare = ")).toMatch(/\.prepareReset\(/);
-    expect(body("const prepare = ")).not.toMatch(/commitReset/); // Continue on the form only prepares
-    expect(body("const commit = ")).toMatch(/\.commitReset\(/);
-    expect(reset).toMatch(/<RecoveryCodeBox code=\{pending\.recoveryCode\} onDone=\{\(\) => void commit\(\)\} \/>/); // confirmed saved, then written
+    expect(reset).not.toMatch(/RecoveryCodeBox/);
+    expect(reset.indexOf("masterAccepts(await measure(pw)")).toBeLessThan(reset.indexOf(".prepareReset("));
     expect(reset).toMatch(/<PasswordFields\s/); // the new password typed twice
   });
 
@@ -414,7 +410,9 @@ describe("source rules", () => {
     expect(text("background/sw.ts")).toMatch(/^ {2}lock: webLock\("sixkey-csb"\), \/\/ the records' lock/m);
     // the handlers that lift or replace a hold take the store's own lock first: the name the store is built with
     expect(text("background/sw.ts")).toMatch(/^ {2}vaultLock: webLock\("sixkey-vault"\), \/\/ the store's own/m);
-    expect(text("platform/runtime-base.ts")).toMatch(/await markCsbHeld\(local, webLock\("sixkey-csb"\)\);/);
+    expect(text("platform/runtime-base.ts")).toMatch(
+      /beforeRecoveryWrite: \(\) => markCsbHeld\(local, webLock\("sixkey-csb"\)\),/,
+    );
     expect(sites(/webLock\("sixkey-csb"\)/).map((s) => s.split(":")[0])).toEqual([
       "background/sw.ts",
       "platform/runtime-base.ts",

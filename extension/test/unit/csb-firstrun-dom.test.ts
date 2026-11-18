@@ -139,6 +139,39 @@ async function toLastStep() {
 const cfgOf = async (c: Computer) => (await c.kv.get([CSB_CFG_KEY]))[CSB_CFG_KEY] as CsbConfig | undefined;
 
 describe("first run, a new vault", () => {
+  it("back from the recovery code to the master password, and from the profile step to the code (owner, 2026-11-18)", async () => {
+    const c = fresh();
+    const { done } = firstRun(c, { mode: "create" }, { onSwitch: () => undefined });
+    await shown("fr-pw");
+    type("fr-pw", STRONG);
+    type("fr-pw2", STRONG);
+    await vi.waitFor(() => expect(byId("fr-next")!.disabled).toBe(false), { timeout: 15_000 });
+    submit("fr-pw");
+    await shown("recovery-saved", 30_000);
+    const first = text("recovery-code");
+    click("fr-back-password");
+    await shown("fr-pw");
+    expect(c.types()).toEqual([]); // nothing written going back
+    type("fr-pw", NEW_PASSWORD);
+    type("fr-pw2", NEW_PASSWORD);
+    await vi.waitFor(() => expect(byId("fr-next")!.disabled).toBe(false), { timeout: 15_000 });
+    submit("fr-pw");
+    await shown("recovery-saved", 30_000);
+    expect(text("recovery-code")).not.toBe(first); // new keys for the new password
+    tick("recovery-saved", true);
+    click("recovery-done");
+    await shown("fr-solo");
+    click("fr-back");
+    await shown("recovery-saved");
+    tick("recovery-saved", true);
+    click("recovery-done");
+    await shown("fr-solo");
+    click("fr-finish");
+    await vi.waitFor(() => expect(done).toHaveLength(1), { timeout: 15_000 });
+    const gen = (await c.service.currentGeneration())!;
+    expect((await openWithPassword(gen.keyring, NEW_PASSWORD)).vk.id).toBe(gen.keyring.vkId);
+  }, 120_000);
+
   it("a copy in Chrome Sync, found above the first step: its restore first, a new vault kept", async () => {
     const { items } = await written("GitHub");
     const b = fresh(items);
@@ -189,7 +222,8 @@ describe("first run, a new vault", () => {
     expect(done[0]).toEqual({ backup: "on" });
     expect((await cfgOf(c))?.on).toBe(true);
     await c.worker.idle();
-    expect(c.area.snapshot()).toEqual({}); // an empty vault is never written
+    // the owner's report of 2026-11-17: the vault, empty still, is handed over at once, so a second computer finds it
+    expect(Object.keys(c.area.snapshot()).length).toBeGreaterThan(0);
   }, 90_000);
 
   it("the box cleared: recorded as the person's turning the backup off, nothing written; cleared by hand, a profile change leaves it so", async () => {
@@ -374,7 +408,10 @@ describe("first run, the restore from Chrome Sync", () => {
     type("cs-restore-secret", code);
     submit("cs-restore-secret");
     await shown("fr-pw", 20_000);
-    await vi.waitFor(() => expect(text("cs-need-password")).toBe(cs("csNeedPassword")));
+    // the copy had a master password: going on with it is offered first, a new one below (a forgotten password)
+    await vi.waitFor(() => expect(text("cs-keep-line")).toBe(cs("csKeepPasswordLine")));
+    expect(byId("cs-keep-password")).not.toBeNull();
+    expect(byId("cs-need-password")).toBeNull();
     // the master password's gate, as a new vault's: below it, the button waits for "Use anyway"
     type("fr-pw", "password1");
     type("fr-pw2", "password1");
@@ -395,6 +432,25 @@ describe("first run, the restore from Chrome Sync", () => {
       seq: gen.seq,
       sum: gen.envelope.checksum,
     });
+  }, 120_000);
+
+  it("by the recovery key, keeping the same master password: nothing to type, the copy's password opens it", async () => {
+    const { code, items } = await written("GitHub");
+    const b = fresh(items);
+    const { done } = firstRun(b, { mode: "csb" });
+    await shown("cs-found-n");
+    type("cs-restore-secret", code);
+    submit("cs-restore-secret");
+    await shown("cs-keep-password", 20_000);
+    click("cs-keep-password");
+    await shown("fr-solo", 20_000);
+    expect(byId("recovery-code")).toBeNull(); // no new recovery key
+    click("fr-finish");
+    await vi.waitFor(() => expect(done).toHaveLength(1), { timeout: 20_000 });
+    expect(done[0]).toMatchObject({ restored: 1, backup: "adopted" });
+    const gen = (await b.service.currentGeneration())!;
+    // the same master password as the computer the copy came from (the owner's report of 2026-11-18)
+    expect((await openWithPassword(gen.keyring, STRONG)).vk.id).toBe(gen.keyring.vkId);
   }, 120_000);
 
   it("only a copy still arriving: said, and the restore goes on once Chrome delivers the rest", async () => {
@@ -684,6 +740,7 @@ describe("the end of a restore: what it found (CsbAfter)", () => {
       skipped: [],
       outdated: true,
       needsPassword: true,
+      keepsPassword: false,
     };
     act(() =>
       render(
@@ -711,7 +768,10 @@ describe("what the one field holds (open.ts)", () => {
     const copies = [{ id: "abcd1234", head: "0123456789abcdef", modified: T0, backup }];
     const o = { now: T0, device: "device01" };
     expect(await openBackups(copies, SHAPED, o)).toMatchObject({ needsPassword: false });
-    expect(await openBackups(copies, keys.recoveryCode, o)).toMatchObject({ needsPassword: true });
+    expect(await openBackups(copies, keys.recoveryCode, o)).toMatchObject({
+      needsPassword: false,
+      keepsPassword: true,
+    });
     expect(await openBackups(copies, "not it", o)).toBeNull();
   }, 60_000);
 });

@@ -66,7 +66,7 @@ describe("file import: source rules", () => {
       expect(code(files.find((f) => f.path === p)!.text), p).not.toMatch(/\bconsole\.|\blogError\b/);
   });
 
-  it("a file is deleted only by file-access.ts, from Add account's Delete click", () => {
+  it("a file is deleted only by file-access.ts, from Add account's Delete click or its Add click", () => {
     expect(at(/\bhandle\.remove\(/)).toEqual(["platform/file-access.ts"]);
     for (const p of [...NEW, "options/AddAccounts.tsx", "options/Backup.tsx"].filter(
       (x) => x !== "platform/file-access.ts",
@@ -74,9 +74,25 @@ describe("file import: source rules", () => {
       expect(code(files.find((f) => f.path === p)!.text), p).not.toMatch(/\.remove\(\s*\)|\bremoveEntry\(/);
     expect(at(/\bdeletePicked\(/).sort()).toEqual(["options/AddAccounts.tsx", "platform/file-access.ts"]);
     const add = code(files.find((f) => f.path === "options/AddAccounts.tsx")!.text);
-    // its one caller is remove(), and remove() is called only from the delete prompt's onDelete, a click
-    expect(add.match(/\bdeletePicked\(/g)).toHaveLength(1);
+    // its callers: remove(), called only from the delete prompt's onDelete, a click; and add(), the Add click, for the
+    // files every entry of which it added, once Chrome's prompt (asked first thing in that click) allowed it (the
+    // owner's report of 2026-11-18)
+    expect(add.match(/\bdeletePicked\(/g)).toHaveLength(2);
     expect(add).toMatch(/async function remove\(a: Ask\) \{[\s\S]{0,300}?deletePicked\(a\.handle, a\.seen\)/);
+    const click = add.slice(
+      add.indexOf("async function add() {"),
+      add.indexOf("setBusy(true);", add.indexOf("async function add() {")),
+    );
+    expect(click).not.toMatch(/\bawait\b/); // the prompt is asked for before anything is awaited
+    expect(click).toMatch(/if \(!deletesItself\(o\) \|\| !h\?\.requestPermission\) continue;/);
+    // only a file of links, all added, not an image: any other format may hold what Sixkey never read (a password)
+    expect(add).toMatch(
+      /const deletesItself = \(o: \{ source: Source; left: number \}\): boolean =>\s*o\.left === 0 && !o\.source\.image && o\.source\.out\.kind === "accounts" && o\.source\.out\.format === "links";/,
+    );
+    expect(click).toMatch(/h\.requestPermission\(\{ mode: "readwrite" \}\)/);
+    expect(add).toMatch(
+      /\(await allowed\) === "granted" \? await deletePicked\(o\.source\.handle, o\.source\.seen\) : "denied"/,
+    );
     expect(add.match(/\bremove\(a\)/g)).toHaveLength(1);
     expect(add).toMatch(/onDelete=\{\(a\) => void remove\(a\)\}/);
     expect(add).toMatch(/onClick=\{\(\) => onDelete\(a\)\}/);

@@ -123,11 +123,9 @@ export const stamp = () => new Date().toISOString().slice(0, 10).replace(/-/g, "
 
 /**
  * Service codes only this page can meet, told here rather than in src/ui/errors.ts, whose table the popup carries
- * (M2-REREVIEW RR-11): a Phase 0 key operation while sync is on (SYNC-DESIGN §0.0i item 18; the sync key operations are
- * §3.6–§3.8, M6), and a rotation refused while an earlier key change's cleanup is pending (§0.0i item 10).
+ * (RR-11): a rotation refused while an earlier key change's cleanup is pending (SYNC-DESIGN §0.0i item 10).
  */
 const PAGE_ONLY: Record<string, { what: string; next: string }> = {
-  sync_on: { what: "errSyncOn", next: "errNextSyncOn" },
   cleanup_pending: { what: "errCleanupPending", next: "errNextCleanupPending" },
 };
 
@@ -481,8 +479,8 @@ export function PasswordFields(p: {
 }
 
 /**
- * The one input for a 28-character code: the recovery code (Reset, the Sync section's turn-on, join, key operations
- * and repair) and the pairing code of an approval join (SYNC-DESIGN §6: "28 个字符的码共用一个 7 组输入组件").
+ * The one input for a 28-character code: the recovery code (Reset; the Sync section's turn-on, join, key operations and
+ * repair, and the pairing code of its approval join, went with that section: OWNER-DECISIONS/25).
  * - Read the way the code is read (any case; spaces, hyphens ignored; O as 0, I and L as 1); `onValue` gets the symbols
  *   only, all of them: a 29th is kept, not cut off, so that the code's own reading says it is not a code (MUST 10), and
  *   the field says "too long" at once (`tooLong`) and marks itself invalid. Typing and pasting work the same (one real

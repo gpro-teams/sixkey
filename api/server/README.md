@@ -22,7 +22,7 @@ Other targets: `make test` (suite only), `make test-long` (400 model-based progr
 ## Run the server locally
 
 ```
-make run      # migrates database sixkey_dev and serves http://127.0.0.1:8787 (the e2e origin)
+make run      # migrates database sixkey_dev and serves http://127.0.0.1:8787 (the origin the extension's removed sync client used)
 ```
 
 OTP codes of the `FakeAuthProvider` are appended to `.pg/otp-inbox.jsonl` (local only; refused when

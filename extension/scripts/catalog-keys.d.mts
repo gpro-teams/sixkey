@@ -35,8 +35,8 @@ export function collectKeys(o: {
   allow?: AllowEntry[];
   catalogImports?: string[];
   compilerOptions?: CompilerOptions;
-  /** The build's release gate; false: `SYNC_UI && ...` (the gate's idiom) is not the page's (rule 5). */
-  syncUi?: boolean;
+  /** The in-page suggestion's release gate; false: `SUGGEST_UI && ...` (the gate's idiom) is not the page's (rule 5). */
+  suggestUi?: boolean;
   /** Modules the walk does not enter: the parts' entries, for a page's own core (rule 6). */
   stop?: string[];
   /** The entries are a part's: a lookup that reaches what their exported functions are passed fails (rule 6). */
@@ -46,16 +46,16 @@ export function collectKeys(o: {
 }): Collected;
 export function subsetCatalog(catalog: Catalog, keys: string[], lang?: string): Catalog;
 export function readCatalogs(root: string): Record<string, Catalog>;
-export function popupKeys(root: string, catalogs?: Record<string, Catalog>, o?: { syncUi?: boolean }): Collected;
+export function popupKeys(root: string, catalogs?: Record<string, Catalog>, o?: { suggestUi?: boolean }): Collected;
 /** The popup's View menu (docs/design/notes/QUICKVIEW-NOTES.md): its module (relative to extension/), loaded when the menu opens. */
 export const VIEW_ENTRIES: string[];
 export const VIEW_CATALOG_FILE: RegExp;
 /** The keys the View menu can show, from its own module (rule 6). */
-export function viewKeys(root: string, catalogs?: Record<string, Catalog>, o?: { syncUi?: boolean }): Collected;
+export function viewKeys(root: string, catalogs?: Record<string, Catalog>, o?: { suggestUi?: boolean }): Collected;
 /** The settings page's text parts: each part's entry modules (relative to extension/). */
 export const SETTINGS_PARTS: Record<string, string[]>;
 export function settingsKeys(
   root: string,
   catalogs?: Record<string, Catalog>,
-  o?: { syncUi?: boolean },
+  o?: { suggestUi?: boolean },
 ): { core: Collected; parts: Record<string, Collected> };

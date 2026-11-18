@@ -20,13 +20,13 @@ import { sitePattern } from "../../core/autofill-sites";
 import { autofillOn } from "../../core/plugins/builtin";
 import { GRANTS_KEY, type GrantEntry } from "../../core/plugins/grants";
 import type { GrantKeys } from "../../core/plugins/store";
-import { API_HOST, readList, setOffHint } from "../autofill-sites";
+import { readList, setOffHint } from "../autofill-sites";
 import { grantedExactly, type GrantList } from "../permission-grants";
 import { grantStore } from "./chrome";
 
 /** The patterns of the listed sites (core/autofill-sites.ts sitePattern), for On's one request and Off's removals. */
 export const patternsOf = (hosts: readonly string[]): string[] =>
-  hosts.map((h) => sitePattern(h, API_HOST)).filter((p): p is string => p !== null);
+  hosts.map((h) => sitePattern(h)).filter((p): p is string => p !== null);
 
 /** The chrome.permissions calls used here (tests pass fakes). */
 export type SwitchPermissions = {

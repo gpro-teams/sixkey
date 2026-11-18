@@ -20,7 +20,7 @@ import { fromB64, toB64 } from "../crypto/bytes";
 import { armDevice, quickLive, wrapsTag } from "../crypto/pin";
 import { gateMac, gateMacOk, newPrfSalt, sealPrfWrap } from "../crypto/prf";
 import { usableRecord } from "../crypto/prf-check";
-import { activeKeyring } from "../sync/local/records";
+import { activeKeyring } from "../storage/active-keyring";
 import {
   gateCreds,
   hasGate,

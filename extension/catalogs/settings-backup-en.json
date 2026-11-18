@@ -86,6 +86,24 @@
   "expSubChanged": {
     "message": "The selected accounts changed in another page. Nothing was saved: check the list and save again."
   },
+  "groupsLead": {
+    "message": "Tick accounts, then move them into a group. Each group is a section of the popup's list; a new group comes last."
+  },
+  "groupsSearch": {
+    "message": "Search by name, account or group"
+  },
+  "groupsMove": {
+    "message": "Move $1 to this group"
+  },
+  "groupsClear": {
+    "message": "Take out of their groups"
+  },
+  "groupsMoved": {
+    "message": "Moved $1 account(s) to $2."
+  },
+  "groupsCleared": {
+    "message": "Took $1 account(s) out of their groups."
+  },
   "fileLockedMeanwhile": {
     "message": "Sixkey locked while the file was being read. Choose it again."
   }

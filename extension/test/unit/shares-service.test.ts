@@ -31,7 +31,7 @@ const input = (issuer: string) => ({
   period: 30,
 });
 
-async function world(o: { sync?: { on: boolean } } = {}) {
+async function world() {
   const kv = new MemoryKV();
   const mirror = new MemoryKV();
   const session = new MemorySession();
@@ -46,10 +46,6 @@ async function world(o: { sync?: { on: boolean } } = {}) {
       security,
       now: () => t.now,
       kdfIterations: TEST_KDF_ITERATIONS,
-      // a sync port that is only on or off (the service asks it whether sync is on: noSync)
-      ...(o.sync
-        ? { sync: { context: async () => (o.sync!.on ? ({} as never) : null), clearLastSynced: async () => undefined } }
-        : {}),
     });
   const svc = make();
   const { recoveryCode } = await createProtected(svc);
@@ -399,16 +395,6 @@ describe("the commit's guards, one at a time (the review's R4, R5, R6)", () => {
     expect(await w.opens(neu)).toBe(true);
     expect(await w.opens(w.recoveryCode)).toBe(false);
   });
-  it("R6: sync turned on between the set and the switch: refused (sync_on), nothing written", async () => {
-    const sync = { on: false };
-    const w = await world({ sync });
-    const h = await w.svc.prepareShares({ password: STRONG }, { threshold: 2, count: 3 });
-    sync.on = true;
-    const before = w.disk();
-    await expect(w.svc.confirmShares(h, asked(h))).rejects.toMatchObject({ code: "sync_on" });
-    expect(w.disk()).toBe(before);
-    expect(await w.opens(w.recoveryCode)).toBe(true);
-  });
 });
 
 describe("the reminder after a switch: at every unlock from the next start of the browser, until a check (F1)", () => {
@@ -550,21 +536,16 @@ describe("the review's N7: the reminder is set before the switch's save, and put
     expect(await remindOn(w)).toMatchObject({ kind: "shares", at: w.t.now, due: false, set: h.setId });
     expect((await remindOn(w)) as { id: string }).toHaveProperty("id", expect.stringMatching(/^[0-9a-f]{16}$/));
   });
-  it("refused before anything is written (locked, sync on, keys changed): no reminder written at all", async () => {
-    const sync = { on: false };
-    const w = await world({ sync });
+  it("refused before anything is written (locked): no reminder written at all", async () => {
+    const w = await world();
     const h = await w.svc.prepareShares({ password: STRONG }, { threshold: 2, count: 3 });
     const before = w.disk();
-    sync.on = true;
-    await expect(w.svc.confirmShares(h, asked(h))).rejects.toMatchObject({ code: "sync_on" });
-    sync.on = false;
     await w.svc.lock();
     await expect(w.svc.confirmShares(h, asked(h))).rejects.toMatchObject({ code: "locked" });
     expect(w.disk()).toBe(before);
   });
   it("refused under the store's lock after the reminder was set: put back as it was (an earlier switch's, due)", async () => {
-    const sync = { on: false };
-    const w = await world({ sync });
+    const w = await world();
     const h1 = await w.svc.prepareShares({ password: STRONG }, { threshold: 2, count: 3 });
     await w.svc.confirmShares(h1, asked(h1));
     await w.svc.browserStarted();
@@ -576,9 +557,11 @@ describe("the review's N7: the reminder is set before the switch's save, and put
     const real = kv.set.bind(kv);
     kv.set = async (items) => {
       await real(items);
-      if ((items[SECURITY_LOG_KEY] as { remind?: { due: boolean } } | undefined)?.remind?.due === false) sync.on = true;
+      // Sixkey locked in another page right after the reminder's write: the save's check under the store's lock refuses
+      if ((items[SECURITY_LOG_KEY] as { remind?: { due: boolean } } | undefined)?.remind?.due === false)
+        w.session.data = null;
     };
-    await expect(w.svc.confirmShares(h2, asked(h2))).rejects.toMatchObject({ code: "sync_on" });
+    await expect(w.svc.confirmShares(h2, asked(h2))).rejects.toMatchObject({ code: "locked" });
     kv.set = real;
     expect(await remindOn(w)).toEqual(earlier); // the earlier switch's, exactly
     expect(await w.opens(await rebuild(asked(h1)))).toBe(true); // that switch is the one in force
@@ -724,8 +707,7 @@ describe("the review's FU-1: a refused switch takes back only its own reminder",
     expect(await w.security.checked(false)).toEqual({ state: "due", set: earlier });
   });
   it("rule 1: a reminder whose write reported an error is not taken back by a refused save (an earlier one stays covered)", async () => {
-    const sync = { on: false };
-    const w = await world({ sync });
+    const w = await world();
     const h1 = await w.svc.prepareShares({ password: STRONG }, { threshold: 2, count: 3 });
     await w.svc.confirmShares(h1, asked(h1));
     await w.svc.browserStarted();
@@ -736,11 +718,11 @@ describe("the review's FU-1: a refused switch takes back only its own reminder",
       await real(items);
       if ((items[SECURITY_LOG_KEY] as { remind?: { due: boolean } } | undefined)?.remind?.due === false) {
         kv.set = real;
-        sync.on = true; // and the save is refused
+        w.session.data = null; // and the save is refused: Sixkey locked in another page
         throw new Error("the reminder's write landed, then reported a failure");
       }
     };
-    await expect(w.svc.confirmShares(h2, asked(h2))).rejects.toMatchObject({ code: "sync_on" });
+    await expect(w.svc.confirmShares(h2, asked(h2))).rejects.toMatchObject({ code: "locked" });
     kv.set = real;
     // what was there before is not known: the reminder written stays (it becomes due at the next start, as one must)
     expect(await w.security.checked(false)).toEqual({ state: "set", set: h2.setId });

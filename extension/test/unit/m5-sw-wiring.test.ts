@@ -1,13 +1,14 @@
 // The service worker module itself (src/background/sw.ts), loaded over fake chrome.* APIs: its listeners are registered
-// once, at the top level, and stay that way however many events arrive; a bridge request from the settings page is sent
-// exactly once, with the build's API origin, and only while the API host permission is granted; one from another page is
-// not sent at all; with sync off a start sends nothing and clears the badge; a browser start removes a permission left
-// without a sync configuration.
+// once, at the top level, and stay that way however many events arrive; each alarm reaches its own handler; the `lock`
+// command soft-locks; permission events that name a host reconcile autofill's sites; and nothing is ever sent. (The server
+// sync's worker, bridge and transport, whose wiring this file also held, went with its client: OWNER-DECISIONS/25,
+// DV-0b; test/unit/store-worker.test.ts holds every build's worker to none of it.)
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Listener = (...args: unknown[]) => unknown;
 const SELF = "abcdefghijklmnopabcdefghijklmnop";
+/** The server sync's API origin's pattern (the dev and e2e builds declared it until DV-0b): now a host like any other. */
 const API = "https://api.sixkey.app/*";
 
 function area() {
@@ -48,7 +49,7 @@ function fakeChrome(manifest: Record<string, unknown> = { version: "0.1.0" }) {
   const alarms = new Map<string, unknown>();
   const alarmGets: string[] = [];
   const badges: string[] = [];
-  const perm = { granted: new Set([API]), asked: [] as string[][], removed: [] as string[][] };
+  const perm = { granted: new Set<string>(), asked: [] as string[][], removed: [] as string[][] };
   const chrome = {
     runtime: {
       id: SELF,
@@ -116,19 +117,17 @@ describe("src/background/sw.ts", () => {
       fetches.push(url);
       return new Response('{"ok":true}', { status: 200, headers: { "content-type": "application/json" } });
     });
-    vi.stubGlobal("__SYNC_UI__", true); // a build with the sync user interface: the worker's sync
     await import("../../src/background/sw");
-    await vi.waitFor(() => expect(f.badges).toEqual([""])); // the start, with sync off
+    await vi.waitFor(() => expect(f.alarms.has("sk-daily")).toBe(true)); // the start's routine ran
   });
   afterEach(() => vi.unstubAllGlobals());
 
   it("registers each listener once, at load, and no event adds another", async () => {
     const counts = () => Object.fromEntries(Object.entries(f.listeners).map(([k, v]) => [k, v.length]));
-    // four message listeners: the pages', the bridge's, the cloud backup's (CLOUDBK patch 4) and the content script's
-    // (AUTOFILL2 patch 3); and one for the official and listed plugins' messages, one that refuses their ports
-    // (src/platform/plugins/worker.ts)
+    // three message listeners: the pages', the cloud backup's (CLOUDBK patch 4) and the content script's (AUTOFILL2
+    // patch 3); none for other extensions (the plugin platform went)
     const once = {
-      message: 4,
+      message: 3,
       messageExternal: 0, // no listener of other extensions since the plugin platform went
       connectExternal: 0,
       alarm: 1,
@@ -161,7 +160,8 @@ describe("src/background/sw.ts", () => {
     for (const l of f.listeners.command!) l("lock");
     await new Promise((r) => setTimeout(r, 50));
     expect(counts()).toEqual(once);
-    expect(fetches).toEqual([]); // sync is off: nothing sent by any of that
+    expect(fetches).toEqual([]); // nothing sent by any of that
+    expect(f.badges).toEqual([]); // nor any toolbar badge drawn (the server sync's went with its worker)
   });
 
   it("the `lock` command soft-locks with no page open (QUICK-UNLOCK §5.12 item 3): the key goes, the epoch moves on, a PIN's sk_quick stays; any other command does nothing", async () => {
@@ -187,107 +187,42 @@ describe("src/background/sw.ts", () => {
     expect(fetches).toEqual([]);
   });
 
-  it("each alarm reaches its own handler only: sync's alarms the engine, the daily one the snapshot routine", async () => {
+  it("each alarm reaches its own handler only: the daily one the snapshot routine; the server sync's old ones nothing", async () => {
     await new Promise((r) => setTimeout(r, 50)); // the start's own reads are done
     const local = f.chrome.storage.local;
-    const syncReads = () => local.reads.filter((k) => k.includes("sk_sync_state")).length;
+    const reads = () => local.reads.length;
     const dailyChecks = () => f.alarmGets.filter((n) => n === "sk-daily").length;
     const fire = async (name: string) => {
       for (const l of f.listeners.alarm!) l({ name });
       await new Promise((r) => setTimeout(r, 50));
     };
-    const [s0, d0] = [syncReads(), dailyChecks()];
+    const [r0, d0] = [reads(), dailyChecks()];
     await fire("sk-unrelated");
-    expect([syncReads(), dailyChecks()]).toEqual([s0, d0]);
-    await fire("sk-sync-periodic");
-    expect(syncReads()).toBeGreaterThan(s0); // the engine looked (sync is off: it does nothing more)
-    expect(dailyChecks()).toBe(d0); // and the daily routine did not run
-    const s1 = syncReads();
+    for (const name of ["sk-sync-periodic", "sk-sync-sync", "sk-sync-kick", "sk-sync-retry"]) await fire(name);
+    expect([reads(), dailyChecks()]).toEqual([r0, d0]); // nothing looked at anything
     await fire("sk-daily");
     expect(dailyChecks()).toBeGreaterThan(d0); // the routine re-checks its alarm
-    expect(syncReads()).toBe(s1);
-  });
-
-  it("a bridge request from the settings page is sent exactly once, to the API origin; from the popup, not at all", async () => {
-    const ask = (url: string, keeps = 1) =>
-      new Promise<unknown>((resolve) => {
-        let kept = 0;
-        for (const l of f.listeners.message!)
-          if (
-            l(
-              { type: "sk-api", req: { method: "GET", target: "/healthz", headers: {} } },
-              { id: SELF, url },
-              resolve,
-            ) === true
-          )
-            kept++;
-        expect(kept).toBe(keeps); // one listener keeps the channel open for the settings page; none for any other sender
-        setTimeout(() => resolve("no answer"), 200);
-      });
-    expect(await ask(`chrome-extension://${SELF}/options/index.html`)).toMatchObject({
-      ok: true,
-      res: { status: 200, body: '{"ok":true}' },
-    });
-    expect(fetches).toEqual(["https://api.sixkey.app/healthz"]);
-    expect(await ask(`chrome-extension://${SELF}/popup/index.html`, 0)).toBe("no answer");
-    expect(fetches).toHaveLength(1);
-    // after any number of daily alarms, still exactly one send per request
-    for (let i = 0; i < 3; i++) for (const l of f.listeners.alarm!) l({ name: "sk-daily" });
-    await ask(`chrome-extension://${SELF}/options/index.html`);
-    expect(fetches).toHaveLength(2);
-    // the permission withdrawn: the request is refused before it leaves (a network error to the page), nothing is sent
-    f.perm.granted.clear();
-    expect(await ask(`chrome-extension://${SELF}/options/index.html`)).toEqual({ ok: false, reason: "offline" });
-    expect(fetches).toHaveLength(2);
-    expect(f.perm.asked.every((o) => o.length === 1 && o[0] === API)).toBe(true);
-  });
-
-  it("a browser start removes an API permission granted without a sync configuration (an enable flow whose tab closed), and only then", async () => {
-    const start = async () => {
-      for (const l of f.listeners.startup!) l();
-      await new Promise((r) => setTimeout(r, 50));
-    };
-    await start(); // granted, no sk_sync_cfg: removed
-    expect(f.perm.removed).toEqual([[API]]);
-    await start(); // not granted any more: nothing to remove
-    expect(f.perm.removed).toHaveLength(1);
-    f.perm.granted.add(API);
-    f.chrome.storage.local.data.set("sk_sync_cfg", { v: 1 }); // sync configured: the permission is the one it needs
-    await start();
-    expect(f.perm.removed).toHaveLength(1);
-    expect(f.perm.granted.has(API)).toBe(true);
+    expect(local.reads.flat().filter((k) => k.startsWith("sk_sync_"))).toEqual([]);
     expect(fetches).toEqual([]);
   });
 
-  it("a build that requires the permission (e2e) never removes it at a browser start", async () => {
-    vi.resetModules();
-    f = fakeChrome({ version: "0.1.0", host_permissions: [API] });
-    vi.stubGlobal("chrome", f.chrome);
-    vi.stubGlobal("__SYNC_UI__", true); // a build with the sync user interface: the worker's sync
-    await import("../../src/background/sw");
-    await vi.waitFor(() => expect(f.badges).toEqual([""]));
-    for (const l of f.listeners.startup!) l();
+  it("permission events that name no host (the clipboard pair) read nothing; one that names a host, any host (the old API origin's too), is a site's: the worker looks for its own ask; nothing is sent", async () => {
     await new Promise((r) => setTimeout(r, 50));
-    expect(f.perm.removed).toEqual([]);
-  });
-
-  it("permission events that name no host (the clipboard pair) are not sync's; one that names a host is handled and sends nothing with sync off", async () => {
-    await new Promise((r) => setTimeout(r, 50));
-    const reads = () => f.chrome.storage.local.reads.length;
+    const reads = () => f.chrome.storage.local.reads.length + f.chrome.storage.session.reads.length;
     const r0 = reads();
     for (const l of [...f.listeners.permAdded!, ...f.listeners.permRemoved!]) l({ permissions: ["clipboardWrite"] });
     for (const l of [...f.listeners.permAdded!, ...f.listeners.permRemoved!])
       l({ origins: [], permissions: ["clipboardRead"] });
     await new Promise((r) => setTimeout(r, 50));
     expect(reads()).toBe(r0);
+    const asks = () => f.chrome.storage.session.reads.filter((k) => k.includes("sk_af_pending")).length;
+    const a0 = asks();
     for (const l of f.listeners.permAdded!) l({ origins: [API] });
     await new Promise((r) => setTimeout(r, 50));
-    expect(reads()).toBe(r0 + 1); // the state, once: sync is off, so no round
-    const asked = f.perm.asked.length;
+    expect(asks()).toBe(a0 + 1); // acceptPending: Sixkey's own ask for a site, if any (there is none here)
     for (const l of f.listeners.permRemoved!) l({ origins: [API] });
     await new Promise((r) => setTimeout(r, 50));
-    expect(f.perm.asked.length).toBe(asked + 1); // asked again (still granted here: nothing to pause)
-    expect(reads()).toBe(r0 + 2); // and the badge brought up to date from the state
+    expect(f.chrome.storage.local.reads.flat().filter((k) => k.startsWith("sk_sync_"))).toEqual([]);
     expect(fetches).toEqual([]);
   });
 });

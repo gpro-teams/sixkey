@@ -863,7 +863,7 @@ describe("the merges, from the card", () => {
 });
 
 describe("the service's hook for the messages (importBackup's and mutate's `after`)", () => {
-  it("is called inside the store's lock with the generation committed, also when sync's outbox cannot be written", async () => {
+  it("is called inside the store's lock with the generation committed; a throw from it leaves the commit standing", async () => {
     const { VaultService } = await import("../../src/core/service/service");
     const { KvSettingsStore, MemorySession } = await import("../../src/core/service/types");
     const { VaultStore } = await import("../../src/core/storage/store");
@@ -881,31 +881,31 @@ describe("the service's hook for the messages (importBackup's and mutate's `afte
           holding--;
         }
       });
-    const outbox: string[] = [];
+    const diag: string[] = [];
     const svc = new VaultService({
-      store: new VaultStore({ lock, kv, now: () => T0 }),
+      store: new VaultStore({ lock, kv, now: () => T0, onDiag: (m) => diag.push(m) }),
       session: new MemorySession(),
       settings: new KvSettingsStore(kv),
       now: () => T0,
       kdfIterations: TEST_KDF_ITERATIONS,
-      // sync on, its outbox failing: the commit stands, and the page's message must still go from inside the lock
-      sync: {
-        context: async () => ({ offsetMs: 0 }),
-        clearLastSynced: async () => undefined,
-        afterCommit: async () => {
-          outbox.push("tried");
-          throw new Error("the outbox could not be written");
-        },
-      },
-    } as never);
+    });
     await svc.create(await svc.prepareKeys(STRONG), {});
     const keys = await protectedKeys();
     const seen: { seq: number; locked: boolean }[] = [];
-    await svc.importBackup(vaultOf(keys.keyring.vaultId, [account("Proton", "JBSWY3DPEHPK3PXQ")]), (gen) =>
-      seen.push({ seq: gen.seq, locked: holding > 0 }),
-    );
-    expect(outbox).toEqual(["tried"]);
+    // the hook throws after it is called (a page's message that could not go): the store catches it, the commit stands
+    await svc.importBackup(vaultOf(keys.keyring.vaultId, [account("Proton", "JBSWY3DPEHPK3PXQ")]), (gen) => {
+      seen.push({ seq: gen.seq, locked: holding > 0 });
+      throw new Error("the message could not be sent");
+    });
     const gen = (await svc.currentGeneration())!;
     expect(seen).toEqual([{ seq: gen.seq, locked: true }]);
+    expect((await svc.read()).vault.entries.map((e) => e.issuer)).toContain("Proton");
+    expect(diag.some((m) => m.startsWith("after commit"))).toBe(true); // written down, not thrown
+    // mutate's `after` the same way
+    await svc.mutate(
+      (v) => ({ ...v, entries: v.entries.map((e) => ({ ...e })) }),
+      (g) => seen.push({ seq: g.seq, locked: holding > 0 }),
+    );
+    expect(seen.at(-1)).toEqual({ seq: (await svc.currentGeneration())!.seq, locked: true });
   });
 });

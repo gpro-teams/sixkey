@@ -64,8 +64,5 @@
   },
   "frScanHint": {
     "message": "You can also click the Sixkey icon on a website to read a QR code shown on the page."
-  },
-  "frJoinSync": {
-    "message": "Join a synced vault instead"
   }
 }

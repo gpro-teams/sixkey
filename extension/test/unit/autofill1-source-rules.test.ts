@@ -303,6 +303,7 @@ describe("the platform module (src/platform/autofill.ts): three calls, one secre
       "options/Misc.tsx", // AUTOFILL2 patch 2: Settings › Autofill says the Chrome 140 line from the gate; it injects nothing
       "platform/autofill-register.ts", // AUTOFILL2 patch 3: asked again before the content script is registered
       "platform/autofill.ts",
+      "platform/page-user.ts", // asked before its one call reads the page's user name
       "platform/storage-access.ts",
     ]);
   });
@@ -348,8 +349,17 @@ describe("who calls what", () => {
     expect(all.filter((f) => /chrome\??\.scripting|\.executeScript\b/.test(f.code)).map((f) => f.path)).toEqual([
       "platform/autofill-register.ts",
       "platform/autofill.ts",
+      "platform/page-user.ts",
     ]);
-    expect(all.filter((f) => /\.executeScript\b/.test(f.code)).map((f) => f.path)).toEqual(["platform/autofill.ts"]);
+    expect(all.filter((f) => /\.executeScript\b/.test(f.code)).map((f) => f.path)).toEqual([
+      "platform/autofill.ts",
+      "platform/page-user.ts",
+    ]);
+    // page-user.ts: one call, a function, the top frame only, after the gate (the owner's report of 2026-11-18)
+    const pu = all.find((f) => f.path === "platform/page-user.ts")!.code;
+    expect(pu.match(/\.executeScript\(/g)).toHaveLength(1);
+    expect(pu).not.toMatch(/allFrames|frameIds|documentIds|\bfiles\s*:|\bworld\s*:/);
+    expect(pu.indexOf("await storageClosed()")).toBeLessThan(pu.indexOf(".executeScript("));
   });
   it("only autofill-register.ts registers the script that runs by itself (AUTOFILL2 patch 3), and nothing uses declarativeContent, webNavigation or tabs events", () => {
     expect(

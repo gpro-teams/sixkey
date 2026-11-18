@@ -62,14 +62,21 @@ export function verdicts(items: readonly Candidate[], existing: readonly Entry[]
 
 /**
  * Add `input` with the id `id`; with `replace`, also move that entry to the trash, in the same edit. The new entry
- * takes the old one's group, sites and place in the list (it stands for the same account). The old entry is only
+ * takes the old one's group, sites, note and place in the list (it stands for the same account). The old entry is only
  * deleted, never purged: it stays in the trash with its key and can be restored.
  */
 export function addOrReplace(v: Vault, input: NewEntry, clock: Clock, opts: { id: string; replace?: string }): Vault {
   const old = opts.replace ? aliveEntries(v).find((e) => e.id === opts.replace) : undefined;
   if (opts.replace && !old) throw new Error("no such entry"); // gone or already in the trash: nothing is changed
   const domains = [...new Set([...(old?.domains ?? []), ...(input.domains ?? [])])].slice(0, LIMITS.domains);
-  const carried: NewEntry = old ? { ...input, group: old.group, domains: domains.length ? domains : undefined } : input;
+  const carried: NewEntry = old
+    ? {
+        ...input,
+        group: old.group,
+        domains: domains.length ? domains : undefined,
+        ...(old.note ? { note: old.note } : {}),
+      }
+    : input;
   let next = addEntry(v, carried, clock, { id: opts.id }).vault;
   if (!old) return next;
   const at = aliveEntries(next)

@@ -269,7 +269,8 @@ test("the backup runs, nothing changed for a week: no reminder in the popup, the
   await expect
     .poll(() => opt.evaluate(async () => Object.keys(await chrome.storage.sync.get(null)).length), { timeout: 60_000 })
     .toBeGreaterThan(0);
-  await expect(opt.locator("#csb-card")).toHaveAttribute("data-state", "ok");
+  // (the empty vault was handed over at "完成"; the account's copy follows after the debounce)
+  await expect(opt.locator("#csb-card")).toHaveAttribute("data-state", "ok", { timeout: 60_000 });
   // a week on with nothing changed: the last copy and the last backup a week and more ago, the daily check run since
   const t = await now(opt);
   await opt.evaluate(async (t) => {

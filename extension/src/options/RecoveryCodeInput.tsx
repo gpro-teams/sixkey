@@ -1,8 +1,8 @@
 // The settings page's recovery code input with "I have shares instead" (docs/design/notes/SHAMIR-NOTES.md §5): the one
 // code field (shared.tsx CodeField) and, a click away, the shares' entry (ui/ShareEntry.tsx, a lazy chunk with its own
 // text), which rebuilds the recovery code from shares and hands it to the host as if it had been typed: `onValue` gets
-// the code's symbols in both cases, and the host uses them exactly as before (the reset, the Sync section's turn-on,
-// join, key operations and repair; the shares wizard's "split my current code"). Either way, nothing is kept here: the
+// the code's symbols in both cases, and the host uses them exactly as before (the reset; the shares wizard's "split my
+// current code"). Either way, nothing is kept here: the
 // field and the entry each let go of what they hold at a lock, when the page goes away and when they are unmounted
 // (switching between them unmounts the other one).
 import { useState } from "preact/hooks";

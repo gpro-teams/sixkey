@@ -27,8 +27,7 @@ import { MAX_SHARES, makeShareSet, parseShare, recoveryCodeFromShares, setIdText
 import { generateVk, type Vk } from "../crypto/vk";
 import type { Generation } from "../storage/format";
 import { StorageError, type TransactInfo } from "../storage/store";
-import { SYNC_CONSTANTS } from "../sync/crypto/constants";
-import { capPrevious } from "../sync/crypto/cap-previous";
+import { capPrevious, KEYRING_PREVIOUS_MAX } from "../crypto/cap-previous";
 import { createClock, type Clock } from "../vault/hlc";
 import { canonicalJson, mergeVaults } from "../vault/merge";
 import { emptyVault, entryIdentity, isPurged, type Vault } from "../vault/model";
@@ -54,7 +53,6 @@ export {
   type PinUnlock,
   type QuickView,
   type ServiceDeps,
-  type SyncPort,
   type UnlockedView,
   type UnlockResult,
   type VkRecord,
@@ -143,7 +141,7 @@ export class VaultService extends ServiceCore {
   /**
    * Every key operation here makes its new master-password wrap with this: PBKDF2_PASSWORD_WRAP_ITERATIONS (kdf.ts;
    * OWNER-DECISIONS/15), or the test hook's count. Only the wraps take it: the recovery wrap is HKDF, and the PIN's set-up
-   * (pin-admin.ts) reads the hook itself and otherwise keeps kdf.ts's default, as backup files and the sync engine do.
+   * (pin-admin.ts) reads the hook itself and otherwise keeps kdf.ts's default, as backup files do.
    */
   private get ctx() {
     return { now: this.now, rng: this.rng, iterations: this.iterations ?? PBKDF2_PASSWORD_WRAP_ITERATIONS };
@@ -277,7 +275,7 @@ export class VaultService extends ServiceCore {
   async prepareRestoredKeys(
     keyring: Keyring,
     vk: Vk,
-    password: { typed: string } | { newPassword: string },
+    password: { typed: string } | { newPassword: string } | { keep: true },
   ): Promise<PreparedKeys> {
     let k = validateKeyring(keyring);
     if (k.vkId !== vk.id) throw new ServiceError("bad_state", "the vault key is not the keyring's");
@@ -287,9 +285,11 @@ export class VaultService extends ServiceCore {
     }
     if (!listMethods(k).includes("password"))
       throw new ServiceError("bad_state", "a restored keyring needs a password");
-    const pw = "newPassword" in password ? password.newPassword : password.typed;
+    // `keep`: a recovery-key restore going on with the master password the copy already had (its wrap is in `keyring`);
+    // nothing was typed, so the input hint of a generated password is not known here (the loose spellings still open it)
+    const pw = "newPassword" in password ? password.newPassword : "typed" in password ? password.typed : null;
     const handle: PreparedKeys = Object.freeze({ vaultId: k.vaultId, recoveryCode: "" });
-    preparedKeys.set(handle, { keyring: k, vk, format: formatRecord(k, pw) });
+    preparedKeys.set(handle, { keyring: k, vk, format: pw === null ? null : formatRecord(k, pw) });
     return handle;
   }
 
@@ -557,22 +557,11 @@ export class VaultService extends ServiceCore {
   }
 
   /**
-   * SYNC-DESIGN §0.0i item 18 (M2R-3): the Phase 0 key operations below commit locally first, so with sync on the next
-   * round would take the server's bundle back over them (or call the server's key older). With sync on they are refused
-   * (sync_on): the key operations go through the server first and then SyncFlows.commitKeys (§3.6–§3.8), and the pages
-   * send the user there (M6). Checked inside each one's transact, so a join turning sync on in another page cannot land in
-   * between, and before any secret is checked or recorded. One read; the popup runs none of them.
-   */
-  private async noSync(): Promise<void> {
-    if (this.sync && (await this.sync.context())) throw new ServiceError("sync_on");
-  }
-
-  /**
    * Turn on the master password for a vault made before it was required (a device-key vault from Phase 0; new vaults
    * always start with one). The vault key is replaced (so a copy that still holds the old device-wrapped key cannot
    * open anything current), the device key is deleted, the other slot and all snapshots are rewritten, and the old key is
    * kept only inside the new keyring. The recovery code, to be shown once, goes to `deliver.onCode` as soon as the change
-   * has committed (CodeDelivery). With sync on: sync_on (noSync).
+   * has committed (CodeDelivery).
    */
   async enableMasterPassword(password: string, deliver: CodeDelivery): Promise<void> {
     this.requirePolicy(password);
@@ -581,7 +570,6 @@ export class VaultService extends ServiceCore {
     let recoveryCode!: string;
     let format: PwFormatRecord | null = null;
     await this.store.transact(async (cur, info) => {
-      await this.noSync();
       if (!cur) throw new ServiceError("bad_state", "no vault");
       if (!hasDevice(cur.keyring)) throw new ServiceError("already_protected");
       oldVk = await unlockWithDevice(cur.keyring);
@@ -598,13 +586,12 @@ export class VaultService extends ServiceCore {
       );
       return { envelope, keyring: await this.capped(r.keyring, info) };
     });
-    await this.committed("password_enabled", newVk, { oldVk, code: recoveryCode, deliver, typed: true });
+    await this.committed("password_enabled", newVk, { oldVk, code: recoveryCode, deliver });
     await this.saveFormat(format);
   }
 
   /**
-   * New key, same password, new recovery code (to `deliver.onCode`). For when the old key may have been exposed. With sync
-   * on: sync_on (noSync; the sync rotation is §3.8, then SyncFlows.commitKeys).
+   * New key, same password, new recovery code (to `deliver.onCode`). For when the old key may have been exposed.
    */
   async rotateKey(password: string, deliver: CodeDelivery): Promise<void> {
     let oldVk!: Vk;
@@ -613,7 +600,6 @@ export class VaultService extends ServiceCore {
     let format: PwFormatRecord | null = null;
     await this.guarding("unlock_failed", () =>
       this.store.transact(async (cur, info) => {
-        await this.noSync();
         if (!cur) throw new ServiceError("bad_state", "no vault");
         if (hasDevice(cur.keyring)) throw new ServiceError("not_protected");
         const opened = await this.unlockWith2(cur.keyring, password);
@@ -636,7 +622,7 @@ export class VaultService extends ServiceCore {
         };
       }),
     );
-    await this.committed("key_rotated", newVk, { oldVk, code: recoveryCode, deliver, typed: true });
+    await this.committed("key_rotated", newVk, { oldVk, code: recoveryCode, deliver });
     rotatedHere.set(this, { vkId: newVk.id, at: this.now() });
     await this.saveFormat(format);
   }
@@ -650,7 +636,7 @@ export class VaultService extends ServiceCore {
    * unless the list is full.
    */
   private async capped(keyring: Keyring, info: TransactInfo): Promise<Keyring> {
-    if (keyring.previous.length <= SYNC_CONSTANTS.KEYRING_PREVIOUS_MAX) return keyring;
+    if (keyring.previous.length <= KEYRING_PREVIOUS_MAX) return keyring;
     if (await info.cleanupPending()) throw new ServiceError("cleanup_pending");
     return capPrevious(keyring);
   }
@@ -700,28 +686,21 @@ export class VaultService extends ServiceCore {
    *   4. the cleanup, through the one entry point: the other slot, the keyring copy, the mirror and the snapshots move
    *      to the new keyring (GM2-3: also after a new password or recovery code of the same key, whose old wrap still
    *      opens the data there); a failure is logged and the marker finishes it at the next open or unlock.
+   * Every caller is a key event of this page's own, its secret just typed here (a new or changed master password, a
+   * reset, a new recovery key, a rotation, shares confirmed): it opens the PIN record's "the PIN alone turns it back on"
+   * for a while (rotated.ts rewrappedHere). (The server sync's adoptions and joins, which typed nothing here and recorded
+   * no kind or another, came through here too, until its client went: DV-0b.)
    */
   private async committed(
-    kind: SecurityKind | null,
+    kind: SecurityKind,
     vk: Vk,
     o: {
       oldVk?: Vk;
-      held?: readonly Vk[];
       code?: string;
       deliver?: CodeDelivery;
       session?: boolean;
-      epoch?: number;
       /** confirmShares: the reminder of this very switch was set just before its commit, and stays. */
       keepRemind?: boolean;
-      /**
-       * A key event of this page's own, its secret just typed here (a new or changed master password, a reset, a new
-       * recovery key, a rotation, shares confirmed; with sync on, the same changes made through the sync engine, which
-       * hands it on: sync-flows.ts KeyCommit `typed`, from the engine's commitPublished, and the new recovery code before
-       * a first upload): it opens the PIN record's "the PIN alone turns it back on" for a while (rotated.ts
-       * rewrappedHere). Never a key adopted (in a background round, or with a secret typed for keys changed elsewhere),
-       * a join or a restore (review r2, PINR-09 and PINR-R2-03).
-       */
-      typed?: true;
     } = {},
   ): Promise<void> {
     if (o.code !== undefined && o.deliver) {
@@ -731,18 +710,17 @@ export class VaultService extends ServiceCore {
         this.diag("onCode failed", e);
       }
     }
-    if (kind) await this.record(kind);
+    await this.record(kind);
     // a new recovery code by any way: a reminder to check shares of the one before is moot (confirmShares sets its own)
-    if (kind && RECOVERY_CHANGES.includes(kind) && !o.keepRemind) await this.security?.remind?.(null);
-    const held = o.held ?? [o.oldVk ?? vk];
-    // A hard lock for the gate's arming (QUICK-UNLOCK §5.5): every key event that is recorded (a new password, a reset, a
-    // new recovery code, a rotation, an adoption, a join), and any change of the vault key. Only a rewrite that records
-    // nothing and keeps the key (the keyring's times floored before a first upload) leaves it. The next master password
-    // arms it again; sk_pin itself moves to a new key with the cleanup (pin-store.ts).
-    if (kind !== null || held.some((k) => k.id !== vk.id)) await this.endQuickQuietly();
+    if (RECOVERY_CHANGES.includes(kind) && !o.keepRemind) await this.security?.remind?.(null);
+    const held = [o.oldVk ?? vk];
+    // A hard lock for the gate's arming (QUICK-UNLOCK §5.5): every key event (a new password, a reset, a new recovery
+    // code, a rotation, shares confirmed). The next master password arms it again; sk_pin itself moves to a new key with
+    // the cleanup (pin-store.ts).
+    await this.endQuickQuietly();
     if (o.session !== false) {
       try {
-        await this.startSession(vk, o.epoch);
+        await this.startSession(vk);
       } catch (e) {
         this.diag("session not stored after a key change", e);
         if (held.some((k) => k.id !== vk.id)) await this.session.clear().catch(() => undefined);
@@ -751,17 +729,16 @@ export class VaultService extends ServiceCore {
     const keyring = await this.scrubQuietly(held, vk);
     // the PIN's record (OWNER-DECISIONS/20): any re-wrap or new key pauses it, its wrap set aside (no old key material on
     // disk; a record still of these keys is left as it is) until the next master password makes it again; and after this
-    // page's own key event, its secret just typed (`typed`), for a while the PIN alone turns it back on here (rotated.ts,
+    // page's own key event, its secret just typed, for a while the PIN alone turns it back on here (rotated.ts,
     // pin-restart-admin.ts), as one touch does for Touch ID after a key change
     if (keyring && this.pins)
       await setAsideRestart(this.pins, keyring).catch((e: unknown) => this.diag("PIN record not paused", e));
-    if (o.typed && keyring) rewrappedHere.set(this, { vkId: keyring.vkId, wraps: wrapsTag(keyring), at: this.now() });
+    if (keyring) rewrappedHere.set(this, { vkId: keyring.vkId, wraps: wrapsTag(keyring), at: this.now() });
   }
 
   /**
    * Change the password; the old one must be given. Only the password wrap changes, the data is untouched. The cleanup
-   * after it takes the old wrap out of the other slot, the keyring copy and the mirror (GM2-3, P-5). With sync on:
-   * sync_on (noSync; §3.6).
+   * after it takes the old wrap out of the other slot, the keyring copy and the mirror (GM2-3, P-5).
    */
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
     this.requirePolicy(newPassword);
@@ -769,7 +746,6 @@ export class VaultService extends ServiceCore {
     let format: PwFormatRecord | null = null;
     await this.guarding("unlock_failed", () =>
       this.store.transact(async (cur) => {
-        await this.noSync();
         if (!cur) throw new ServiceError("bad_state", "no vault");
         if (hasDevice(cur.keyring)) throw new ServiceError("not_protected");
         vk = (await this.unlockWith2(cur.keyring, oldPassword)).vk;
@@ -778,25 +754,23 @@ export class VaultService extends ServiceCore {
         return { envelope: cur.envelope, keyring };
       }),
     );
-    await this.committed("password_changed", vk, { typed: true });
+    await this.committed("password_changed", vk);
     await this.saveFormat(format);
   }
 
   /**
    * Forgot the password, step one (GM2-13; the pattern of prepareKeys): the recovery code opens the vault key, and a new
-   * password and a new recovery code are wrapped around it in memory. Nothing of the vault is written. The page (the
-   * settings tab, src/options/Reset.tsx; never the popup, which closes when the user goes to save the code: A4R-1) shows
-   * `recoveryCode` and asks the user to confirm it is saved; only then commitReset writes it. A page closed before that
-   * has changed nothing: the old recovery code still opens the vault, and the one shown opens nothing. The key
-   * derivations run here, outside the vault lock.
+   * password is wrapped around it in memory; the recovery wrap is kept as it is, so the recovery key the person just
+   * typed goes on working (the owner's report of 2026-11-18: a reset used to issue a new recovery key too, one more thing
+   * to save for no gain; `recoveryCode` is "" now). Nothing of the vault is written; commitReset writes it, which the
+   * page (src/options/Reset.tsx) does at once. The key derivations run here, outside the vault lock.
    * A wrong code is recorded (recovery_failed) and refused (wrong_secret); one that is not even well-formed is a typo,
    * not a guess, and is not recorded. The new password is held to the policy first, before any guess is counted. A code
    * that is accepted is recorded at once (recovery_used, as at the lock screen, A3-9): otherwise whoever holds it could
-   * learn it is valid here, go Back, and leave no entry. With sync on: sync_on, before the code is checked (noSync).
+   * learn it is valid here, go Back, and leave no entry.
    */
   async prepareReset(code: string, newPassword: string): Promise<PreparedReset> {
     this.requirePolicy(newPassword);
-    await this.noSync(); // before the code is checked or recorded
     const r = await this.store.load();
     if (r.status !== "ok") throw new ServiceError("bad_state", r.status);
     let vk: Vk;
@@ -810,12 +784,8 @@ export class VaultService extends ServiceCore {
       throw e;
     }
     await this.record("recovery_used"); // accepted: before the new keys are made
-    const { keyring, recoveryCode } = await setRecovery(
-      await setPassword(r.gen.keyring, vk, newPassword, this.ctx),
-      vk,
-      this.ctx,
-    );
-    const handle: PreparedReset = Object.freeze({ recoveryCode });
+    const keyring = await setPassword(r.gen.keyring, vk, newPassword, this.ctx);
+    const handle: PreparedReset = Object.freeze({ recoveryCode: "" });
     preparedResets.set(handle, {
       base: canonicalJson(r.gen.keyring),
       keyring,
@@ -832,7 +802,7 @@ export class VaultService extends ServiceCore {
    * page: the code on screen will never work, start again), or if the handle was already used. A write that landed
    * although it reported a failure is recognised by a retry with the same handle and counts as done, as makeVault does.
    * The handle is spent once the change has committed. There is no one-call reset (A4R-5): every reset shows its code
-   * before it is written, in the settings tab (popup: the button opens it). Sync turned on since step one: sync_on.
+   * before it is written, in the settings tab (popup: the button opens it).
    */
   async commitReset(prepared: PreparedReset): Promise<void> {
     const p = preparedResets.get(prepared);
@@ -843,7 +813,6 @@ export class VaultService extends ServiceCore {
         if (!cur) throw new ServiceError("bad_state", "no vault");
         const now = canonicalJson(cur.keyring);
         if (now === mine) throw LANDED; // this very reset, written by an attempt that reported an error
-        await this.noSync();
         if (now !== p.base) throw new ServiceError("bad_state", "keys changed meanwhile");
         return { envelope: cur.envelope, keyring: p.keyring };
       });
@@ -851,7 +820,7 @@ export class VaultService extends ServiceCore {
       if (e !== LANDED) throw e;
     }
     preparedResets.delete(prepared);
-    await this.committed("password_reset", p.vk, { typed: true });
+    await this.committed("password_reset", p.vk);
     await this.saveFormat(p.format);
   }
 
@@ -861,11 +830,9 @@ export class VaultService extends ServiceCore {
    * it, and someone at an unlocked browser without it must not get one. The password is checked first, as verifyPassword
    * does (outside the vault lock; a wrong one is refused with wrong_secret and recorded as unlock_failed; "" is a typo and
    * not recorded). A Phase 0 device-key vault has no master password (not_protected): anyone at it can open the vault
-   * anyway, so there `password` is ignored, as in clearSecurityLog and the export. With sync on: sync_on, before the
-   * password is checked (noSync; §3.7).
+   * anyway, so there `password` is ignored, as in clearSecurityLog and the export.
    */
   async newRecoveryCode(password: string, deliver: CodeDelivery): Promise<void> {
-    await this.noSync(); // before the password is checked or recorded
     try {
       await this.verifyPassword(password);
     } catch (e) {
@@ -874,7 +841,6 @@ export class VaultService extends ServiceCore {
     let recoveryCode!: string;
     let vk!: Vk;
     await this.store.transact(async (cur) => {
-      await this.noSync();
       if (!cur) throw new ServiceError("bad_state", "no vault");
       vk = await this.requireVk(cur.keyring);
       const r = await setRecovery(cur.keyring, vk, this.ctx);
@@ -882,7 +848,7 @@ export class VaultService extends ServiceCore {
       return { envelope: cur.envelope, keyring: r.keyring };
     });
     // Already unlocked with this key: no session to write.
-    await this.committed("recovery_code_new", vk, { code: recoveryCode, deliver, session: false, typed: true });
+    await this.committed("recovery_code_new", vk, { code: recoveryCode, deliver, session: false });
   }
 
   // ---- recovery code shares (docs/design/notes/SHAMIR-NOTES.md) --------------------------------------------------
@@ -890,14 +856,13 @@ export class VaultService extends ServiceCore {
   /**
    * Make a share set (ADVANCED-RECOVERY-AND-TIERS §3.1, §3.7), in memory; nothing of the vault is written.
    *   - `{password}`, "replace" (the recommended way): a new recovery code, shown only as shares. As newRecoveryCode, it
-   *     needs an unlocked vault AND the master password (a recovery code resets the master password); with sync on it is
-   *     refused (sync_on, before the password is checked: the new wrap would have to go through the server, §3.7). The
-   *     password's answers are verifyPassword's (a wrong one refused with wrong_secret and recorded as unlock_failed;
+   *     needs an unlocked vault AND the master password (a recovery code resets the master password). The password's
+   *     answers are verifyPassword's (a wrong one refused with wrong_secret and recorded as unlock_failed;
    *     "" is a typo). The new keyring is made here and kept in this module; confirmShares commits it.
    *   - `{recoveryCode}`, "split": the shares are of the current code, which must open the vault now (a stale or wrong
    *     code would give shares that open nothing). Needs an unlocked vault; a wrong code is refused (wrong_secret) and
    *     recorded as recovery_failed, as everywhere a recovery code is typed; a malformed one is a typo (recovery_*),
-   *     not recorded. Allowed with sync on: it writes nothing.
+   *     not recorded. It writes nothing.
    * A vault without a recovery wrap (a Phase 0 device-key vault) has nothing to share: not_protected. The code is taken
    * by recoveryKeyFrom, the one way to it. The random members to type back are drawn here (`test`), uniformly. The secret
    * itself is zeroed once the shares are made.
@@ -944,8 +909,8 @@ export class VaultService extends ServiceCore {
    * accounts and the inheritance kit to, never a second way:
    *   - `{recoveryCode}`: the current code, typed or rebuilt from shares, which must open the current recovery wrap (a
    *     wrong one is refused with wrong_secret and recorded as recovery_failed; a malformed one is a typo, not recorded);
-   *   - `{password}`: a new recovery code, made in memory (sync_on first, before the password is checked; then the master
-   *     password, verifyPassword's answers and records); the keyring with its wrap is returned, nothing is written.
+   *   - `{password}`: a new recovery code, made in memory (the master password first, verifyPassword's answers and
+   *     records); the keyring with its wrap is returned, nothing is written.
    * Needs an unlocked vault (locked) with a recovery wrap (not_protected for a Phase 0 device-key vault). Returns the
    * code's text, the keyring it was taken against, and for a new code the new keyring and its vault key.
    */
@@ -954,7 +919,6 @@ export class VaultService extends ServiceCore {
   ): Promise<{ code: string; keyring: Keyring; next: { keyring: Keyring; vk: Vk } | null }> {
     const fresh = "password" in from;
     if (fresh) {
-      await this.noSync(); // before the password is checked or recorded
       await this.verifyPassword(from.password);
     }
     const r = await this.store.load();
@@ -987,8 +951,8 @@ export class VaultService extends ServiceCore {
    *     and only then is the keyring written, in one locked save, the same as newRecoveryCode's: the old recovery code
    *     works until that save commits (an interrupted one is rolled back at the next start, Interrupted key changes), and
    *     every share of it stops working with it. Refused, writing nothing, with bad_state if the keys changed since the
-   *     set was made (a new code, a reset or a rotation in another page: these shares would never work), with sync_on if
-   *     sync was turned on meanwhile, and with locked if Sixkey locked. A save that landed although it reported an error
+   *     set was made (a new code, a reset or a rotation in another page: these shares would never work), and with locked
+   *     if Sixkey locked. A save that landed although it reported an error
    *     counts as done when tried again with the same handle. After it: recorded as recovery_code_new, the PIN's
    *     session ended, the cleanup (`committed`), as for a new recovery code. The shares reminder is set just before the
    *     save (SHAMIR-NOTES.md §4), so no lost write can keep the commit and lose it; a refused save puts it back as it was
@@ -1034,7 +998,6 @@ export class VaultService extends ServiceCore {
       if (!k) throw new ServiceError("bad_state", "no vault");
       const now = canonicalJson(k);
       if (now === mine) return true;
-      await this.noSync();
       if (now !== p.base) throw new ServiceError("bad_state", "keys changed meanwhile");
       await this.requireVk(k);
       return false;
@@ -1059,7 +1022,7 @@ export class VaultService extends ServiceCore {
     }
     preparedShares.delete(prepared);
     // Already unlocked with this key: no session to write. No code to deliver: the shares were shown before the commit.
-    await this.committed("recovery_code_new", next.vk, { session: false, keepRemind: true, typed: true });
+    await this.committed("recovery_code_new", next.vk, { session: false, keepRemind: true });
   }
 
   /**
@@ -1177,21 +1140,19 @@ export class VaultService extends ServiceCore {
 
   /**
    * Erase accounts for good: the secret is removed from the vault and from every copy Sixkey itself keeps (the previous
-   * slot, rolling and daily snapshots, the mirror, the vaults kept from before a join that a held key opens). Copies in
-   * files the user exported are not touched, nor a kept vault under a key this profile no longer holds (`keptUnchecked`
-   * says how many there are, for the page to say so), and the browser's database may keep old bytes on disk until it
-   * compacts (see docs/security/local-vault.md). The master password first (requireMasterPassword): a wrong one is
-   * refused (wrong_secret, recorded) and nothing is erased.
+   * slot, rolling and daily snapshots, the mirror). Copies in files the user exported are not touched, and the browser's
+   * database may keep old bytes on disk until it compacts (see docs/security/local-vault.md). The master password first
+   * (requireMasterPassword): a wrong one is refused (wrong_secret, recorded) and nothing is erased.
    */
-  async purgeForever(ids: string[], password: string): Promise<{ keptUnchecked: number }> {
+  async purgeForever(ids: string[], password: string): Promise<void> {
     await this.requireMasterPassword(password); // irreversible: never on the strength of a PIN or an open page alone
-    let keptUnchecked = 0;
-    if (ids.length === 0) return { keptUnchecked };
+    if (ids.length === 0) return;
     const device = await this.settings.deviceId();
     const purgeIn = (vault: Vault, clock: Clock): Vault =>
       ids.reduce((v, id) => (v.entries.some((e) => e.id === id && !isPurged(e)) ? purgeEntry(v, id, clock) : v), vault);
-    // The accounts erased, by identity: another vault's copies (kept re-encrypted for "find accounts" after a join, §3.5
-    // D9) gave them other ids in added mode, so there they are found by identity (§0.0i req. 13, A4R-12; R3).
+    // The accounts erased, by identity: a copy of another vault under a key held here has them under other ids, so there
+    // they are found by identity (§0.0i req. 13, A4R-12; R3). Only the removed server sync's join made such copies (kept
+    // re-encrypted for "find accounts", §3.5 D9); a developer profile that joined may still hold one among its snapshots.
     const gone = new Set<string>();
     await this.mutate((vault, clock) => {
       for (const e of vault.entries) {
@@ -1206,7 +1167,7 @@ export class VaultService extends ServiceCore {
         return k !== null && gone.has(k) ? purgeEntry(v, e.id, clock) : v;
       }, vault);
     const r = await this.store.load();
-    if (r.status !== "ok") return { keptUnchecked };
+    if (r.status !== "ok") return;
     const vk = await this.requireVk(r.gen.keyring);
     const olds = await unwrapPreviousVks(r.gen.keyring, vk);
     const vaultId = r.gen.keyring.vaultId;
@@ -1224,17 +1185,6 @@ export class VaultService extends ServiceCore {
       },
       { all: true },
     );
-    // the vaults kept from before a join (sk_prejoin, §3.5 ④): copies Sixkey keeps too
-    for (const rec of this.vkRecords) {
-      keptUnchecked +=
-        (await rec.purge?.(vk, olds, async (plain, id) => {
-          const vault = deserializeVault(plain);
-          const clock = createClock(device, { now: this.now });
-          observeVault(clock, vault);
-          return serializeVault(id === vaultId ? purgeIn(vault, clock) : purgeOther(vault, clock));
-        })) ?? 0;
-    }
-    return { keptUnchecked };
   }
 
   async lastBackupAt(): Promise<number | null> {

@@ -1,12 +1,13 @@
 {
   "name": "sixkey-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "MPL-2.0",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:dev": "node scripts/build.mjs --dev",
+    "build:test": "node scripts/build.mjs --test && node scripts/check-dist.mjs --test",
     "check": "node scripts/check-dist.mjs",
     "format": "prettier --write --ignore-path ../.gitignore --ignore-path ../.prettierignore ..",
     "format:check": "prettier --check --ignore-path ../.gitignore --ignore-path ../.prettierignore ..",
@@ -16,8 +17,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "npm run build && npm run build:e2e && node scripts/check-dist.mjs --e2e && npm run build:dev && node scripts/check-dist.mjs --dev && playwright test",
-    "e2e:sync": "npm run build:e2e && node scripts/check-dist.mjs --e2e && playwright test -c playwright.sync.config.ts",
-    "test:live": "vitest run -c vitest.live.config.ts",
     "verify": "npm run typecheck && npm test && npm run build && npm run check && npm run e2e",
     "build:e2e": "node scripts/build.mjs --e2e"
   },

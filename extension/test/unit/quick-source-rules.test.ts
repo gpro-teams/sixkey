@@ -55,8 +55,8 @@ describe("the session quick unlock's records", () => {
     }
   });
 
-  it('"sk_pin" is spelled in core/sync/local/keys.ts only; it is written only by pin-store.ts, under the vault lock', () => {
-    expect(where(/"sk_pin"/)).toEqual(["core/sync/local/keys.ts"]);
+  it('"sk_pin" is spelled in core/storage/local-keys.ts only; it is written only by pin-store.ts, under the vault lock', () => {
+    expect(where(/"sk_pin"/)).toEqual(["core/storage/local-keys.ts"]);
     // the service names it for loadView's first read (its unlock side, service-core.ts), the PIN box to notice a change;
     // neither writes it
     expect(where(/\bPIN_KEY\b/).sort()).toEqual([

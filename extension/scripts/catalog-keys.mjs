@@ -30,14 +30,12 @@
 //    closed. A function nothing in the page uses cannot run there, so its lookups need no key.
 //    Not seen: writes into a table through another name or inside a function it is passed to.
 // 4. An `allow` entry that matched nothing fails, so the list cannot go stale.
-// 5. The release gate (scripts/sync-ui.mjs), when the build's is closed (`syncUi: false`): `SYNC_UI && <expression>`,
-//    where SYNC_UI is a constant of that module declared as the gate is read (typeof __SYNC_UI__ === "boolean" &&
-//    __SYNC_UI__; test/unit/m6-gate.test.ts holds every reader to it), is dead code the bundler drops; the expression's
-//    mentions and uses are not the page's. Only that form; anything else is read as usual. scripts/build.mjs checks the
-//    bundle afterwards: a key the shipped code still names and the catalog lacks fails the build. The in-page
-//    suggestion's release gate (scripts/suggest-ui.mjs; `suggestUi: false`) is read the same way: `SUGGEST_UI &&
-//    <expression>`, SUGGEST_UI declared as typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__
-//    (test/unit/suggest-ui-gate.test.ts).
+// 5. The in-page suggestion's release gate (scripts/suggest-ui.mjs), when the build's is closed (`suggestUi: false`):
+//    `SUGGEST_UI && <expression>`, where SUGGEST_UI is a constant of that module declared as the gate is read
+//    (typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__; test/unit/suggest-ui-gate.test.ts), is dead code the
+//    bundler drops; the expression's mentions and uses are not the page's. Only that form; anything else is read as
+//    usual. scripts/build.mjs checks the bundle afterwards: a key the shipped code still names and the catalog lacks
+//    fails the build.
 // 6. Parts of a page (the settings page's text is in parts, docs/design/notes/BUDGET-NOTES.md): `stop` lists modules the
 //    walk does not enter (the parts' entries, for the page's own core), and `part: true` reads the entries as a part's,
 //    whose exported components are rendered from outside its graph: a lookup that reaches a parameter of a function an
@@ -139,14 +137,12 @@ export function tsOptions(tsconfig) {
  * @param {object[]} [o.allow]          see POPUP_ALLOW
  * @param {string[]} [o.catalogImports] specifier prefixes that are the page's own catalog (not code)
  * @param {ts.CompilerOptions} [o.compilerOptions] default: root/tsconfig.json
- * @param {boolean} [o.syncUi]          the build's release gate; false: rule 5 applies
- * @param {boolean} [o.suggestUi]       the in-page suggestion's release gate; false: rule 5 applies to it
+ * @param {boolean} [o.suggestUi]       the in-page suggestion's release gate; false: rule 5 applies
  */
 export function collectKeys(o) {
   const root = resolve(o.root);
   // rule 5: each closed gate's constant name, and the text its declaration must have
   const closedGates = new Map([
-    ...(o.syncUi === false ? [["SYNC_UI", squash('typeof __SYNC_UI__ === "boolean" && __SYNC_UI__')]] : []),
     ...(o.suggestUi === false ? [["SUGGEST_UI", squash('typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__')]] : []),
   ]);
   const gateClosed = closedGates.size > 0;
@@ -304,7 +300,7 @@ export function collectKeys(o) {
   };
   for (const sf of sources) {
     const visit = (node, inType) => {
-      // rule 5: a gate closed, `SYNC_UI && x` (or `SUGGEST_UI && x`) is the gate alone
+      // rule 5: the gate closed, `SUGGEST_UI && x` is the gate alone
       if (
         gateClosed &&
         ts.isBinaryExpression(node) &&
@@ -1174,8 +1170,8 @@ export const VIEW_CATALOG_FILE = /[\\/]catalogs[\\/]view-([A-Za-z_]+)\.json(?:\?
 
 /**
  * The popup's keys in this tree: the modules of POPUP_PAGES, the catalog read in src/ui/i18n.ts, POPUP_ALLOW.
- * Every language must have the same keys (scripts/messages.py also checks). `o.syncUi`: the build's release gate
- * (rule 5; open unless it is false).
+ * Every language must have the same keys (scripts/messages.py also checks). `o.suggestUi`: the in-page suggestion's
+ * release gate (rule 5; open unless it is false).
  */
 export function popupKeys(root, catalogs = readCatalogs(root), o = {}) {
   const first = fullKeys(catalogs);
@@ -1183,7 +1179,6 @@ export function popupKeys(root, catalogs = readCatalogs(root), o = {}) {
     root,
     entries: POPUP_PAGES.flatMap((page) => moduleEntriesOfHtml(resolve(root, page))),
     keys: first,
-    ...(o.syncUi === false ? { syncUi: false } : {}),
     ...(o.suggestUi === false ? { suggestUi: false } : {}),
     catalogModule: "src/ui/i18n.ts",
     catalogBinding: "catalog",
@@ -1205,7 +1200,7 @@ export function popupKeys(root, catalogs = readCatalogs(root), o = {}) {
 
 /**
  * The keys the View menu can show, in this tree (rule 6, as a settings part): from its own module, whose exported
- * functions are called from outside its graph. The catalogs/ files it imports are text, not code. `o.syncUi`: rule 5.
+ * functions are called from outside its graph. The catalogs/ files it imports are text, not code. `o.suggestUi`: rule 5.
  */
 export function viewKeys(root, catalogs = readCatalogs(root), o = {}) {
   const own = resolve(root, "catalogs") + sep;
@@ -1213,7 +1208,6 @@ export function viewKeys(root, catalogs = readCatalogs(root), o = {}) {
     root,
     entries: VIEW_ENTRIES,
     keys: fullKeys(catalogs),
-    ...(o.syncUi === false ? { syncUi: false } : {}),
     ...(o.suggestUi === false ? { suggestUi: false } : {}),
     catalogModule: "src/ui/i18n.ts",
     catalogBinding: "catalog",
@@ -1233,7 +1227,7 @@ export function viewKeys(root, catalogs = readCatalogs(root), o = {}) {
 export const SETTINGS_PARTS = {
   security: ["src/options/Security.tsx"],
   accounts: ["src/options/AddAccounts.tsx"],
-  backup: ["src/options/Backup.tsx"],
+  backup: ["src/options/Backup.tsx", "src/options/Groups.tsx"],
   misc: ["src/options/Misc.tsx"],
   general: ["src/options/Appearance.tsx"],
   firstrun: ["src/options/FirstRun.tsx"],
@@ -1242,9 +1236,8 @@ export const SETTINGS_PARTS = {
 
 /**
  * Which keys each part of the settings page can show, in this tree (rule 6): `core` from the page's entry with every
- * part's entries left out (the Sync section, a chunk of its own, is followed when the gate is open: the words it takes
- * from t() are core's), and each part from its own entries. The settings catalogs (catalogs/settings-*.json) are the
- * page's own text, not code. `o.syncUi`: the build's release gate (rule 5).
+ * part's entries left out, and each part from its own entries. The settings catalogs (catalogs/settings-*.json) are the
+ * page's own text, not code. `o.suggestUi`: the in-page suggestion's release gate (rule 5).
  */
 export function settingsKeys(root, catalogs = readCatalogs(root), o = {}) {
   const keys = fullKeys(catalogs);
@@ -1255,7 +1248,6 @@ export function settingsKeys(root, catalogs = readCatalogs(root), o = {}) {
     catalogModule: "src/ui/i18n.ts",
     catalogBinding: "catalog",
     pageCatalogs: (f) => f.startsWith(own),
-    ...(o.syncUi === false ? { syncUi: false } : {}),
     ...(o.suggestUi === false ? { suggestUi: false } : {}),
   };
   const core = collectKeys({

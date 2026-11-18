@@ -1,8 +1,7 @@
 // "I have shares instead" (docs/design/notes/SHAMIR-NOTES.md §5; ADVANCED-RECOVERY-AND-TIERS §3.7 flow 2): the one input
 // for recovery code shares, wherever a recovery code is accepted (the popup's and the side panel's lock screen, the
-// settings page's reset and the Sync section's recovery code fields, through options/RecoveryCodeInput.tsx) and in the
-// shares wizard (its test restore and "Check my shares"). It is a lazy chunk with its own text (share-text.ts), so the
-// popup carries only the link that loads it.
+// settings page's reset, through options/RecoveryCodeInput.tsx) and in the shares wizard (its test restore and "Check
+// my shares"). It is a lazy chunk with its own text (share-text.ts), so the popup carries only the link that loads it.
 //
 // The shares are typed one at a time; each is read at once (its check bits catch a typo; a share of another set, or the
 // same share again, is refused before anything is combined) and leaves the field, which then asks for the next one. With

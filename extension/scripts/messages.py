@@ -1,8 +1,8 @@
 # Source of truth for _locales and for the page catalogs in catalogs/. Run: python3 scripts/messages.py  (writes both
 # _locales/<lang>/messages.json files and every catalogs/*.json file; all of them are generated, never edited by hand, and
 # never part of a patch: whoever applies one runs this again).
-# _locales holds the full catalogs: every key but the Sync section's, for Chrome (the manifest's __MSG_ names, the
-# service worker's chrome.i18n.getMessage) and as the text the page catalogs are cut from. No page loads them whole:
+# _locales holds the full catalogs, for Chrome (the manifest's __MSG_ names, the service worker's chrome.i18n.getMessage)
+# and as the text the page catalogs are cut from. No page loads them whole:
 #   - the popup ships only the keys its code can use: scripts/build.mjs cuts that part from these files on every build
 #     (scripts/catalog-keys.mjs), so nothing here or in a fragment changes for it;
 #   - the settings page loads its text in parts (docs/design/notes/BUDGET-NOTES.md): catalogs/settings-<part>-<lang>.json,
@@ -22,10 +22,9 @@
 #     settings-page catalog it was), loaded with the switch's lazy chunk and counted in none of the settings page's
 #     up-front budgets or views, as the shares' is; what a vault's page holds with it in (PLUGINS_VIEW) is held to
 #     SHARES_PAGE_LIMIT. Its keys are disjoint from every other catalog's.
-#   - the Sync section's text is a catalog of its own, in two files (catalogs/sync-<lang>.json, and the managing screens'
-#     catalogs/sync-manage-<lang>.json), both loaded by that section before it is drawn (src/options/sync/text.ts) and
-#     never by the popup, so a build without the sync user interface (scripts/sync-ui.mjs) carries none of it. Its keys
-#     are disjoint from the full catalogs'.
+#   - the settings page's Sync section and its two catalogs (catalogs/sync-<lang>.json, catalogs/sync-manage-<lang>.json)
+#     are gone from every build (OWNER-DECISIONS/25): no fragment may add to them, and a leftover file of theirs is
+#     deleted (below).
 #   - the Fill button's text (TOTP-AUTOFILL, Stage 1) is a catalog of its own, catalogs/autofill-<lang>.json, loaded with the
 #     button's lazy chunk (src/popup/main/Fill.tsx, src/popup/main/fill-text.ts) and never counted in the popup's catalog:
 #     the popup has no room for it. Its keys are disjoint from the full catalogs'. What the service worker shows for the
@@ -56,11 +55,11 @@
 #   - the site rules' updater's text (TOTP autofill Stage 3, AF3-U2; docs/design/notes/AUTOFILL3-NOTES.md §10) is a catalog
 #     of its own, catalogs/rules-<lang>.json (src/options/RulesUpdate.tsx: Settings › Security › Autofill's "Get the latest
 #     site rules"), loaded with that lazy chunk, which the settings page loads only in a build whose updater's release gate
-#     is open (scripts/rules-update.mjs), so a build without the updater carries none of it (as the Sync section's). A
+#     is open (scripts/rules-update.mjs), so a build without the updater carries none of it. A
 #     budget of its own; disjoint keys.
 # Every catalog a page loads has a budget (BUDGETS, gzipped, the larger language counted), and so does what a page loads
 # together (AGGREGATES: each view's catalogs as one gzip stream, held to the 12 KB the settings page's whole text had as one
-# catalog, and the Sync section's). This script measures each file as the build emits it (with node; see
+# catalog). This script measures each file as the build emits it (with node; see
 # ESTIMATE_MARGIN), refuses one over its budget before it writes anything, and scripts/check-dist.mjs measures the built
 # chunks against the same numbers (restated there; test/unit/budget-split.test.ts checks the two agree).
 #
@@ -74,9 +73,7 @@
 #                             key, its own or another's; each key in one part, placed once across all fragments)
 #   VIEW                      keys of the full catalogs that the popup's View menu loads when it opens: [keys] (any
 #                             key, also one that a part or the popup's catalog has; each listed once)
-#   SYNC_EN, SYNC_ZH          new keys of the Sync section's catalog; both languages, the same keys
-#   SYNC_MANAGE_EN, SYNC_MANAGE_ZH  new keys of the Sync section's managing screens' catalog; the same rules
-#   PLUGINS_EN, PLUGINS_ZH    new keys of the autofill switch's catalog (above); the same rules
+#   PLUGINS_EN, PLUGINS_ZH    new keys of the autofill switch's catalog (above); both languages, the same keys
 #   AUTOFILL_EN, AUTOFILL_ZH  new keys of the Fill button's catalog (below); the same rules
 #   SHARES_EN, SHARES_ZH      new keys of the recovery code shares' catalog (below); the same rules
 #   DEVICE_EN, DEVICE_ZH      new keys of the device unlock's catalog (below); the same rules
@@ -90,7 +87,7 @@
 # (by two fragments, or again over an existing key without OVERRIDE), two fragments rewriting the same key,
 # rewriting or removing a key that does not exist, removing a key twice or one that is also rewritten, English
 # and Chinese ending up with different keys, a key placed in a part that does not exist, placed twice, or not a key
-# (removed, or the Sync section's), a manifest __MSG_ name or a getMessage key with no text, and a catalog over budget.
+# (removed, or never added), a manifest __MSG_ name or a getMessage key with no text, and a catalog over budget.
 import glob, json, os, re, runpy, subprocess, sys, zlib
 
 I18N = os.path.join(os.path.dirname(__file__), "i18n")
@@ -105,10 +102,6 @@ FRAGMENT_NAMES = {
     "VIEW",
     "PLUGINS_EN",
     "PLUGINS_ZH",
-    "SYNC_EN",
-    "SYNC_ZH",
-    "SYNC_MANAGE_EN",
-    "SYNC_MANAGE_ZH",
     "AUTOFILL_EN",
     "AUTOFILL_ZH",
     "SHARES_EN",
@@ -128,8 +121,7 @@ FRAGMENT_NAMES = {
 # entry modules; "core" is the rest of the page, loaded before anything is drawn).
 SETTINGS_PARTS = ["core", "security", "accounts", "backup", "misc", "general", "firstrun", "unlock"]
 # Gzipped bytes, the larger language counted (docs/design/notes/BUDGET-NOTES.md: each set at its measured size plus at
-# least 1.5 KB, rounded up to 512 B; the Sync section's two keep that section's limit, 12 KB, each). None above 12 KB,
-# the old full catalog's limit.
+# least 1.5 KB, rounded up to 512 B). None above 12 KB, the old full catalog's limit.
 BUDGETS = {
     "settings-core": 5120,
     "settings-security": 5120,
@@ -143,8 +135,6 @@ BUDGETS = {
     # the plugin platform's settings-page catalog's budget, kept for the autofill switch's text, which is all that is left
     # of it
     "plugins": 3072,
-    "sync": 12288,
-    "sync-manage": 12288,
     "autofill": 4096,
     # 1,5xx B (zh_CN) when it was introduced, plus at least 1.5 KB, rounded up to 512 B (docs/design/notes/SHAMIR-NOTES.md §6)
     "shares": 3072,
@@ -164,10 +154,10 @@ BUDGETS = {
     "csb-popup": 2048,
 }
 # What a page loads together, held as one gzip stream (each language) to the measure the old limits were set on: the
-# settings page's whole text as one catalog (12 KB, check-dist's FULL_CATALOG_GZ) and the Sync section's as one (12 KB,
-# SYNC_CATALOG_GZ). The catalogs of each view, concatenated in load order: the core, then src/options/parts.tsx partsFor's
-# parts (with no vault: the wizard's; with one: the sections and the lock's), and every part together, the most one page
-# can hold; the Sync section loads both of its catalogs before it draws. check-dist holds the built chunks to the same.
+# settings page's whole text as one catalog (12 KB, check-dist's FULL_CATALOG_GZ). The catalogs of each view, concatenated
+# in load order: the core, then src/options/parts.tsx partsFor's parts (with no vault: the wizard's; with one: the
+# sections and the lock's), and every part together, the most one page can hold. check-dist holds the built chunks to the
+# same.
 VIEW_LIMIT = 12288
 AGGREGATES = {
     "settings page with no vault": ["settings-core", "settings-firstrun"],
@@ -181,7 +171,6 @@ AGGREGATES = {
         "settings-unlock",
     ],
     "settings page, every part": ["settings-" + p for p in SETTINGS_PARTS],
-    "Sync section": ["sync", "sync-manage"],
 }
 # The most a vault's page can hold with the shares' text in: its view and the shares' catalog. Not held to VIEW_LIMIT:
 # the shares' catalog is lazy and has a budget of its own, like the Fill button's in the popup (the owner's decision,
@@ -216,7 +205,7 @@ CSB_VIEW = SHARES_VIEW[:-1] + ["csb"]
 CSB_FIRSTRUN_VIEW = ["settings-core", "settings-firstrun", "csb"]
 # The sizes are measured with Node's gzip (the one check-dist uses), on the text of each chunk exactly as the build emits
 # it. Without node, Python's zlib estimates them; it compresses a little differently (up to 3.1% smaller, on short Chinese
-# catalogs; 1.5% on the Sync section's), so the estimate stops this far short of a budget, which refuses whatever the
+# catalogs), so the estimate stops this far short of a budget, which refuses whatever the
 # exact measure would. check-dist holds the built chunks to the budgets themselves.
 ESTIMATE_MARGIN = 0.04
 GZIP_JS = (
@@ -248,10 +237,6 @@ def read(path, allowed):
             "ZH",
             "OVERRIDE_EN",
             "OVERRIDE_ZH",
-            "SYNC_EN",
-            "SYNC_ZH",
-            "SYNC_MANAGE_EN",
-            "SYNC_MANAGE_ZH",
             "PLUGINS_EN",
             "PLUGINS_ZH",
             "AUTOFILL_EN",
@@ -343,24 +328,7 @@ for where, f in fragments:
 if EN.keys() != ZH.keys():
     fail(f"English and Chinese have different keys: {sorted(EN.keys() ^ ZH.keys())}")
 
-# 4. The Sync section's catalogs: new keys only, both languages, none of them a key of the full catalogs, and the two
-#    catalogs disjoint.
-SYNC = {"sync": ({}, {}), "sync-manage": ({}, {})}
-sync_by = {}
-for where, f in fragments:
-    for name, prefix in (("sync", "SYNC_"), ("sync-manage", "SYNC_MANAGE_")):
-        en, zh = f[prefix + "EN"], f[prefix + "ZH"]
-        if en.keys() != zh.keys():
-            fail(f"{where}: {prefix}EN and {prefix}ZH add different keys: {sorted(en.keys() ^ zh.keys())}")
-        for k in en:
-            if k in sync_by:
-                fail(f"{where}: sync key {k!r} is also added by {sync_by[k]}")
-            if k in EN or k in added_by or k in removed_by:
-                fail(f"{where}: sync key {k!r} is also a key of the full catalogs (the two sets are disjoint)")
-            sync_by[k] = where
-            SYNC[name][0][k], SYNC[name][1][k] = en[k], zh[k]
-
-# 4b. The Fill button's catalog: new keys only, both languages, none of them a key of the full catalogs or the Sync section's.
+# 4b. The Fill button's catalog: new keys only, both languages, none of them a key of the full catalogs.
 AUTOFILL = ({}, {})
 autofill_by = {}
 for where, f in fragments:
@@ -370,7 +338,7 @@ for where, f in fragments:
     for k in en:
         if k in autofill_by:
             fail(f"{where}: autofill key {k!r} is also added by {autofill_by[k]}")
-        if k in EN or k in added_by or k in removed_by or k in sync_by:
+        if k in EN or k in added_by or k in removed_by:
             fail(f"{where}: autofill key {k!r} is also a key of another catalog (the sets are disjoint)")
         autofill_by[k] = where
         AUTOFILL[0][k], AUTOFILL[1][k] = en[k], zh[k]
@@ -389,7 +357,7 @@ for where, f in fragments:
         for k in en:
             if k in plugins_by:
                 fail(f"{where}: plugins key {k!r} is also added by {plugins_by[k]}")
-            if k in EN or k in added_by or k in removed_by or k in sync_by or k in autofill_by:
+            if k in EN or k in added_by or k in removed_by or k in autofill_by:
                 fail(f"{where}: plugins key {k!r} is also a key of another catalog (the sets are disjoint)")
             plugins_by[k] = where
             table[0][k], table[1][k] = en[k], zh[k]
@@ -405,7 +373,7 @@ for where, f in fragments:
     for k in en:
         if k in shares_by:
             fail(f"{where}: shares key {k!r} is also added by {shares_by[k]}")
-        if k in EN or k in added_by or k in removed_by or k in sync_by or k in autofill_by or k in plugins_by:
+        if k in EN or k in added_by or k in removed_by or k in autofill_by or k in plugins_by:
             fail(f"{where}: shares key {k!r} is also a key of another catalog (the sets are disjoint)")
         shares_by[k] = where
         SHARES[0][k], SHARES[1][k] = en[k], zh[k]
@@ -420,7 +388,7 @@ for where, f in fragments:
     for k in en:
         if k in device_by:
             fail(f"{where}: device key {k!r} is also added by {device_by[k]}")
-        if k in EN or k in added_by or k in removed_by or k in sync_by or k in autofill_by or k in shares_by:
+        if k in EN or k in added_by or k in removed_by or k in autofill_by or k in shares_by:
             fail(f"{where}: device key {k!r} is also a key of another catalog (the sets are disjoint)")
         device_by[k] = where
         DEVICE[0][k], DEVICE[1][k] = en[k], zh[k]
@@ -440,7 +408,6 @@ for where, f in fragments:
                 k in EN
                 or k in added_by
                 or k in removed_by
-                or k in sync_by
                 or k in autofill_by
                 or k in shares_by
                 or k in plugins_by
@@ -465,7 +432,6 @@ for where, f in fragments:
             k in EN
             or k in added_by
             or k in removed_by
-            or k in sync_by
             or k in autofill_by
             or k in shares_by
             or k in plugins_by
@@ -493,7 +459,6 @@ for where, f in fragments:
                 k in EN
                 or k in added_by
                 or k in removed_by
-                or k in sync_by
                 or k in autofill_by
                 or k in shares_by
                 or k in plugins_by
@@ -518,7 +483,7 @@ for where, f in fragments:
             if k in placed_by:
                 fail(f"{where}: PARTS places {k!r}, which {placed_by[k]} places too (in {part_of[k]!r})")
             if k not in EN:
-                why = "the Sync section's" if k in sync_by else "removed" if k in removed_by else "not a key"
+                why = "removed" if k in removed_by else "not a key"
                 fail(f"{where}: PARTS places {k!r}, which is {why}: only keys of the full catalogs go in a part")
             placed_by[k], part_of[k] = where, part
 
@@ -530,7 +495,7 @@ for where, f in fragments:
         if k in view_by:
             fail(f"{where}: VIEW lists {k!r}, which {view_by[k]} lists too")
         if k not in EN:
-            why = "the Sync section's" if k in sync_by else "removed" if k in removed_by else "not a key"
+            why = "removed" if k in removed_by else "not a key"
             fail(f"{where}: VIEW lists {k!r}, which is {why}: only keys of the full catalogs go in the view part")
         view_by[k] = where
 
@@ -584,7 +549,6 @@ for part in SETTINGS_PARTS:
     keys = [k for k in EN if part_of.get(k) == part]
     catalogs["settings-" + part] = ({k: EN[k] for k in keys}, {k: ZH[k] for k in keys})
 catalogs["view"] = ({k: EN[k] for k in EN if k in view_by}, {k: ZH[k] for k in ZH if k in view_by})
-catalogs.update(SYNC)
 catalogs["plugins"] = PLUGINS
 catalogs["autofill"] = AUTOFILL
 catalogs["shares"] = SHARES
@@ -670,15 +634,13 @@ for file in os.listdir(cat_root):
         )
         and file not in wanted
     ):
-        os.remove(os.path.join(cat_root, file))  # a catalog of a part there is no more
+        os.remove(os.path.join(cat_root, file))  # a catalog of a part there is no more (the Sync section's too)
 
 print(
     len(EN),
     "messages,",
     len(placed_by),
     "of them on the settings page,",
-    sum(len(en) for en, _ in SYNC.values()),
-    "in the Sync section's catalogs,",
     len(view_by),
     "in the popup's view part,",
     len(AUTOFILL[0]),

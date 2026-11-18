@@ -69,7 +69,7 @@ describe("pages and the files they load", () => {
           t.replace("</head>", '<script type="module" src="../assets/x.mjs"></script></head>'),
         );
       },
-      /assets\/x\.mjs: `fetch` appears 1 times[\s\S]*not the API origin: https:\/\/evil\.example/,
+      /assets\/x\.mjs: `fetch` appears 1 times[\s\S]*not one it may hold: https:\/\/evil\.example/,
     ],
     [
       "a file of a kind no build ships (a WebAssembly module)",

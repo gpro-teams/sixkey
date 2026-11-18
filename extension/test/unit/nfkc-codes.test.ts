@@ -1,8 +1,8 @@
 // A code typed in a Chinese IME's full-width mode (全角: ＡＢＣ１２３, the hyphen －, the ideographic space) reads as the
 // same code (core/crypto/crockford.ts normalizeCrockford: NFKC first, as pin.ts reads a PIN). Every way a code is typed
 // goes through it, and each is here: the recovery key to unlock, to reset the master password, to restore a cloud
-// backup, to make shares from and in the sync flows; recovery code shares; the pairing code; and the settings page's
-// code fields, which show what was typed the way it is read. A TOTP secret typed by hand reads the same way
+// backup, to make shares from; recovery code shares; and the settings page's code fields, which show what was typed the
+// way it is read. (The sync flows' recovery proof and the pairing code went with the server sync's client: DV-0b.) A TOTP secret typed by hand reads the same way
 // (core/totp/base32.ts cleanBase32). For both readings, every code point that read before reads the same after
 // (REVIEW-P5P6-r4, D3 and D4: the reviewer's per-code-point check).
 import { describe, expect, it } from "vitest";
@@ -10,7 +10,6 @@ import { makeCloudBackup } from "../../src/core/cloud/format";
 import { openCloudBackups } from "../../src/core/cloud/restore";
 import { CROCKFORD, normalizeCrockford } from "../../src/core/crypto/crockford";
 import { unlockWithRecoveryCode } from "../../src/core/crypto/keyring";
-import { generatePairingCode, parsePairingCode } from "../../src/core/crypto/pairing-code";
 import { formatRecoveryCode, generateRecoveryCode, parseRecoveryCode } from "../../src/core/crypto/recovery-code";
 import { makeShareSet, parseShare, recoveryCodeFromShares } from "../../src/core/crypto/shares";
 import { VaultService } from "../../src/core/service/service";
@@ -22,9 +21,7 @@ import { createClock } from "../../src/core/vault/hlc";
 import { emptyVault } from "../../src/core/vault/model";
 import { addEntry } from "../../src/core/vault/ops";
 import { VaultStore } from "../../src/core/storage/store";
-import { recoveryProof } from "../../src/core/sync/crypto/auth-proofs";
 import { codeSymbols } from "../../src/options/code-text";
-import { fullLength } from "../../src/options/sync/recovery";
 import { account, candidate, protectedKeys, seal, vaultOf } from "../helpers/cloud";
 import { createProtected, resetWithCode, STRONG } from "../helpers/vaults";
 
@@ -137,19 +134,12 @@ describe("the recovery key, typed full-width", () => {
     const files = [candidate("A", await makeCloudBackup(gen, "both", "t"))];
     const opening = openCloudBackups(files, { recoveryKey: fullWidth(keys.recoveryCode) }, { now: T0, device: "d1" });
     expect(await outcome(opening)).toBe("ok");
-    expect(await opening).toMatchObject({ needsPassword: true });
+    expect(await opening).toMatchObject({ needsPassword: false, keepsPassword: true });
   });
 
-  it("the sync flows: the same recovery proof as the code typed half-width", async () => {
-    const { text } = await generateRecoveryCode();
-    expect(await outcome(recoveryProof(fullWidth(text)))).toBe("ok");
-    expect(await recoveryProof(fullWidth(text))).toEqual(await recoveryProof(text));
-  });
-
-  it("the settings page's code fields read it as the code (codeSymbols, the sync section's length check)", async () => {
+  it("the settings page's code fields read it as the code (codeSymbols)", async () => {
     const { text } = await generateRecoveryCode();
     expect(codeSymbols(fullWidth(text))).toBe(codeSymbols(text));
-    expect(fullLength(fullWidth(text))).toBe(true);
   });
 });
 
@@ -168,16 +158,6 @@ describe("recovery code shares, typed full-width", () => {
   });
 });
 
-describe("the pairing code, typed full-width", () => {
-  it("parses to the same secret", async () => {
-    const { text, secret } = await generatePairingCode();
-    expect(await outcome(parsePairingCode(fullWidth(text)))).toBe("ok");
-    expect(await parsePairingCode(fullWidth(text))).toEqual(secret);
-    expect(fullLength(fullWidth(text))).toBe(true); // the join's field says it is whole
-  });
-});
-
-/** A vault with a master password, as first run makes it; its recovery key and keyring. */
 async function protectedService() {
   const kv = new MemoryKV();
   const store = new VaultStore({ lock: createMutex(), kv, now: () => T0 });

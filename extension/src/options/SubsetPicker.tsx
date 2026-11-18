@@ -24,17 +24,22 @@ const name = (e: Entry) => (
   </span>
 );
 
-/** `entries`: the live accounts in list order. `picked` may name ids that are gone; they count for nothing. */
+/**
+ * `entries`: the live accounts in list order. `picked` may name ids that are gone; they count for nothing. `preview`: the
+ * export's preview of what goes in the file (false on Settings › Groups, Groups.tsx, which exports nothing).
+ */
 export function SubsetPicker({
   entries,
   picked,
   onPick,
   disabled,
+  preview = true,
 }: {
   entries: Entry[];
   picked: ReadonlySet<string>;
   onPick: (next: Set<string>) => void;
   disabled: boolean;
+  preview?: boolean;
 }) {
   const groups = groupsOf(entries);
   const chosen = entries.filter((e) => picked.has(e.id));
@@ -114,7 +119,7 @@ export function SubsetPicker({
           );
         })}
       </div>
-      {chosen.length > 0 && (
+      {preview && chosen.length > 0 && (
         <div class="callout sub-preview" id="sub-preview">
           <div>
             <p>{t("expSubOnly", chosen.length)}</p>

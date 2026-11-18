@@ -86,6 +86,24 @@
   "expSubChanged": {
     "message": "所选账户已在其他页面中被更改，未保存任何文件。请检查列表后重新保存。"
   },
+  "groupsLead": {
+    "message": "勾选账户，再移到一个分组。每个分组在弹窗列表里单独成一段；新建的分组排在最后。"
+  },
+  "groupsSearch": {
+    "message": "按名称、账户或分组搜索"
+  },
+  "groupsMove": {
+    "message": "把 $1 个移到这个分组"
+  },
+  "groupsClear": {
+    "message": "移出分组"
+  },
+  "groupsMoved": {
+    "message": "已把 $1 个账户移到「$2」。"
+  },
+  "groupsCleared": {
+    "message": "已把 $1 个账户移出分组。"
+  },
   "fileLockedMeanwhile": {
     "message": "读取文件时 Sixkey 已锁定，请重新选择这个文件。"
   }

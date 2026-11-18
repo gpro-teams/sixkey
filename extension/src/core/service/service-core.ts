@@ -21,15 +21,12 @@ import { vkFromRaw, type Vk } from "../crypto/vk";
 import type { Generation } from "../storage/format";
 import { createMutex, type Lock } from "../storage/kv";
 import type { Cleanup, VaultStore, ViewLoad } from "../storage/store";
-import { LOCAL_ONLY_KEYS } from "../sync/local/keys";
-import { editFits, exemptFromSizeCheck, uploadEnvelopeBytes } from "../sync/local/size";
-import type { SyncContext } from "../sync/local/state";
 import { createClock, type Clock } from "../vault/hlc";
 import type { Vault } from "../vault/model";
 import { observeVault } from "../vault/ops";
 import { deserializeVault, serializeVault } from "../vault/validate";
 import type { StorageEvent } from "../storage/format";
-import { PIN_KEY, type PinStore } from "./pin-store";
+import { PIN_KEY, RESTART_KEY, type PinStore } from "./pin-store";
 import { PRF_KEY, type PrfStore } from "./prf-store";
 import { formatFor, formatRecord, type PwFormatRecord, type PwFormatStore } from "./pw-format";
 import type { SecurityKind, SecurityRecorder } from "./security-log";
@@ -112,9 +109,9 @@ export type ServiceDeps = {
    */
   security?: SecurityRecorder;
   /**
-   * Records outside the store's copies that are encrypted under the vault key (SYNC-DESIGN §0.0i M2 req. 5: M2's
-   * sk_sync_cfg.enc and sk_prejoin). None yet: this is the hook M2 fills. The one cleanup entry point moves each to the
-   * current key before the store's own copies.
+   * Records outside the store's copies that are encrypted under the vault key (SYNC-DESIGN §0.0i M2 req. 5): the PIN's
+   * set-up, the device unlock's record and the plugin grants (platform/runtime-base.ts). The one cleanup entry point
+   * moves each to the current key before the store's own copies.
    */
   vkRecords?: readonly VkRecord[];
   /**
@@ -122,11 +119,6 @@ export type ServiceDeps = {
    * Production uses PBKDF2_PASSWORD_WRAP_ITERATIONS for the first and kdf.ts's 600k default for the second.
    */
   kdfIterations?: number;
-  /**
-   * Sync's local side as the service needs it (SYNC-DESIGN M2; platform/runtime.ts). Without it, sync is off: no size
-   * check, no clock offset.
-   */
-  sync?: SyncPort;
   /**
    * The PIN's set-up, sk_pin (QUICK-UNLOCK §5.2; pin-store.ts), and its record, sk_pin_restart (OWNER-DECISIONS/20 and
    * its 2026-10-30 notes: the PIN's one way). Without it there is no PIN: PinAdmin.setPin refuses
@@ -155,24 +147,6 @@ export type ServiceDeps = {
 };
 
 /**
- * What the service itself needs of sync's local side, in every context (platform/runtime.ts builds it; small, so the
- * popup carries it). The sync flows (applyRemote, the key commits, the join) are SyncFlows in sync-flows.ts, which the
- * pages that sync build on top of this service with the whole local side (M5); the popup never loads them.
- */
-export type SyncPort = {
-  /** null when sync is off; one read (sk_sync_cfg and sk_sync_state). */
-  context(): Promise<SyncContext | null>;
-  /** lastSynced and the outbox to null (D1). Called inside the vault lock, before a commit that a full pull must follow. */
-  clearLastSynced(): Promise<void>;
-  /**
-   * M3: the outbox (§4.7, D2). After every commit of new data through mutate or applyRemote, inside the vault lock,
-   * guarded (a failure is logged and the save stands). It gets the key and the vault just committed. Must not start a
-   * cleanup or touch the network.
-   */
-  afterCommit?: (c: { gen: Generation; vk: Vk; vault: Vault }) => Promise<void>;
-};
-
-/**
  * A record encrypted under the vault key that the store does not hold (see ServiceDeps.vkRecords). `reencrypt` moves it
  * to `current` if it is under one of `held` (the old keys the caller can open: the keyring's previous ones, and whatever
  * else the caller has in memory), and says what it found.
@@ -188,25 +162,14 @@ export type SyncPort = {
  *     lock calls the cleanup: webLock is not re-entrant, so either deadlocks.
  *   - A read that throws must propagate: the cleanup then stops before the store's part, and the marker stays for the
  *     next unlock (§0.0i req. 5).
- *   - "unopenable": under a key none of `held` opens. The record decides what that means (sk_prejoin is kept, it is never
- *     deleted automatically; sk_sync_cfg.enc asks for a new enrolment, §2.5). It never holds the marker up.
+ *   - "unopenable": under a key none of `held` opens. The record decides what that means (the PIN's set-up is removed,
+ *     a PRF wrap is paused: pin-store.ts, prf-store.ts). It never holds the marker up.
  * test/regression/gm2-fixes.test.ts has a record written to this contract racing two rotations.
  */
 export type VkRecord = {
   /** For the diagnostics log; never secret. */
   readonly name: string;
   reencrypt(current: Vk, held: readonly Vk[]): Promise<VkRecordResult>;
-  /**
-   * A record that holds vault data (sk_prejoin's kept vaults): the permanent delete (purgeForever) passes every vault in
-   * it that a held key opens through `scrub` (the erased accounts taken out), under `current` after; the others are kept
-   * as they are (only the user deletes a kept vault). Returns how many it kept unchecked. The same critical section and
-   * rules as reencrypt.
-   */
-  purge?(
-    current: Vk,
-    held: readonly Vk[],
-    scrub: (vault: Uint8Array, vaultId: string) => Promise<Uint8Array>,
-  ): Promise<number>;
   /**
    * A new vault about to be made under `next`, a new key (makeVault, before its commit): what this record grants that
    * `next` will not open, withdrawn now in a way that needs no key and only tightens (the plugin grants: each plugin
@@ -264,7 +227,6 @@ export class ServiceCore {
   protected readonly diag: (message: string, err?: unknown) => void;
   protected readonly security: SecurityRecorder | undefined;
   protected readonly vkRecords: readonly VkRecord[];
-  protected readonly sync: SyncPort | undefined;
   protected readonly pins: PinStore | undefined;
   protected readonly prfs: PrfStore | undefined;
   private readonly formats: PwFormatStore | undefined;
@@ -295,7 +257,6 @@ export class ServiceCore {
     this.diag = d.onDiag ?? (() => undefined);
     this.security = d.security;
     this.vkRecords = d.vkRecords ?? [];
-    this.sync = d.sync;
     this.pins = d.pins;
     this.prfs = d.prfs;
     this.formats = d.formats;
@@ -307,7 +268,7 @@ export class ServiceCore {
    * when there are their stores. No more gets: they come with the pointer's.
    */
   private get also(): string[] {
-    return [...(this.pins ? [PIN_KEY, LOCAL_ONLY_KEYS.restart] : []), ...(this.prfs ? [PRF_KEY] : [])];
+    return [...(this.pins ? [PIN_KEY, RESTART_KEY] : []), ...(this.prfs ? [PRF_KEY] : [])];
   }
 
   // ---- state ---------------------------------------------------------------------------------
@@ -455,7 +416,7 @@ export class ServiceCore {
   }
 
   /**
-   * `epoch`: the lock epoch read before the caller last checked that the vault is open (a sync join): a lock after that
+   * `epoch`: the lock epoch read before the caller last checked that the vault is open (an unlock): a lock after that
    * check then voids this session at once, instead of being absorbed by an epoch read now. Without it, the epoch now.
    */
   protected async startSession(vk: Vk, epoch?: number): Promise<number> {
@@ -730,9 +691,9 @@ export class ServiceCore {
    * The one cleanup entry point (SYNC-DESIGN §0.0i M2 req. 5, GM2-4): after a key change, or when a check is due, move
    * every copy that is not under the current key `vk` to it. Nothing else calls the store's finishKeyChange
    * (test/unit/source-rules.test.ts): the unlock and open cleanup (housekeeping), the one after this page's own key
-   * changes (scrub), and M2's (§3.5 ⑥, §3.8 P4, §3.9 R3) all come through here.
+   * changes (scrub) both come through here.
    *   - The keys it can open with: `keyring`'s previous ones, plus `held`, the old keys the caller has in memory (a
-   *     rotation's old key; M2's join: the device's own old key, which the new keyring does not list). The re-encrypt
+   *     rotation's old key). The re-encrypt
    *     callback built from them is the only record of which keys the caller holds; a copy it cannot open is kept or
    *     dropped by the store's rule (this vault: kept; another vault: dropped).
    *   - First the records outside the store (vkRecords), then the store's copies. A read that throws stops it where it
@@ -774,10 +735,10 @@ export class ServiceCore {
 
   /**
    * Edit the vault. `fn` gets the current vault, a clock that is already past every timestamp in it, and the reference
-   * time (this machine's clock, server-corrected with sync on, §4.14), and returns the new vault (or the same object for
-   * "no change"). The read-edit-write is one locked step. `after`: called with the generation committed, still inside
-   * the store's lock (after the outbox), guarded by the store (a throw is a diagnostics line): the settings page's
-   * message to the worker about the very generation it wrote (the backup in Chrome sync's merges).
+   * time (this machine's clock), and returns the new vault (or the same object for "no change"). The read-edit-write is
+   * one locked step. `after`: called with the generation committed, still inside the store's lock, guarded by the store
+   * (a throw is a diagnostics line): the settings page's message to the worker about the very generation it wrote (the
+   * backup in Chrome sync's merges).
    */
   async mutate(
     fn: (vault: Vault, clock: Clock, now: number) => Vault | Promise<Vault>,
@@ -785,49 +746,28 @@ export class ServiceCore {
   ): Promise<Vault> {
     let result!: Vault;
     const device = await this.settings.deviceId();
-    const sync = this.sync ? await this.sync.context() : null;
-    const offset = sync?.offsetMs ?? 0; // the server clock's offset (±7 days), 0 with sync off
-    let committed: { vk: Vk; vault: Vault } | null = null;
     await this.store.transact(
       async (cur) => {
         if (!cur) throw new ServiceError("bad_state", "no vault");
         const vk = await this.requireVk(cur.keyring);
-        const plain = await decryptVault(cur.envelope, vk);
-        const vault = deserializeVault(plain);
-        // With sync on, the clock runs on the server-corrected time (§4.14, F5), so a device with a fast clock does not win
-        // every edit and ping-pong uploads; with sync off it is this machine's clock, as in Phase 0.
-        const clock = createClock(device, { now: () => this.now() + offset });
+        const vault = deserializeVault(await decryptVault(cur.envelope, vk));
+        const clock = createClock(device, { now: () => this.now() });
         observeVault(clock, vault);
-        const next = await fn(vault, clock, this.now() + offset);
+        const next = await fn(vault, clock, this.now());
         result = next;
         if (next === vault) return { envelope: cur.envelope, keyring: cur.keyring };
         // Refuse to save anything the next load would reject: a save that cannot be read back looks like corruption and gets rolled back.
         const bytes = serializeVault(next);
         deserializeVault(bytes);
-        // With sync on, an edit the server would refuse to store is refused before it is saved (§4.3, D3).
-        if (sync && !exemptFromSizeCheck(vault, next)) {
-          const at = { vaultId: cur.envelope.vaultId, vkId: vk.id };
-          if (!editFits(uploadEnvelopeBytes(plain.length, at), uploadEnvelopeBytes(bytes.length, at)))
-            throw new ServiceError("too_large_for_sync");
-        }
         const envelope = await encryptVault(
           bytes,
           vk,
           { vaultId: cur.envelope.vaultId, rev: cur.envelope.rev + 1 },
           this.rng,
         );
-        committed = { vk, vault: next };
         return { envelope, keyring: cur.keyring };
       },
-      {
-        afterCommit: async (gen) => {
-          try {
-            if (sync && committed) await this.sync?.afterCommit?.({ gen, ...committed }); // the outbox (M3)
-          } finally {
-            after?.(gen); // also when the outbox could not be written: the commit stands
-          }
-        },
-      },
+      after ? { afterCommit: async (gen) => after(gen) } : {},
     );
     return result;
   }

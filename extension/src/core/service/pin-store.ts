@@ -3,7 +3,7 @@
 // reencrypt() after a key change. Each is one critical section under the vault lock (webLock("sixkey-vault"), the store's
 // own, as service.ts's VkRecord contract asks), and nothing inside it calls the store or the service.
 //   - write: only while the vault's active keyring is still the vault and key the record was sealed for (read straight
-//     from the slots, as the sync records do), so a key change in another page cannot leave the set-up under a key that
+//     from the slots, as the device unlock's record does), so a key change in another page cannot leave the set-up under a key that
 //     is no longer the vault's.
 //   - reencrypt (the VkRecord contract, service.ts): a set-up under an older key that this cleanup holds moves to the
 //     current key (pinKek is the same, so the user's PIN stays). One under a key nobody here holds, for another vault, or
@@ -14,13 +14,13 @@
 // (pin-restart-steps.ts: the record's own unlock and counter, the master password's note) and the settings page's and the
 // service worker's (pin-restart-admin.ts: made with a new PIN, removed, turned back on, and its wrap set aside after every
 // key event, VaultService.committed). Only its key is named here.
-// Not vault data (store.ts hasAnyData), never mirrored, synced, backed up or exported; turning sync off keeps both.
+// Not vault data (store.ts hasAnyData), never mirrored, synced, backed up or exported (core/storage/local-keys.ts).
 import { randomBytes, type Random } from "../crypto/bytes";
 import { openPinRecord, parsePinRecord, sealPinRecord, type PinRecord } from "../crypto/pin";
 import type { Vk } from "../crypto/vk";
 import type { KV, Lock } from "../storage/kv";
-import { activeKeyring } from "../sync/local/records";
-import { LOCAL_ONLY_KEYS } from "../sync/local/keys";
+import { activeKeyring } from "../storage/active-keyring";
+import { LOCAL_ONLY_KEYS } from "../storage/local-keys";
 import type { VkRecord, VkRecordResult } from "./service";
 
 export const PIN_KEY = LOCAL_ONLY_KEYS.pin;

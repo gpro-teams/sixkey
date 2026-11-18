@@ -91,7 +91,6 @@ describe("the idle auto-lock alarm survives a failure in the quick-unlock expiry
     f = fakeChrome(failOn);
     vi.stubGlobal("chrome", f.chrome);
     vi.stubGlobal("fetch", async () => new Response("{}", { status: 200 }));
-    vi.stubGlobal("__SYNC_UI__", true); // a build with the sync user interface: the worker's sync
     await import("../../src/background/sw");
     await new Promise((r) => setTimeout(r, 50));
     // an unlocked vault in idle mode (the default settings: 15 minutes)

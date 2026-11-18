@@ -7,7 +7,6 @@
 // deny-everything bug fails too), and the real offscreen document module. The expected table below is written out by
 // hand and is NOT read from the policy module: a change to a row must change this file as well.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { BRIDGE_PAGES } from "../../src/platform/bridge-worker";
 import {
   acceptedType,
   knownType,
@@ -19,9 +18,10 @@ import {
 import { loadWorker, OTHER, SELF, unload, url, wait, type World } from "../helpers/sw-world";
 
 /**
- * The policy module as a production build and as a dev or e2e build have it. The developer page exists in the module
- * only when the build's `__SYNC_DEV__` define is true (a production worker does not mention it at all), so each copy is
- * a fresh import with the define set. The static import above is the module with no define at all.
+ * The policy module as a production build and as a dev or e2e build have it: each copy is a fresh import with the build's
+ * `__SYNC_DEV__` define set. The define changes nothing in it any more (the developer sync page, a sender in dev and e2e
+ * builds only, went with the server sync's client: DV-0b), and these tests hold both copies to the same table. The static
+ * import above is the module with no define at all.
  */
 type Policy = typeof import("../../src/platform/sender-policy");
 async function policyBuiltWith(dev: boolean): Promise<Policy> {
@@ -40,23 +40,13 @@ beforeAll(async () => {
   devP = await policyBuiltWith(true);
 });
 
-const SURFACES = [
-  "popup",
-  "sidepanel",
-  "options",
-  "devsync",
-  "offscreen",
-  "worker",
-] as const satisfies readonly Surface[];
+const SURFACES = ["popup", "sidepanel", "options", "offscreen", "worker"] as const satisfies readonly Surface[];
 
-/** Message type -> [receiver, the surfaces that may send it], in a PRODUCTION build (no developer page). */
+/** Message type -> [receiver, the surfaces that may send it], in every build. */
 const EXPECTED: Record<string, [string, readonly Surface[]]> = {
-  // the side panel (docs/design/notes/SIDEPANEL-NOTES.md) draws the popup's screens: exactly the popup's three messages
+  // the side panel (docs/design/notes/SIDEPANEL-NOTES.md) draws the popup's screens: exactly the popup's two messages
   "sk-reschedule-autolock": ["worker", ["popup", "sidepanel", "options"]],
-  "sk-sync-soon": ["worker", ["popup", "sidepanel", "options"]],
-  "sk-sync-changed": ["worker", ["options"]],
   "sk-clip-arm": ["worker", ["popup", "sidepanel", "options"]],
-  "sk-api": ["worker", ["options"]],
   "sk-offscreen-done": ["worker", ["offscreen"]],
   "sk-offscreen-arm": ["offscreen", ["worker"]],
   // the backup in Chrome's sync storage (CSB-3): the settings page alone, its card and first run (CSB-4)
@@ -68,8 +58,14 @@ const EXPECTED: Record<string, [string, readonly Surface[]]> = {
   "sk-csb-merged": ["worker", ["options"]],
   "sk-csb-drop": ["worker", ["options"]],
 };
-/** The Google Drive backup's messages, which went with its code: no row any more, so taken from no one. */
+/**
+ * Messages that went with their code: no row any more, so taken from no one. The Google Drive backup's, and the server
+ * sync's (a commit's "sync soon", the Sync section's "sync changed", the bridge's API request: DV-0b).
+ */
 const GONE = [
+  "sk-sync-soon",
+  "sk-sync-changed",
+  "sk-api",
   "sk-cloud-connected",
   "sk-cloud-now",
   "sk-cloud-off",
@@ -84,21 +80,15 @@ const GONE = [
   "sk-cloud-removed",
   "sk-devcloud",
 ];
-/** The same in a dev or e2e build: the developer sync page is a sender of exactly these. */
-const DEV_EXTRA: Record<string, Surface[]> = {
-  "sk-sync-soon": ["devsync"],
-  "sk-sync-changed": ["devsync"],
-  "sk-api": ["devsync"],
-};
-
 const PATH: Record<Surface, string> = {
   popup: "/popup/index.html",
   sidepanel: "/sidepanel/index.html",
   options: "/options/index.html",
-  devsync: "/devsync/index.html",
   offscreen: "/offscreen/index.html",
   worker: "/sw.js",
 };
+/** The developer sync page's path: a sender in dev and e2e builds until it went from every build (OWNER-DECISIONS/25). */
+const DEVSYNC = "/devsync/index.html";
 const web = "https://evil.example/login";
 
 /** Senders that carry this extension's ID or look like it, and must be refused for EVERY message type. */
@@ -180,12 +170,11 @@ describe("surfaceOf: who sent it, by URL, origin and tab", () => {
       for (const sender of forms) expect(devP.surfaceOf(sender, SELF), `${s} ${JSON.stringify(sender)}`).toBe(s);
     }
     expect(devP.SURFACE_PATHS).toEqual(PATH);
-    const { devsync: _dev, ...production } = PATH;
-    expect(prodP.SURFACE_PATHS).toEqual(production);
-    expect(SURFACE_PATHS).toEqual(production);
+    expect(prodP.SURFACE_PATHS).toEqual(PATH);
+    expect(SURFACE_PATHS).toEqual(PATH);
   });
 
-  it("the Google Drive backup's developer page is no surface in any build, and its messages and that path's have no row", async () => {
+  it("the Google Drive backup's developer page is no surface in any build, and its messages and the server sync's have no row", async () => {
     const page = { id: SELF, url: url("/devcloud/index.html"), origin: `chrome-extension://${SELF}` };
     for (const p of [prodP, devP]) {
       expect(p.surfaceOf(page, SELF)).toBeNull();
@@ -202,10 +191,12 @@ describe("surfaceOf: who sent it, by URL, origin and tab", () => {
     }
   });
 
-  it("the developer page is a surface only when the build has it", () => {
-    expect(prodP.surfaceOf({ id: SELF, url: url(PATH.devsync) }, SELF)).toBeNull();
-    expect(devP.surfaceOf({ id: SELF, url: url(PATH.devsync) }, SELF)).toBe("devsync");
-    expect(surfaceOf({ id: SELF, url: url(PATH.devsync) }, SELF)).toBeNull(); // unit tests are not a dev build
+  it("the developer sync page is no surface in any build (it went from every build: OWNER-DECISIONS/25, DV-0b)", () => {
+    for (const p of [prodP, devP]) {
+      expect(p.surfaceOf({ id: SELF, url: url(DEVSYNC) }, SELF)).toBeNull();
+      expect(Object.values(p.SURFACE_PATHS)).not.toContain(DEVSYNC);
+    }
+    expect(surfaceOf({ id: SELF, url: url(DEVSYNC) }, SELF)).toBeNull();
   });
 
   it("every hostile sender is no surface at all, in a dev build as well", () => {
@@ -236,12 +227,12 @@ describe("surfaceOf: who sent it, by URL, origin and tab", () => {
 });
 
 describe("the table", () => {
-  it("has exactly the message types of the hand-written table, receiver and senders alike (production senders; the developer page is added in dev builds only, below)", () => {
+  it("has exactly the message types of the hand-written table, receiver and senders alike", () => {
     expect(Object.keys(MESSAGE_SENDERS).sort()).toEqual(Object.keys(EXPECTED).sort());
     for (const [type, [to, from]] of Object.entries(EXPECTED)) {
       const row = MESSAGE_SENDERS[type as keyof typeof MESSAGE_SENDERS];
       expect(row.to, type).toBe(to);
-      expect([...(row.from as readonly Surface[])].sort(), type).toEqual([...from].sort()); // no developer page in the rows
+      expect([...(row.from as readonly Surface[])].sort(), type).toEqual([...from].sort());
     }
   });
 
@@ -250,23 +241,12 @@ describe("the table", () => {
       for (const [type, [to, from]] of Object.entries(EXPECTED))
         for (const s of SURFACES) {
           const sender = { id: SELF, url: url(PATH[s]) };
-          const allowed = from.includes(s) || (dev && (DEV_EXTRA[type] ?? []).includes(s));
+          const allowed = from.includes(s);
           for (const receiver of ["worker", "offscreen"] as const) {
             const got = (dev ? devP : prodP).acceptedType({ type }, sender, SELF, receiver);
             expect(got, `${type} from ${s} to ${receiver} dev=${dev}`).toBe(allowed && receiver === to ? type : null);
           }
         }
-  });
-
-  it("the api bridge's page list is the same pages (bridge-worker.ts keeps its own check as a second line)", () => {
-    const prod = SURFACES.filter((s) =>
-      prodP.acceptedType({ type: "sk-api" }, { id: SELF, url: url(PATH[s]) }, SELF, "worker"),
-    );
-    expect(prod.map((s) => PATH[s])).toEqual([...BRIDGE_PAGES]); // BRIDGE_PAGES is the production list in unit tests
-    const dev = SURFACES.filter((s) =>
-      devP.acceptedType({ type: "sk-api" }, { id: SELF, url: url(PATH[s]) }, SELF, "worker"),
-    );
-    expect(dev.map((s) => PATH[s]).sort()).toEqual(["/devsync/index.html", "/options/index.html"]);
   });
 
   it("a type counts only if it is an own, string `type` of an object: no prototype names, no arrays, no look-alike case", () => {
@@ -300,20 +280,16 @@ describe("the table", () => {
 });
 
 // The real worker. Each type has a message that works if it is let through, and one effect that shows it was.
-const PAYLOAD = { hash: "abc", delayMs: 1000, req: { method: "GET", target: "/healthz", headers: {} } };
+const PAYLOAD = { hash: "abc", delayMs: 1000 };
 const message = (type: string) => ({ type, ...PAYLOAD });
 const effect = (w: World, type: string): number => {
   switch (type) {
     case "sk-reschedule-autolock":
-    case "sk-sync-soon":
-    case "sk-sync-changed":
-      return w.syncReads(); // the engine looked at its state once, sync being off
+      return w.quickReads(); // the idle alarm re-armed: its quick expiry looked at sk_quick once
     case "sk-clip-arm":
       return w.sent.filter((m) => (m as { type?: string }).type === "sk-offscreen-arm").length;
     case "sk-offscreen-done":
       return w.fx.closed;
-    case "sk-api":
-      return w.fx.fetched.length;
     case "sk-csb-on":
     case "sk-csb-off":
     case "sk-csb-now":
@@ -324,7 +300,7 @@ const effect = (w: World, type: string): number => {
       return w.answers.filter((a) => a.type === type).length; // answered after its work, once
     case "sk-offscreen-arm":
       // not a message the worker answers at all: nothing it does would show; the other counters must stay still
-      return w.syncReads() + w.fx.closed + w.fx.created + w.fx.fetched.length + w.sent.length + w.answers.length;
+      return w.quickReads() + w.fx.closed + w.fx.created + w.fx.fetched.length + w.sent.length + w.answers.length;
     default:
       throw new Error(`no effect known for ${type}`);
   }
@@ -413,9 +389,8 @@ describe("the service worker (src/background/sw.ts)", () => {
       expect(
         w.send(message(type), { id: SELF, url: url(PATH.options) }, (r) => replies.push(r)),
         type,
-      ).toEqual([undefined, undefined, true, undefined]);
+      ).toEqual([undefined, true, undefined]);
       expect(w.send(message(type), { id: SELF, url: url(PATH.popup) }), type).toEqual([
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -429,11 +404,11 @@ describe("the service worker (src/background/sw.ts)", () => {
     expect(w.sync.callsOf("set")).toEqual([]);
   });
 
-  it("the Google Drive backup's messages, which have no row, are taken from no sender: no channel kept open, no answer, nothing done", async () => {
+  it("the Google Drive backup's and the server sync's messages, which have no row, are taken from no sender: no channel kept open, no answer, nothing done", async () => {
+    const reads = w.local.reads.length + w.session.reads.length;
     for (const type of GONE)
       for (const s of SURFACES) {
         expect(w.send(message(type), { id: SELF, url: url(PATH[s]) }), `${type} from ${s}`).toEqual([
-          undefined,
           undefined,
           undefined,
           undefined,
@@ -444,18 +419,21 @@ describe("the service worker (src/background/sw.ts)", () => {
     expect(w.fx.fetched).toEqual([]);
     expect([...w.alarms.keys()].filter((n) => n.startsWith("sk-cloud-"))).toEqual([]);
     expect(w.local.data.has("sk_cloud_cfg")).toBe(false);
+    expect(w.answers.filter((a) => a.type === "sk-api" || String(a.type).startsWith("sk-sync-"))).toEqual([]);
+    await wait();
+    expect(w.local.reads.length + w.session.reads.length).toBe(reads); // nothing even read for them
   });
 
-  it("only the bridge keeps a channel open among the other messages, and only for the settings page; the answer is the API's", async () => {
-    const reply = (sender: unknown) =>
-      new Promise<unknown>((resolve) => {
-        const kept = w.send(message("sk-api"), sender, resolve).filter((r) => r === true).length;
-        if (kept === 0) resolve("not kept");
-      });
-    expect(await reply({ id: SELF, url: url(PATH.options) })).toMatchObject({ ok: true, res: { status: 200 } });
-    expect(await reply({ id: SELF, url: url(PATH.popup) })).toBe("not kept");
-    expect(await reply({ id: SELF, url: web, tab: { url: web } })).toBe("not kept");
-    expect(w.fx.fetched).toEqual(["https://api.sixkey.app/healthz"]);
+  it("no other message keeps a channel open, from any page, and none makes the worker fetch anything", async () => {
+    for (const type of WORKER_TYPES.filter((t) => !t.startsWith("sk-csb-")))
+      for (const s of SURFACES)
+        expect(w.send(message(type), { id: SELF, url: url(PATH[s]) }), `${type} from ${s}`).toEqual([
+          undefined,
+          undefined,
+          undefined,
+        ]);
+    await wait();
+    expect(w.fx.fetched).toEqual([]);
   });
 
   it("the clip-arm request reaches the offscreen document with the hash and the delay, from the popup, the side panel and the settings page only", async () => {
@@ -519,33 +497,22 @@ describe("the service worker (src/background/sw.ts)", () => {
   });
 });
 
-describe("the service worker in a dev or e2e build (the developer sync page exists)", () => {
+describe("the service worker in a dev or e2e build: the same table, and no developer sync page", () => {
   afterEach(unload);
-  it("the developer page sends exactly the sync messages, and is refused for the rest; the other pages are unchanged", async () => {
-    const w = await loadWorker({ dev: true });
-    for (const type of WORKER_TYPES) {
-      const allowed = (DEV_EXTRA[type] ?? []).includes("devsync");
-      const before = effect(w, type);
-      w.send(message(type), { id: SELF, url: url(PATH.devsync) });
-      await wait();
-      expect(effect(w, type) - before, type).toBe(allowed ? 1 : 0);
-    }
-    const before = w.syncReads();
-    w.send({ type: "sk-sync-soon" }, { id: SELF, url: url(PATH.options) });
-    w.send({ type: "sk-sync-soon" }, { id: SELF, url: web, tab: { url: web } });
-    await wait();
-    expect(w.syncReads() - before).toBe(1);
-  });
-
-  it("a production build (the define is false) and a bare module (no define) refuse the developer page for every type", async () => {
-    for (const dev of [false, undefined]) {
+  it("a dev build (the define is true), a production build (false) and a bare module (no define) refuse the developer sync page's path for every type, and take the settings page's as the table says", async () => {
+    for (const dev of [true, false, undefined]) {
       const w = await loadWorker(dev === undefined ? {} : { dev });
       for (const type of WORKER_TYPES) {
         const before = effect(w, type);
-        w.send(message(type), { id: SELF, url: url(PATH.devsync) });
+        w.send(message(type), { id: SELF, url: url(DEVSYNC) });
         await wait();
         expect(effect(w, type) - before, `${type} dev=${dev}`).toBe(0);
       }
+      const before = effect(w, "sk-reschedule-autolock");
+      w.send(message("sk-reschedule-autolock"), { id: SELF, url: url(PATH.options) });
+      w.send(message("sk-reschedule-autolock"), { id: SELF, url: web, tab: { url: web } });
+      await wait();
+      expect(effect(w, "sk-reschedule-autolock") - before, `dev=${dev}`).toBe(1);
       unload();
     }
   });

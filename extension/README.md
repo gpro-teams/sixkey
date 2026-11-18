@@ -7,14 +7,13 @@ Licence: MPL-2.0 (`../LICENSE.md`); the third-party notices are `../THIRD-PARTY-
 npm install
 npm run verify      # typecheck, unit + fault tests, build, dist checks, end-to-end tests in real Chromium
 npm run build       # -> dist/   (load this unpacked in chrome://extensions)
-npm run build:dev   # -> dist-dev/ with source maps, "(dev)" name, the local sync API (http://127.0.0.1:8787) and the developer sync page
-npm run build:e2e   # -> dist-e2e/ with clipboard permissions granted and the same local sync API, used only by Playwright
+npm run build:test  # -> dist-test/, checked: the store build named "Sixkey (test)" with a fixed ID, for testing by hand ("Builds")
+npm run build:dev   # -> dist-dev/ with source maps, the "(dev)" name and what the store build gates out
+npm run build:e2e   # -> dist-e2e/ with clipboard permissions granted, used only by Playwright
 npm run package     # the store package: a prod build, check-dist on it, then release/sixkey-<version>.zip from dist/
                     # (refused, before building, until Sixkey's STORE_ID is pinned and the site rules' bundle names
                     # its source; --id-draft: the first upload's ID draft, "do not publish"; --local-only: dist/
                     # checked for Load unpacked, no zip; "Publishing" below)
-npm run e2e:sync    # end-to-end sync against the real API server (api/server); how to run it: docs/design/notes/M5-NOTES.md
-npm run test:live   # the sync engine against the real API server; the same
 npm run format      # Prettier over the whole repository (npm run format:check only checks; Python: make format in api/server)
 npm run notices     # regenerate ../THIRD-PARTY-NOTICES.md from the lockfile, node_modules and the server's pins (notices:check checks)
 python3 scripts/messages.py   # regenerate _locales and catalogs/ from scripts/i18n/base.py plus one fragment per package (scripts/i18n/*.py)
@@ -25,8 +24,8 @@ to Chrome; `src/popup`, `src/sidepanel` (the popup's screens in the browser's si
 `src/offscreen`, `src/background` are the extension contexts.
 `scripts/check-dist.mjs` fails the build on a manifest that is not exactly the expected one (permissions, the one
 optional host permission, the content-security-policy), a page without its own `connect-src 'none'` ahead of its first
-script, inline scripts, content scripts, remote resources, a finder script (`inject/otp.js`) that is not the one classic script it must be (no extension API, network, storage or form submission) or is over its budget, the Fill button's chunk or text in a page's static graph, a network call anywhere but the service worker's sync
-transport (and the one read of the package's own site rules, in the lazy chunk the Fill button and the "same sign-in" lines load), a URL other than the sync API's, a development-mode build, a developer page or enrolment code in a prod build,
+script, inline scripts, content scripts, remote resources, a finder script (`inject/otp.js`) that is not the one classic script it must be (no extension API, network, storage or form submission) or is over its budget, the Fill button's chunk or text in a page's static graph, a network call anywhere but the service worker's site
+rules updater (with its gate open) and the one read of the package's own site rules, in the lazy chunk the Fill button and the "same sign-in" lines load, a URL a script may not hold, the server sync's API origin in any shipped file of any build, a development-mode build, the settings page's Sync section (its chunk, catalogs, route, elements or text), the developer sync page or enrolment code in any build, the names of the server sync's records in a store build,
 a popup or side panel over budget, the side panel's open-on-click behaviour (it loses `activeTab`), a build without its licence (`LICENSE.txt`) and third-party notices (`THIRD-PARTY-NOTICES.txt`), or one whose site rules (`rules/baseline.json`, `rules/LICENSE.txt`) are not the repository's bundle and its licence, or whose scripts hold the bundle's host lists (in any quotes or spacing; the build itself already refuses any module that imports a file under `rules/`).
 The site rules' updater (signed bundles between releases, TOTP autofill Stage 3) is behind its own release gate,
 `scripts/rules-update.mjs`, closed in the store build: there the build keeps its modules out of every module graph
@@ -37,8 +36,32 @@ gate open stops unless it has a rules origin and exactly two signing keys (`scri
 `../rules/SIGNING.md`); with it open (the dev and e2e builds), check-dist holds each of the updater's marks to where it
 belongs, the CSP to exactly the rules origin's `/v1/` path more, and the worker to its budget plus the updater's room,
 which no store build gets (`scripts/sw-budget.mjs`).
-`--e2e` and `--dev` check those builds instead (`dist-e2e/`, `dist-dev/`), and `--id-draft` the first upload's ID draft
-(`dist-id-draft/`). Only `npm run package` makes Sixkey's zip, and only from a build that has just passed the check.
+`--e2e` and `--dev` check those builds instead (`dist-e2e/`, `dist-dev/`), `--id-draft` the first upload's ID draft
+(`dist-id-draft/`), and `--test` the test build (`dist-test/`). Only `npm run package` makes Sixkey's zip, and only from
+a build that has just passed the check.
+
+## Builds
+
+Each build goes to its own folder; only `dist/` is ever packaged (and `dist-id-draft/`, for the first upload alone).
+
+- `npm run build` (`dist/`): the store build. The store package is made from it (`npm run package`).
+- `npm run build:test` (`dist-test/`, checked by `check-dist --test` as it is built): **for testing by hand**, on one
+  computer or two. It is the store build in every respect (the same release gates, so no in-page suggestion or rules
+  updater; no API origin; the same CSP and permissions) but three: its name is
+  "Sixkey (test)"; its manifest carries a public key of its own (`manifest.test.json`), so its ID is
+  `copndbnmkakfiohikpecmdaoldodaojc` wherever it is loaded, and copies on two computers share their data in Chrome sync,
+  which is keyed by that ID; and the install-source check is off, since a copy loaded unpacked would always show its
+  notice. Its ID is neither the dev build's nor the store's, so it can sit beside either in one profile, with a vault of
+  its own. The prod check refuses it, and it is never packaged.
+- `npm run build:dev` (`dist-dev/`): for developing Sixkey. It carries what the store build gates out (the in-page
+  suggestion; the rules updater), unminified, with source maps and the fixed ID `pgnlbjikdnniepfeijffpefifnojjege`. A
+  check by hand uses it only for a feature that is still gated out of the store build.
+- No build has the server sync's client: the settings page's Sync section (sign-in by e-mail, the code, the join), the
+  developer sync page that drove the engine, the engine itself, the worker's sync, the bridge, the transport and the API
+  origin are gone from every build (OWNER-DECISIONS/25); the build's graph guard and check-dist refuse any of them in any
+  build, and no build reaches any API. The dev and e2e builds' worker removes, at an install or an update, what that
+  client left in a profile that once had it on (`src/platform/server-sync-leftovers.ts`).
+- `npm run build:e2e` (`dist-e2e/`): for the Playwright tests alone.
 
 ## Publishing
 

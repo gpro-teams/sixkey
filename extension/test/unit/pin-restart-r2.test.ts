@@ -131,7 +131,7 @@ async function plantStub(w: QuickWorld, o: Partial<RestartRecord> = {}) {
 /** The service's own private step, by element access (as the reviewer's probe P8 calls it). */
 const committed = (svc: VaultService) =>
   svc as unknown as {
-    committed(kind: string | null, vk: Vk, o: object): Promise<void>;
+    committed(kind: string, vk: Vk, o?: object): Promise<void>;
     currentVk(k: unknown): Promise<Vk | null>;
   };
 /**
@@ -483,14 +483,12 @@ describe("PINR-08 (R06): the count's own guard in the lock", () => {
 });
 
 describe("PINR-09: only a key event typed on this page opens the PIN-only window", () => {
-  it("a key adopted in a background round (committed('keys_adopted'), nothing typed) does not; this page's own change does", async () => {
+  // (A key adopted in a background round, which typed nothing here, opened none either: the server sync's, gone with its
+  // client, DV-0b. Every commit there is now is this page's own key event.)
+  it("another page's key event does not open this page's window; this page's own change does", async () => {
     const w = await onWorld();
     const page = w.ctx();
-    await w.ctx().service.changePassword(STRONG, STRONG2); // another device's change, here another page's
-    expect((await page.restart.state())?.byPin).toBe(false);
-    const k = (await page.service.currentGeneration())!.keyring;
-    const vk = (await committed(page.service).currentVk(k))!;
-    await committed(page.service).committed("keys_adopted", vk, { held: [vk] });
+    await w.ctx().service.changePassword(STRONG, STRONG2); // another page's change
     expect((await page.restart.state())?.byPin).toBe(false);
     await expect(page.restart.turnBackOn({ pin: PIN })).rejects.toMatchObject({ code: "wrong_secret" });
     await page.service.changePassword(STRONG2, STRONG); // this page's own: typed here
@@ -506,7 +504,7 @@ describe("PINR-09: only a key event typed on this page opens the PIN-only window
     expect((await page.restart.state())?.byPin).toBe(false);
   });
 
-  it("a key event recorded as nothing (committed(null)) still pauses a record of other wraps, and opens no window", async () => {
+  it("every key event's own step pauses a record of other wraps, also one another page's step left unpaused", async () => {
     const w = await onWorld();
     const before = got(w);
     const page = w.ctx();
@@ -514,9 +512,8 @@ describe("PINR-09: only a key event typed on this page opens the PIN-only window
     w.kv.data.set(KEY, { ...got(w), wrap: before.wrap }); // as if its step had not landed
     const k = (await page.service.currentGeneration())!.keyring;
     const vk = (await committed(page.service).currentVk(k))!;
-    await committed(page.service).committed(null, vk, { held: [vk], session: false });
+    await committed(page.service).committed("password_changed", vk, { session: false });
     expect(got(w).wrap).toBeNull();
-    expect((await page.restart.state())?.byPin).toBe(false);
   });
 });
 

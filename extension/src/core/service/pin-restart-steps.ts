@@ -35,7 +35,7 @@ import type { PinKit } from "./pin-kit";
 import type { PinStore } from "./pin-store";
 import type { PinUnlock, ServiceCore } from "./service-core";
 
-/** The key, as pin-store.ts RESTART_KEY (core/sync/local/keys.ts LOCAL_ONLY_KEYS.restart): restated, not imported. */
+/** The key, as pin-store.ts RESTART_KEY (core/storage/local-keys.ts LOCAL_ONLY_KEYS.restart): restated, not imported. */
 const KEY = "sk_pin_restart";
 /** The settings' key (types.ts SETTINGS_KEY), restated: the note reads them with the pointer. */
 const SETTINGS = "sk_settings";
@@ -136,7 +136,7 @@ export async function unlock(s: ServiceCore, input: string, kit: PinKit): Promis
     if (!cur || cur.id !== spent.next.id || JSON.stringify(cur.wrap) !== JSON.stringify(spent.next.wrap))
       return "ended";
     // the keys the try was counted for are still the vault's: a key event during the derivation (a new password, a reset,
-    // a rotation, one taken from sync) leaves a record whose wrap is already aside as it was, so only the keyring tells
+    // a rotation) leaves a record whose wrap is already aside as it was, so only the keyring tells
     let kr: Awaited<ReturnType<PinKit["activeKeyring"]>>;
     try {
       kr = await kit.activeKeyring(store.kv);

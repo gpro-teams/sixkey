@@ -451,7 +451,6 @@ describe("PasswordFields and its callers (source rules)", () => {
       "options/Security.tsx": 2,
       "options/Reset.tsx": 1,
       "options/Backup.tsx": 2,
-      "options/sync/ManageViews.tsx": 1,
     };
     for (const [f, n] of Object.entries(callers)) {
       const text = read(f);
@@ -540,14 +539,9 @@ describe("PasswordFields and its callers (source rules)", () => {
       expect(text.match(/anyway=\{\{ value: anyway, set: setAnyway \}\}/g), f).toHaveLength(n);
       expect(text, f).not.toMatch(/strength\?\.ok === true/);
     }
-    // a backup file and the sync key operations keep the bar: no "Use anyway" there
-    for (const f of ["options/Backup.tsx", "options/sync/ManageViews.tsx"]) expect(read(f), f).not.toMatch(/anyway/);
-    const views = read("options/sync/ManageViews.tsx");
-    const submit = views.indexOf("await flow.submit({ password: pw, newPassword: npw");
-    expect(submit).toBeGreaterThan(0);
-    expect(views.slice(submit - 300, submit)).toMatch(
-      /if \(\(kind === "password" \|\| kind === "reset"\) && !\(await measure\(npw\)\)\.ok\) return;/,
-    );
+    // a backup file keeps the bar: no "Use anyway" there (nor in the Sync section's key operations, gone from every
+    // build: OWNER-DECISIONS/25)
+    expect(read("options/Backup.tsx")).not.toMatch(/anyway/);
   });
   it("a password is never in a text field the browser keeps: masked, or shown with autocomplete off", () => {
     expect(fields).toMatch(/type: shown \? "text" : "password",/);

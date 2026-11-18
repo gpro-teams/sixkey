@@ -402,14 +402,7 @@ test("what a script injected by Sixkey (or a renderer acting as one) cannot do: 
           }
         try {
           // every message type the worker knows, from a web page's context
-          const types = [
-            "sk-reschedule-autolock",
-            "sk-sync-soon",
-            "sk-sync-changed",
-            "sk-clip-arm",
-            "sk-api",
-            "sk-offscreen-done",
-          ];
+          const types = ["sk-reschedule-autolock", "sk-clip-arm", "sk-offscreen-done"];
           out.msg = (
             await Promise.all(
               types.map((type) =>

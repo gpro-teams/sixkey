@@ -16,7 +16,6 @@
 // closes (TOTP-AUTOFILL §8.3). What the sites are used for (patch 3's content script) is decided by
 // platform/autofill-reconcile.ts, from both halves.
 import { MAX_SITES, readSites, siteHostOk, sitePattern, sitesRecord } from "../core/autofill-sites";
-import { API_ORIGIN } from "./api-origin";
 import { grantedExactly, type GrantList } from "./permission-grants";
 import { webLock } from "./locks";
 
@@ -53,12 +52,6 @@ export function setOffHint(off: boolean): void {
   }
 }
 /**
- * The sync API's host: never a site, since its grant is sync's network switch. None ("", which no host is) in a build
- * without the sync user interface, whose API origin is empty: it has no sync and no such switch.
- */
-export const API_HOST = API_ORIGIN ? new URL(API_ORIGIN).hostname : "";
-
-/**
  * The worker's watch on the list (src/background/sw.ts): a change of `sk_af_sites`, made by a trusted context, starts a
  * reconcile. Nothing is taken from the change but its key: the run reads the list itself, as platform/action-mode.ts does.
  */
@@ -92,7 +85,7 @@ const lock = webLock("sixkey-af-sites");
 /** The hosts on a list kept under `key` (the sites, or "Not now"), as read back; none when it cannot be read. */
 async function hostsAt(area: SiteArea, key: string): Promise<string[]> {
   try {
-    return readSites((await area.get([key]))[key], API_HOST);
+    return readSites((await area.get([key]))[key]);
   } catch {
     return [];
   }
@@ -106,7 +99,7 @@ export const laterList = (session: SiteArea | undefined = sessionArea()): Promis
 /** One change of a list, read and written in one critical section (the popup, the side panel, Settings, the worker). */
 function edit(area: SiteArea, key: string, f: (hosts: string[]) => string[] | null): Promise<string[]> {
   return lock(async () => {
-    const hosts = readSites((await area.get([key]))[key], API_HOST);
+    const hosts = readSites((await area.get([key]))[key]);
     const next = f(hosts);
     if (next === null) return hosts;
     await area.set({ [key]: sitesRecord(next) });
@@ -114,7 +107,7 @@ function edit(area: SiteArea, key: string, f: (hosts: string[]) => string[] | nu
   });
 }
 const adding = (host: string) => (hosts: string[]) =>
-  !siteHostOk(host, API_HOST) || hosts.includes(host) || hosts.length >= MAX_SITES ? null : [...hosts, host];
+  !siteHostOk(host) || hosts.includes(host) || hosts.length >= MAX_SITES ? null : [...hosts, host];
 
 /** Put a site on the list; true if it is on it now (not for a host that may not be, nor past MAX_SITES). */
 export const addSite = async (host: string, local: SiteArea = localArea()): Promise<boolean> =>
@@ -122,7 +115,7 @@ export const addSite = async (host: string, local: SiteArea = localArea()): Prom
 
 /** Whether Chrome grants the site's pattern now (a broad grant counts here: the list is what decides). */
 export async function siteGranted(host: string, p: SitePermissions = permissions()): Promise<boolean> {
-  const pattern = sitePattern(host, API_HOST);
+  const pattern = sitePattern(host);
   if (pattern === null) return false;
   try {
     return await p.contains({ origins: [pattern] });
@@ -145,7 +138,7 @@ export function requestSite(
   session: SiteArea | undefined = sessionArea(),
   now: number = Date.now(),
 ): Promise<boolean> {
-  const pattern = sitePattern(host, API_HOST);
+  const pattern = sitePattern(host);
   if (pattern === null) return Promise.resolve(false);
   let asked: Promise<boolean>;
   try {
@@ -161,7 +154,7 @@ export function requestSite(
 function readPending(raw: unknown): { host: string; at: number } | null {
   const r = raw as { v?: unknown; host?: unknown; at?: unknown } | null | undefined;
   if (!r || typeof r !== "object" || Object.keys(r).sort().join() !== "at,host,v" || r.v !== 1) return null;
-  return siteHostOk(r.host, API_HOST) && Number.isSafeInteger(r.at) ? { host: r.host, at: r.at as number } : null;
+  return siteHostOk(r.host) && Number.isSafeInteger(r.at) ? { host: r.host, at: r.at as number } : null;
 }
 
 /** The ask is over (the page that made it saw the answer): the note goes, if it is still this site's. */
@@ -196,7 +189,7 @@ export async function notNow(host: string, session: SiteArea | undefined = sessi
 /**
  * The worker's end of an ask (chrome.permissions.onAdded, review M7): the site goes on the list only if Sixkey's own ask
  * is under PENDING_MS old and Chrome added exactly its pattern. Nothing else is ever added here: a site granted in Chrome's
- * own menus, "On all sites" (the broad https pattern), the sync API's origin, an ask older than a minute. True if a site was
+ * own menus, "On all sites" (the broad https pattern), an ask older than a minute. True if a site was
  * added.
  */
 export async function acceptPending(
@@ -213,7 +206,7 @@ export async function acceptPending(
     await session.remove([PENDING_KEY]); // an ask no answer can finish any more
     return false;
   }
-  if (!(added.origins ?? []).includes(sitePattern(r.host, API_HOST)!)) return false;
+  if (!(added.origins ?? []).includes(sitePattern(r.host)!)) return false;
   await session.remove([PENDING_KEY]);
   return addSite(r.host, local);
 }
@@ -230,6 +223,6 @@ export async function removeSite(
   p: SitePermissions = permissions(),
 ): Promise<void> {
   await edit(local, SITES_KEY, (hosts) => (hosts.includes(host) ? hosts.filter((h) => h !== host) : null));
-  const pattern = sitePattern(host, API_HOST);
+  const pattern = sitePattern(host);
   if (pattern !== null && (await grantedExactly(pattern, p))) await p.remove({ origins: [pattern] }).catch(() => false);
 }

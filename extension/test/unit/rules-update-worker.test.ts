@@ -69,7 +69,7 @@ async function ask(w: Awaited<ReturnType<typeof loadWorker>>, msg: unknown, send
 describe("gate closed (the store build)", () => {
   it("no listener of the updater's: the two messages are answered by none, from any page", async () => {
     const w = await loadWorker();
-    expect(w.listeners.message).toHaveLength(4); // the pages', the bridge's, the cloud backup's, the content script's
+    expect(w.listeners.message).toHaveLength(3); // the pages', the cloud backup's, the content script's
     for (const s of ["popup", "sidepanel", "options"] as const)
       for (const type of ["sk-af-rule", "sk-af-rules-status"]) {
         const r = await ask(w, { type, host: "login.example.com", on: true }, { id: SELF, url: url(PATH[s]) }, 10);
@@ -87,7 +87,7 @@ describe("gate closed (the store build)", () => {
 describe("gate open", () => {
   it("one listener more, which takes the two messages from their own pages only, answered after the work", async () => {
     const w = await open();
-    expect(w.listeners.message).toHaveLength(5);
+    expect(w.listeners.message).toHaveLength(4);
     const allowed: Record<string, string[]> = {
       "sk-af-rule": ["popup", "sidepanel"],
       "sk-af-rules-status": ["options"],

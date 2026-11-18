@@ -12,11 +12,10 @@
 //   - `sender.origin`, when the browser gives one (Chrome 80+), is this extension's origin;
 //   - `sender.tab`, when there is one (an extension page open in a tab, such as the settings page), has a URL that is
 //     one of this extension's own pages. A tab with a web URL or with no readable URL is refused;
-//   - the page is in the row's list. The popup cannot send the offscreen document's message, the offscreen document cannot
-//     send the popup's, and the developer sync page is a sender only in builds that contain it.
+//   - the page is in the row's list. The popup cannot send the offscreen document's message, and the offscreen document
+//     cannot send the popup's.
 //   - the side panel (src/sidepanel/) is a page of its own, at its own path, though it draws the popup's screens: it sends
-//     exactly the popup's three messages, the ones its screens send (the idle alarm, a commit's round, the clipboard),
-//     and no other. A side panel is no tab, so it has no `sender.tab` [unverified in a real panel: SIDEPANEL-NOTES.md].
+//     exactly the popup's two messages, the ones its screens send (the idle alarm, the clipboard), and no other. A side panel is no tab, so it has no `sender.tab` [unverified in a real panel: SIDEPANEL-NOTES.md].
 //
 // This module is imported by the service worker and the offscreen document only. The popup and the settings page do not
 // import it (the popup's size budget). The message types are written out here, not imported, for the same reason
@@ -26,47 +25,34 @@
 // these rows (a missing or an extra handler fails `npm run typecheck`), and a source test lists every type the code
 // sends or reads and fails on one without a row.
 
-// Replaced by scripts/build.mjs (Vite define): true in dev and e2e builds, which also serve the developer sync page. In a
-// production build the developer page is not mentioned at all (test/unit/m5-build-guard.test.ts): everything about it is
-// behind this constant, so the bundler drops it. That is also why there is no `dev` argument: tests set the define
-// (vi.stubGlobal) and import a fresh copy of the module.
-declare const __SYNC_DEV__: boolean;
-const DEV_BUILD = typeof __SYNC_DEV__ === "boolean" && __SYNC_DEV__;
+// (The developer sync page, a sender in dev and e2e builds only, and the server sync's three messages, sk-sync-soon,
+// sk-sync-changed and sk-api, went with that sync's client: OWNER-DECISIONS/25, DV-0b.)
 
 /** The extension's own contexts that send messages, each with its page (or script) path. */
-export type Surface = "popup" | "sidepanel" | "options" | "devsync" | "offscreen" | "worker";
+export type Surface = "popup" | "sidepanel" | "options" | "offscreen" | "worker";
 
-/** The path of each surface's page; `worker` is the service worker script. `devsync` is here in dev and e2e builds only. */
-export const SURFACE_PATHS: Readonly<Partial<Record<Surface, string>>> = {
+/** The path of each surface's page; `worker` is the service worker script. */
+export const SURFACE_PATHS: Readonly<Record<Surface, string>> = {
   popup: "/popup/index.html",
   sidepanel: "/sidepanel/index.html",
   options: "/options/index.html",
   offscreen: "/offscreen/index.html",
   worker: "/sw.js",
-  ...(DEV_BUILD ? { devsync: "/devsync/index.html" } : {}),
 };
 
 type Row = { readonly to: "worker" | "offscreen"; readonly from: readonly Surface[] };
 
 /**
- * The table. `to` is the receiver; `from` is every surface that may send the type, no other (the developer page, in
- * dev and e2e builds, is added by DEV_SENDERS below). Where each is sent:
+ * The table. `to` is the receiver; `from` is every surface that may send the type, no other. Where each is sent:
  *   sk-reschedule-autolock: popup/App.tsx, sidepanel/guard.ts, options/App.tsx,
  *                           options/DeviceBox.tsx (a gate armed by an enrolment: its expiry alarm)
- *   sk-sync-soon:           platform/runtime-base.ts, from every page that commits (popup, side panel, settings,
- *                           developer page)
- *   sk-sync-changed:        options/sync/gateway.ts, devsync/main.ts
  *   sk-clip-arm:            platform/clipboard.ts, from the popup, the side panel and the settings page
- *   sk-api:                 platform/bridge-page.ts, from the pages that run the sync engine (bridge-worker.ts BRIDGE_PAGES)
  *   sk-offscreen-arm:       the service worker, to the offscreen document
  *   sk-offscreen-done:      the offscreen document, to the service worker
  */
 export const MESSAGE_SENDERS = {
   "sk-reschedule-autolock": { to: "worker", from: ["popup", "sidepanel", "options"] },
-  "sk-sync-soon": { to: "worker", from: ["popup", "sidepanel", "options"] },
-  "sk-sync-changed": { to: "worker", from: ["options"] },
   "sk-clip-arm": { to: "worker", from: ["popup", "sidepanel", "options"] },
-  "sk-api": { to: "worker", from: ["options"] },
   "sk-offscreen-done": { to: "worker", from: ["offscreen"] },
   "sk-offscreen-arm": { to: "offscreen", from: ["worker"] },
   // The backup in Chrome's sync storage (CSB-3; platform/csb-worker.ts): turned on and off, a run now, the switch
@@ -95,10 +81,6 @@ export type CsbMessage = (typeof CSB_MESSAGES)[number];
 
 export type MessageType = keyof typeof MESSAGE_SENDERS;
 
-/** The developer sync page's messages: the sync ones only (it runs the sync engine). Empty in a production build. */
-const DEV_SENDERS: Readonly<Partial<Record<MessageType, Surface>>> = DEV_BUILD
-  ? { "sk-sync-soon": "devsync", "sk-sync-changed": "devsync", "sk-api": "devsync" }
-  : {};
 type Receiver = Row["to"];
 /** The types one receiver accepts. */
 export type MessageFor<R extends Receiver> = {
@@ -156,7 +138,7 @@ export function acceptedType<R extends Receiver>(
   const row: Row = MESSAGE_SENDERS[type];
   if (row.to !== receiver) return null;
   const from = surfaceOf(sender, selfId);
-  return from !== null && (row.from.includes(from) || DEV_SENDERS[type] === from) ? (type as MessageFor<R>) : null;
+  return from !== null && row.from.includes(from) ? (type as MessageFor<R>) : null;
 }
 
 // ---- the site rules' updater (TOTP autofill Stage 3, AF3-U2; docs/design/notes/AUTOFILL3-NOTES.md §10) ---------------

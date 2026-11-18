@@ -250,5 +250,14 @@
   },
   "csDamaged": {
     "message": "$1 backup(s) are damaged or from a newer Sixkey and were not opened."
+  },
+  "csKeepPasswordLine": {
+    "message": "Opened with your recovery key. Keep using the same master password as on your other computers, or set a new one if you've forgotten it."
+  },
+  "csKeepPassword": {
+    "message": "Keep the same master password"
+  },
+  "csOrNewPassword": {
+    "message": "Or set a new master password"
   }
 }

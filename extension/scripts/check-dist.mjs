@@ -5,9 +5,13 @@
 //   node scripts/check-dist.mjs --dev    a dev build in dist-dev/ (npm run build:dev)
 //   node scripts/check-dist.mjs --id-draft  the prod build's ID draft in dist-id-draft/ (scripts/package.mjs --id-draft):
 //                                        every prod rule, and its own name
+//   node scripts/check-dist.mjs --test   the prod build for testing by hand in dist-test/ (npm run build:test): every
+//                                        prod rule, and its own name, its own key (TEST_EXTENSION_ID) and no
+//                                        install-source check; a test build never passes the prod check, nor the
+//                                        store build this one
 //   --dist <dir>                         check that directory instead (the tests check altered copies of a build)
 // Every expected value below is written out here on purpose, not imported from the build's own configuration
-// (scripts/api-origin.mjs, the manifests): this script is the second opinion on what the build produced.
+// (scripts/csp.mjs, the manifests): this script is the second opinion on what the build produced.
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { basename, isAbsolute, resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -15,7 +19,6 @@ import { gzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { swAccessLevelOrder, swActionFirst } from "./sw-order.mjs";
 import { STORE_ID } from "./store-id.mjs";
-import { SYNC_UI_IN_STORE_BUILD, syncUiIn } from "./sync-ui.mjs";
 import { SUGGEST_UI_IN_STORE_BUILD, suggestUiIn } from "./suggest-ui.mjs";
 import { RULES_ORIGINS, RULES_UPDATE_IN_STORE_BUILD, rulesUpdateIn, testRulesHosts } from "./rules-update.mjs";
 import { pointOf, sameKey, STORE_RULES_KEYS, TEST_RULES_KEYS } from "./rules-keys.mjs";
@@ -47,6 +50,15 @@ if (idDraft && !prod) {
   console.error("check-dist: --id-draft is the prod build's ID draft; it takes neither --dev nor --e2e");
   process.exit(2);
 }
+// the test build (scripts/build.mjs --test): a prod build, held to every prod rule, with its own name and key, and the
+// install-source check off; neither a dev, e2e nor ID draft build
+const testBuild = args.includes("--test");
+if (testBuild && (!prod || idDraft)) {
+  console.error(
+    "check-dist: --test is the prod build for testing by hand; it takes neither --dev, --e2e nor --id-draft",
+  );
+  process.exit(2);
+}
 const distArg = args.indexOf("--dist");
 if (distArg !== -1 && !args[distArg + 1]) {
   console.error("check-dist: --dist needs a directory");
@@ -59,7 +71,15 @@ const dist =
       : resolve(process.cwd(), args[distArg + 1])
     : resolve(
         root,
-        flavour === "e2e" ? "dist-e2e" : flavour === "dev" ? "dist-dev" : idDraft ? "dist-id-draft" : "dist",
+        flavour === "e2e"
+          ? "dist-e2e"
+          : flavour === "dev"
+            ? "dist-dev"
+            : idDraft
+              ? "dist-id-draft"
+              : testBuild
+                ? "dist-test"
+                : "dist",
       );
 const BUDGET_GZ = 60 * 1024; // popup JS+CSS, gzipped. PLAN target is 200KB; this keeps regressions visible.
 // The side panel (sidepanel/index.html; docs/design/notes/SIDEPANEL-NOTES.md), counted the same way: it draws the popup's
@@ -99,14 +119,6 @@ const SETTINGS_VIEWS = {
   "with a vault": ["core", "security", "accounts", "backup", "misc", "general", "unlock"],
   "every part": ["core", "security", "accounts", "backup", "misc", "general", "firstrun", "unlock"],
 };
-// The Sync section's own catalogs (catalogs/sync-<lang>.json and the managing screens' catalogs/sync-manage-<lang>.json,
-// scripts/messages.py), gzipped: each, the larger language. Enforced wherever the sync user interface is built (minified
-// builds: prod once the gate is open, and e2e; a dev build prints it). Measured for M6 part A at 7,955 B (zh_CN; en 7,074
-// B), and with part B's text (the devices, approving, the key operations, revoking, the repair, a separate identity,
-// deleting the account) at 10,564 B (zh_CN; en 9,488 B): 12 KB, the full catalogs' own limit, left room for corrections
-// (docs/design/notes/M6-NOTES.md §4, §13.5). At 11,888 B the second catalog that section named for the managing screens
-// came (part B's text, docs/design/notes/BUDGET-NOTES.md): each of the two is held to the same limit.
-const SYNC_CATALOG_GZ = 12 * 1024;
 // TOTP autofill, Stage 1 (TOTP-AUTOFILL §4.1, §6.4; docs/design/notes/AUTOFILL1-NOTES.md):
 //   - the finder, inject/otp.js, gzipped (the design's target; 4,4 KB when it was introduced, 6,087 B at the end of Stage 2,
 //     7,144 B with Stage 3's hint: the token kinds, the boost conditions and the every-box checks, AF3-2);
@@ -268,18 +280,16 @@ const RULES_BUDGET_GZ = 64 * 1024;
 // (src/platform/package-data.ts): on in the e2e build's Fill chunk, which reads that build's test rules, off elsewhere.
 const RESERVED_ON = /\ballowReserved\s*:\s*!0\b/;
 const RESERVED_OFF = /\ballowReserved\s*:\s*!1\b/;
-// The release gate (scripts/sync-ui.mjs): whether this flavour carries the Sync section. The one place the value comes
-// from; the store build's is false until the cloud goes live (M8). Imported rather than restated, as STORE_ID is: a
-// second copy here would be a second switch to forget when it is flipped.
-const SYNC_UI = syncUiIn(flavour);
-// The release gate of TOTP autofill's in-page suggestion (scripts/suggest-ui.mjs), imported for the same reason.
+// The release gate of TOTP autofill's in-page suggestion (scripts/suggest-ui.mjs): whether this flavour carries it.
+// Imported rather than restated, as STORE_ID is: a second copy here would be a second switch to forget when it is flipped.
 const SUGGEST_UI = suggestUiIn(flavour);
 // The release gate of the site rules' updater (scripts/rules-update.mjs), imported for the same reason.
 const RULES_UPDATE = rulesUpdateIn(flavour);
-// The sync API origin of each build (SYNC-DESIGN §5.2, §7): the one host the extension may reach.
-const API_ORIGIN = { prod: "https://api.sixkey.app", dev: "http://127.0.0.1:8787", e2e: "http://127.0.0.1:8787" }[
-  flavour
-];
+// The server sync's API (SYNC-DESIGN §5.2, §7): its public host and the local server the dev and e2e builds talked to.
+// That sync's client is gone from the extension (OWNER-DECISIONS/25, DV-0b): no build names either in any shipped file,
+// its manifest included (below), and no build reaches any API. The only request a build may make to a server is the site
+// rules' updater's, with that gate open (RULES_PATH below).
+const GONE_API = ["api.sixkey.app", "127.0.0.1:8787"];
 // Exactly these permissions; the e2e build grants the optional clipboard pair up front so Playwright can use it.
 // `sidePanel` (no install warning; Chrome 114+, open() 116+) came with the side panel mode (docs/design/notes/
 // SIDEPANEL-NOTES.md; ux-study §2.1 and Q2, the owner's decision of 2026-10-16): the one permission added since Phase 0.x
@@ -331,10 +341,8 @@ const DRIVE_MARKS = [
   "sk_cloud_state",
   "sk_cloud_token",
 ];
-// The host permissions, exactly, in exactly one key; the other key must not exist.
-//   - The API origin's (SYNC-DESIGN §7, revision 21): optional in prod and dev builds, so nothing is granted at install
-//     and the settings page asks for it when sync is turned on (and removes it when sync is turned off); required in the
-//     e2e build, whose automated tests cannot answer Chrome's prompt.
+// The host permissions, exactly, in exactly one key; the other key must not exist. (The server sync's API origin was one,
+// in the dev and e2e builds, until its client went: OWNER-DECISIONS/25, DV-0b.)
 //   - TOTP autofill's per-site grants (AUTOFILL2-PLAN §3.1, §3.6; docs/design/notes/AUTOFILL2-NOTES.md §7): prod and dev
 //     declare https://*/* as OPTIONAL, which grants nothing at install and warns of nothing; Sixkey asks for one site at
 //     a time, exactly https://<host>/*, in the click that turns that site on (src/platform/autofill-sites.ts). Nothing
@@ -345,14 +353,7 @@ const DRIVE_MARKS = [
 const HOST_KEY = flavour === "e2e" ? "host_permissions" : "optional_host_permissions";
 const SITES_PATTERN = "https://*/*";
 const E2E_GRANTED = ["https://grantedtls.fix.test/*", "http://granted.fix.test/*"];
-// The sync API origin is in the manifest (the host permission, the CSP's connect-src) only where the build has the sync
-// user interface, or is a developer or e2e build (scripts/build.mjs): the store build with the release gate closed names
-// autofill's sites alone, and its CSP lets it connect nowhere.
-const API_IN_MANIFEST = !prod || SYNC_UI;
-const HOSTS =
-  flavour === "e2e"
-    ? [`${API_ORIGIN}/*`, ...E2E_GRANTED]
-    : [...(API_IN_MANIFEST ? [`${API_ORIGIN}/*`] : []), SITES_PATTERN];
+const HOSTS = flavour === "e2e" ? E2E_GRANTED : [SITES_PATTERN];
 // The manifest's top-level keys, exactly. Anything else (content_scripts, externally_connectable, the other host
 // permission key, web_accessible_resources, sandbox, ...) fails. externally_connectable went with the plugin platform:
 // with no listener of another extension's messages or ports in any build (the rule below), no other extension and no
@@ -373,7 +374,8 @@ const MANIFEST_KEYS = [
   "permissions",
   "content_security_policy",
   "optional_permissions",
-  ...(flavour === "dev" ? ["key"] : []),
+  // a fixed ID: the dev build's and the test build's (below); never the store build's, nor an ID draft's
+  ...(flavour === "dev" || testBuild ? ["key"] : []),
 ];
 // The dev build's fixed extension ID (QUICK-UNLOCK §0A.1 item 5, §8 "Release-order constraints"; docs/design/notes/
 // PRF-NOTES.md): manifest.dev.json carries the public key whose SHA-256 gives this ID (only the public half; the private
@@ -381,6 +383,12 @@ const MANIFEST_KEYS = [
 // survive reinstalls and moved folders. The dev build only: the store's ID is the store's (OWNER-DECISIONS/11), and the
 // e2e build's does not matter to the virtual authenticator.
 const DEV_EXTENSION_ID = "pgnlbjikdnniepfeijffpefifnojjege";
+// The test build's fixed extension ID (scripts/build.mjs --test): manifest.test.json carries the public key whose SHA-256
+// gives it (only the public half; the private key was never kept). The owner's copies on two computers have the same ID,
+// so Chrome sync, which keys an extension's data by its ID, carries the backup in Chrome sync between them. It is
+// neither the dev build's (both can sit in one profile) nor the store's (STORE_ID: a test build never takes the place
+// of the store's item).
+const TEST_EXTENSION_ID = "copndbnmkakfiohikpecmdaoldodaojc";
 /** An extension's ID from its manifest key: SHA-256 of the key's bytes, the first 32 hex digits written with a to p. */
 const idOfKey = (key) =>
   [
@@ -401,17 +409,14 @@ const COMMANDS = {
   lock: { suggested_key: { default: "Alt+Shift+L" }, description: "__MSG_cmdLock__" },
   fill: { suggested_key: { default: "Alt+Shift+F" }, description: "__MSG_cmdFill__" },
 };
-// The policy that makes "nothing but the sync API" a property the browser enforces, not just a habit of the code. It
-// applies to the extension's pages and to its service worker. It is not a permission: the worker needs the API origin
-// here even with the host permission granted (and each page narrows it to nothing with its own policy, below). The store
-// build without the sync user interface names no origin: connect-src 'none' (API_IN_MANIFEST above).
-// With the site rules' updater's gate open (AF3-U2), connect-src also names the rules origin's one path the worker reads
-// (/v1/: the manifest and the bundles), and nothing more of it.
+// The policy that makes "connect nowhere" a property the browser enforces, not just a habit of the code. It applies to
+// the extension's pages and to its service worker. With the site rules' updater's gate open (AF3-U2), connect-src names
+// the rules origin's one path the worker reads (/v1/: the manifest and the bundles), and nothing more of it (each page
+// narrows it to nothing with its own policy, below); with the gate closed, as in the store build, connect-src 'none'.
+// (The server sync's API origin was the other source, in the dev and e2e builds, until its client went: DV-0b.)
 const RULES_PATH = RULES_UPDATE ? `${RULES_ORIGINS[flavour]}/v1/` : null;
-const CONNECT = [...(API_IN_MANIFEST ? [API_ORIGIN] : []), ...(RULES_PATH ? [RULES_PATH] : [])];
+const CONNECT = RULES_PATH ? [RULES_PATH] : [];
 const EXPECTED_CSP = `script-src 'self'; object-src 'self'; default-src 'self'; connect-src ${CONNECT.length ? CONNECT.join(" ") : "'none'"}; img-src 'self' data:; font-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'`;
-// M4's default min_client_version: an older manifest version would stop every round and write (update_required).
-const MIN_VERSION = [0, 1, 0];
 const DEV_MARKERS = ["localhost", "127.0.0.1", "auth.g.pro", "(dev)", "__skFill", "__skRules"];
 // The site rules' format (src/core/rules/format.ts RESERVED_TLDS; in the Fill chunk since TOTP autofill Stage 3, AF3-3b)
 // names "localhost" in its list of the reserved names a rule's host may not be under. That list, exactly as the minifier
@@ -419,17 +424,28 @@ const DEV_MARKERS = ["localhost", "127.0.0.1", "auth.g.pro", "(dev)", "__skFill"
 // in: AF3-U2), is the one place a prod script may hold the word: it is taken out of the text before the dev markers are
 // looked for, and any other "localhost", in the same chunk too, is still one.
 const RESERVED_NAMES_LIST = /\[\s*([`'"])test\1\s*,\s*\1example\1\s*,\s*\1invalid\1\s*,\s*\1localhost\1\s*\]/g;
-// The developer sync page (src/devsync/): dev and e2e builds only. Its marker is in its HTML and its script.
+// The developer sync page (src/devsync/, gone from every build: OWNER-DECISIONS/25). Its marker was in its HTML and its
+// script.
 const DEV_SYNC_MARKER = "sixkey-dev-sync";
-// While the release gate keeps the Sync section out of the store build (SYNC_UI above), a prod build carries no enrolment
-// code at all, so nothing a user can reach turns sync on. These string literals exist only in
-// src/core/sync/engine/enroll.ts and the Sync section's model (a unit test keeps that true) and survive minification;
-// scripts/build.mjs checks the bundler's module graph as well.
-const ENROLMENT_FINGERPRINTS = ["unfinished_wait", "keyring_changed", "status_failed"];
-// http(s) URLs a shipped script may contain besides the API origin: namespace names (not fetched), the hostname
-// normaliser's template http://${host}/ (src/core/site-domains.ts: parsed with new URL, never fetched), and the one
-// permission pattern of an autofill site, https://${host}/* (src/core/autofill-sites.ts sitePattern: asked of
-// chrome.permissions, never fetched; the CSP's connect-src still allows the API origin alone).
+// No build carries the Sync section or the developer sync page, nor the enrolment code they drove, so nothing a user of
+// any build can reach turns sync on. These string literals are that enrolment's own domain tags and key label (its
+// enroll-labels.ts, which went with the rest of the server sync's client, DV-0b): names no other code uses (the device
+// groups' join has labels of its own), which survive minification. No source holds them now
+// (test/unit/m5-source-rules.test.ts); scripts/build.mjs checks the bundler's module graph as well.
+const ENROLMENT_FINGERPRINTS = ["sixkey-enroll|2|", "sixkey-enroll-commit|2|", "sixkey/v2/enroll-key"];
+// The names of what the server sync's client left in a profile (src/platform/server-sync-leftovers.ts): its records in
+// chrome.storage.local, its identity's database and its alarms. Only the dev and e2e builds' worker names them, to
+// remove them once; the store and test builds compile that out (the define __SYNC_DEV__), so none of their files holds
+// one.
+const SERVER_SYNC_RECORDS = ["sk_sync_", "sk_prejoin", "sixkey-identity", "sk-sync-"];
+// The server sync's toolbar badge: its title's text key (the worker read it with chrome.i18n; its badge text was a count),
+// in no shipped file of any build, _locales included. The badge's module (platform/badge.ts) may draw another badge.
+const SYNC_BADGE_KEYS = ["syncBadgeTitle"];
+// http(s) URLs a shipped script may contain (besides the site rules' origin in the worker, with the updater's gate open):
+// namespace names (not fetched), the hostname normaliser's template http://${host}/ (src/core/site-domains.ts: parsed
+// with new URL, never fetched), and the one permission pattern of an autofill site, https://${host}/*
+// (src/core/autofill-sites.ts sitePattern: asked of chrome.permissions, never fetched; the CSP's connect-src allows
+// none of these).
 const URL_ALLOWED = [
   /^http:\/\/www\.w3\.org\/(?:2000\/svg|1999\/xhtml|1999\/xlink|1998\/Math\/MathML)$/,
   /^http:\/\/\$\{[A-Za-z_$][\w$]*\}\/$/,
@@ -478,10 +494,16 @@ for (const k of Object.keys(m)) if (!MANIFEST_KEYS.includes(k)) fail(`manifest k
 for (const k of MANIFEST_KEYS) if (!(k in m)) fail(`manifest key missing: ${k}`);
 // The name: a store package's is the catalog's, an ID draft's says what it is (the review's N-1), and neither is the other
 // (a draft can never pass as the store package, nor the store package as a draft). Dev and e2e builds have their own.
-if (prod && m.name !== (idDraft ? "Sixkey (ID draft, do not publish)" : "__MSG_appName__"))
-  fail(`the ${idDraft ? "ID draft's" : "store build's"} manifest name is ${JSON.stringify(m.name)}`);
+// A test build's says what it is too ("Sixkey (test)"), and is neither of the other two, nor they it.
+const PROD_NAME = idDraft ? "Sixkey (ID draft, do not publish)" : testBuild ? "Sixkey (test)" : "__MSG_appName__";
+if (prod && m.name !== PROD_NAME)
+  fail(
+    `the ${idDraft ? "ID draft's" : testBuild ? "test build's" : "store build's"} manifest name is ${JSON.stringify(m.name)}`,
+  );
 if (flavour === "dev" && "key" in m && idOfKey(m.key) !== DEV_EXTENSION_ID)
   fail(`the dev build's manifest key gives the ID ${idOfKey(m.key)}, not ${DEV_EXTENSION_ID}`);
+if (testBuild && "key" in m && idOfKey(m.key) !== TEST_EXTENSION_ID)
+  fail(`the test build's manifest key gives the ID ${idOfKey(m.key)}, not ${TEST_EXTENSION_ID}`);
 if (!same(sorted(m.permissions), sorted(PERMISSIONS)))
   fail(`permissions must be exactly ${PERMISSIONS.join(", ")}: ${JSON.stringify(m.permissions)}`);
 for (const p of m.optional_permissions ?? [])
@@ -511,16 +533,7 @@ if (!(m.optional_permissions ?? []).includes("scripting")) fail("scripting must 
 for (const k of ["permissions", "optional_permissions"])
   if ((m[k] ?? []).includes("identity"))
     fail(`identity must never be in a build's ${k}: no build signs in to Google (${flavour})`);
-{
-  const v = /^\d{1,5}(\.\d{1,5}){0,3}$/.test(m.version ?? "") ? m.version.split(".").map(Number) : null;
-  const below = (a, b) => {
-    for (let i = 0; i < 4; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0);
-    return false;
-  };
-  if (!v) fail(`manifest version is not a Chrome version: ${m.version}`);
-  else if (below(v, MIN_VERSION))
-    fail(`manifest version ${m.version} is below the sync API's minimum client version ${MIN_VERSION.join(".")}`);
-}
+if (!/^\d{1,5}(\.\d{1,5}){0,3}$/.test(m.version ?? "")) fail(`manifest version is not a Chrome version: ${m.version}`);
 
 // referenced files exist
 const refs = [
@@ -665,7 +678,8 @@ function staticImports(from) {
   }
   return seen;
 }
-// Chrome's own use of _locales besides the manifest: the service worker's badge words (chrome.i18n.getMessage)
+// Chrome's own use of _locales besides the manifest: the service worker's words (chrome.i18n.getMessage: the fill
+// shortcut's toolbar title, src/background/fill-command.ts)
 for (const f of scripts)
   for (const [, key] of f.text.matchAll(/\bgetMessage\(\s*["'`]([A-Za-z0-9_]+)["'`]/g))
     for (const loc of readdirSync(resolve(dist, "_locales")))
@@ -691,8 +705,8 @@ for (const { rel, text: h } of pages) {
 }
 
 // Every page carries its own connect-src 'none' ahead of everything else: a second policy, which the browser enforces
-// together with the manifest's, so no page reaches any host. Pages that sync go through the service worker's bridge;
-// the worker is the one context the manifest's connect-src lets reach the API origin. The policy's place is pinned,
+// together with the manifest's, so no page reaches any host: the worker is the one context the manifest's connect-src
+// lets reach anything (the site rules' updater's one path, with that gate open). The policy's place is pinned,
 // not searched for: the document starts with the doctype, <html>, <head>, <meta charset="utf-8"> and then exactly this
 // <meta>, with only whitespace between them. Text that only looks like the policy is no policy: inside <noscript> (raw
 // text while scripts run), <template> (inert) or <title> (text), or after a "--!>" comment end, it would pass a search
@@ -731,18 +745,19 @@ for (const f of shipped.filter((x) => x.rel.endsWith(".css"))) {
   if (/url\(\s*["']?(https?:)?\/\//i.test(f.text)) fail(`${f.rel}: remote url() in CSS`);
 }
 
-// scripts: the network (SYNC-DESIGN §4.9, §7). The CSP already blocks every host but the API origin; these tripwires
-// keep the code itself to one way out, so a dependency that starts using another before it ships fails here:
+// scripts: the network (SYNC-DESIGN §4.9, §7). The CSP already blocks every host but the site rules' updater's one path
+// (with that gate open); these tripwires keep the code itself to that one way out, so a dependency that starts using
+// another before it ships fails here:
 //   - no XMLHttpRequest, WebSocket, EventSource, sendBeacon, WebTransport, RTCPeerConnection or importScripts anywhere;
-//   - `fetch` only in the service worker, and there exactly once: the sync transport (src/platform/fetch-transport.ts),
-//     where the build has the sync user interface; the store build with its release gate closed has no sync worker
-//     (src/background/sw.ts), so no fetch there at all;
+//   - `fetch` in the service worker only for the site rules' updater (below), never for anything else: the server sync's
+//     transport (src/platform/fetch-transport.ts), the dev and e2e builds' other fetch, went with its client (DV-0b);
 //     besides, the read of the extension's own package file (TOTP autofill Stage 3, AF3-3b; src/platform/package-data.ts:
 //     fetch(chrome.runtime.getURL(...)) of the site rules' path, no network), once, in the Fill paths' lazy chunk, and
 //     nowhere else: not in the worker, whose shortcut takes no rule yet (the maintainers' C27); and with the site rules'
 //     updater's gate open (AF3-U2; src/platform/rules-live.ts), its one read of the rules origin, in the worker. Counted
 //     on the text without the bundler's region marks (`//#region src/platform/rules-fetch.ts` names a file, not a call);
-//   - every http(s) or ws(s) URL in a script is the API origin, or one of the few names in URL_ALLOWED.
+//   - every http(s) or ws(s) URL in a script is the site rules' origin in the worker (with the updater's gate open), or one
+//     of the few names in URL_ALLOWED.
 // The last two read the scripts as text, which holds only for minified ones: a dev build keeps every comment (they name
 // URLs and the word fetch), so it skips them. The prod and e2e builds, minified from the same sources, are checked.
 const packageReaders = [];
@@ -768,9 +783,7 @@ for (const f of scripts) {
   if (/\b(?:openPanelOnActionClick|setPanelBehavior)\b/.test(f.text))
     fail(`${f.rel}: the side panel's open-on-click behaviour (it loses activeTab); the worker opens the panel itself`);
   if (flavour === "dev") continue;
-  // (with the sync release gate closed, as in the store build, there is no sync transport: no fetch in the worker)
-  // the sync transport: once, in the worker; and the package file's read (AF3-3b): one fetch of
-  // chrome.runtime.getURL(...), in a script that names the site rules' path
+  // the package file's read (AF3-3b): one fetch of chrome.runtime.getURL(...), in a script that names the site rules' path
   const own = f.text.match(/\bfetch\(chrome\.runtime\.getURL\(/g)?.length ?? 0;
   const ownRead = own === 1 && new RegExp(`["'\`]${PACKAGED_BASELINE}["'\`]`).test(f.text);
   if (own > 0 && !ownRead)
@@ -779,16 +792,15 @@ for (const f of scripts) {
     );
   if (ownRead) packageReaders.push(f.rel);
   const fetches = f.text.replace(/^\/\/#(?:end)?region\b.*$/gm, "").match(/\bfetch\b/g)?.length ?? 0;
-  const allowed = (f.rel === swRel ? (SYNC_UI ? 1 : 0) + (RULES_UPDATE ? 1 : 0) : 0) + (ownRead ? 1 : 0);
+  const allowed = (f.rel === swRel && RULES_UPDATE ? 1 : 0) + (ownRead ? 1 : 0);
   if (fetches !== allowed)
     fail(
-      `${f.rel}: \`fetch\` appears ${fetches} times; only ${swRel} may use it, ${allowed} times (${SYNC_UI ? "the sync transport" : "no sync transport in a build without the sync user interface"}${f.rel === swRel && RULES_UPDATE ? ", the site rules' updater" : ""}${ownRead ? ", and the site rules' read" : ""})`,
+      `${f.rel}: \`fetch\` appears ${fetches} times; only ${swRel} may use it, ${allowed} times (${f.rel === swRel && RULES_UPDATE ? "the site rules' updater" : "no network in this build"}${ownRead ? ", and the site rules' read" : ""})`,
     );
   for (const [u] of f.text.matchAll(/\b(?:https?|wss?):\/\/[^\s"'`<>\\)]*/gi)) {
-    if (u === API_ORIGIN || u.startsWith(`${API_ORIGIN}/`)) continue;
     // the site rules' updater's origin, in the worker, with its gate open (AF3-U2): the origin and its /v1/ files
     if (RULES_PATH && f.rel === swRel && (u === RULES_ORIGINS[flavour] || u.startsWith(RULES_PATH))) continue;
-    if (!URL_ALLOWED.some((re) => re.test(u))) fail(`${f.rel}: URL in shipped code that is not the API origin: ${u}`);
+    if (!URL_ALLOWED.some((re) => re.test(u))) fail(`${f.rel}: URL in shipped code that is not one it may hold: ${u}`);
   }
 }
 // the package file's read in one lazy chunk of the popup's and the side panel's (AF3-3b): since AF3-4 the chunk the bundler
@@ -857,7 +869,6 @@ if (flavour !== "dev") {
 for (const f of scripts)
   if (f.text.includes("__SK_RULES_TEST_HOSTS__"))
     fail(`${f.rel}: __SK_RULES_TEST_HOSTS__ left in the build (the define is missing)`);
-const swText = shipped.find((f) => f.rel === swRel)?.text ?? "";
 
 // Built in production mode, wherever it was built: a build made with NODE_ENV=development or =test (a developer's
 // shell, a test runner) uses the JSX runtime's debug build, whose calls carry fileName and lineNumber keys holding the
@@ -874,24 +885,18 @@ if (flavour !== "dev") {
       fail(`${f.rel}: an absolute file path`);
   }
 }
-// The sync API origin: in the worker, its transport's, where the build has the sync user interface; where the release
-// gate keeps it out (the store build), in no shipped file at all, not even its host name: the worker has no sync worker
-// (src/background/sw.ts) and the build's __API_ORIGIN__ is empty (scripts/build.mjs), so a scan of the package finds no
-// address of the API.
-const API_HOST_NAME = new URL(API_ORIGIN).hostname;
-if (SYNC_UI) {
-  if (!swText.includes(API_ORIGIN)) fail(`${swRel} does not carry the API origin ${API_ORIGIN}`);
-} else
-  for (const f of shipped)
-    if (f.text.includes(API_HOST_NAME))
-      fail(`${f.rel}: names the sync API's host ${API_HOST_NAME} in a build whose release gate keeps sync out`);
-// The in-page suggestion's release gate (scripts/suggest-ui.mjs; AUTOFILL2 patch 4), both ways, as the sync user
-// interface's is. With the gate closed, no shipped script names any mark of what the gate lets in, so the store build is
-// patches 1 to 3 (nothing a page sends opens a Sixkey surface, no request v2 is read or written, the surface's page-R rules
-// and their text are not there): the content script's second message, request v2's document pattern, the worker's
-// records, the Fill strip's line for a page's request, the gate's two popup keys (in the code and in the popup's catalog
-// chunks; _locales, the full catalogs for every build, is not a script), and the surface's input delay. With the gate open,
-// each is where it belongs. test/unit/autofill1-check-dist.test.ts tampers with every mark, both ways.
+// The server sync's API (GONE_API above): in no shipped file of any build, the manifest and a dev build's comments
+// included, not even its host name, so a scan of the package finds no address of it.
+for (const f of shipped)
+  for (const a of GONE_API)
+    if (f.text.includes(a)) fail(`${f.rel}: names the server sync's API (${a}), whose client no build has (DV-0b)`);
+// The in-page suggestion's release gate (scripts/suggest-ui.mjs; AUTOFILL2 patch 4), both ways. With the gate closed,
+// no shipped script names any mark of what the gate lets in, so the store build is patches 1 to 3 (nothing a page sends
+// opens a Sixkey surface, no request v2 is read or written, the surface's page-R rules and their text are not there):
+// the content script's second message, request v2's document pattern, the worker's records, the Fill strip's line for a
+// page's request, the gate's two popup keys (in the code and in the popup's catalog chunks; _locales, the full catalogs
+// for every build, is not a script), and the surface's input delay. With the gate open, each is where it belongs.
+// test/unit/autofill1-check-dist.test.ts tampers with every mark, both ways.
 {
   const marks = {
     "sk-af-open": [swRel], // the click's message (sender-policy.ts, content-channel.ts)
@@ -1094,25 +1099,30 @@ if (SYNC_UI) {
   );
 }
 
-// The prod build: no developer marker in any shipped file, no developer sync page, and, while the gate keeps the sync
-// user interface out (SYNC_UI), no enrolment code (so nothing a user can reach turns sync on, SYNC-DESIGN §9 M5/M6).
-// Dev and e2e builds carry the developer sync page.
-if (prod) {
+// The prod build: no developer marker in any shipped file. Every build: no developer sync page, and no enrolment code
+// (so nothing a user can reach turns sync on, SYNC-DESIGN §9 M5/M6; OWNER-DECISIONS/25).
+if (prod)
   for (const f of shipped) {
     const text = /\.js$/.test(f.rel) ? f.text.replace(RESERVED_NAMES_LIST, "") : f.text;
-    for (const d of [...DEV_MARKERS, DEV_SYNC_MARKER])
+    for (const d of DEV_MARKERS)
       if (f.rel !== "manifest.json" && text.includes(d)) fail(`${f.rel}: dev marker in a prod build: ${d}`);
   }
-  if (existsSync(resolve(dist, "devsync"))) fail("devsync/ (the developer sync page) is in a prod build");
-  if (!SYNC_UI)
-    for (const f of scripts)
-      for (const k of ENROLMENT_FINGERPRINTS)
-        if (f.text.includes(k)) fail(`${f.rel}: enrolment code in a prod build (${k})`);
-} else {
-  const page = shipped.find((f) => f.rel === "devsync/index.html");
-  if (!page || !page.text.includes(DEV_SYNC_MARKER))
-    fail(`the ${flavour} build has no developer sync page (devsync/index.html)`);
-}
+if (existsSync(resolve(dist, "devsync"))) fail(`devsync/ (the developer sync page) is in the ${flavour} build`);
+for (const f of shipped)
+  if (f.text.includes(DEV_SYNC_MARKER)) fail(`${f.rel}: the developer sync page's marker in the ${flavour} build`);
+for (const f of scripts)
+  for (const k of ENROLMENT_FINGERPRINTS)
+    if (f.text.includes(k)) fail(`${f.rel}: enrolment code in the ${flavour} build (${k})`);
+for (const f of shipped)
+  for (const k of SYNC_BADGE_KEYS)
+    if (f.text.includes(k)) fail(`${f.rel}: the server sync's toolbar badge (${k}) in the ${flavour} build`);
+if (prod)
+  for (const f of shipped)
+    for (const k of SERVER_SYNC_RECORDS)
+      if (f.text.includes(k))
+        fail(
+          `${f.rel}: names the server sync's records (${k}) in the ${flavour} build, whose worker never removes them`,
+        );
 
 // The Google Drive backup's marks (DRIVE_MARKS above), in no build, nor its developer page's folder.
 if (existsSync(resolve(dist, "devcloud")))
@@ -1142,8 +1152,15 @@ for (const f of shipped)
 
 // install-source check (H4): a prod build has it turned on, and once the store ID exists (scripts/store-id.mjs),
 // carries that ID. A build with the check off has none of its code (src/platform/install-source.ts), so finding the
-// getSelf call means it is on. Dev and e2e builds have it off and no store ID.
-if (prod) {
+// getSelf call means it is on. Dev and e2e builds have it off and no store ID. The test build has it off as well
+// (always loaded unpacked, it would always show the notice a store copy never shows; scripts/build.mjs installCheck):
+// no getSelf call in its scripts, so a store build checked as a test build fails here, and a test build checked as the
+// store build fails above (its name and key) and here.
+if (testBuild) {
+  for (const f of scripts)
+    if (f.text.includes("getSelf"))
+      fail(`${f.rel}: the install-source check (chrome.management.getSelf) is on in the test build`);
+} else if (prod) {
   const js = scripts.map((f) => f.text);
   if (!js.some((text) => text.includes("getSelf")))
     fail("install-source check (chrome.management.getSelf) is off or missing in this build");
@@ -1589,9 +1606,29 @@ if (prod) {
         const from = m.index + m[0].length;
         return f.text.slice(from, balanced(f.text, from));
       });
+      // the page's user name (src/platform/page-user.ts, a lazy chunk): exactly one call, a function with exactly one
+      // argument (the length cap), the top frame only (no allFrames, frameIds or documentIds), no files, no world
+      if (/^assets\/page-user-[\w-]+\.js$/.test(f.rel)) {
+        const argsN = (c) => {
+          const args = /args\s*:\s*\[/.exec(c);
+          return args
+            ? topLevelItems(c.slice(args.index + args[0].length, balanced(c, args.index + args[0].length)))
+            : -1;
+        };
+        if (
+          calls.length !== 1 ||
+          !/\bfunc\s*:/.test(calls[0]) ||
+          /allFrames|frameIds|documentIds|\bfiles\s*:|\bworld\s*:/.test(calls[0]) ||
+          argsN(calls[0]) !== 1
+        )
+          fail(
+            `${f.rel}: the page's user name is read by one call, a function with one argument, in the top frame only`,
+          );
+        continue;
+      }
       const allowed = f.rel === swRel || /^assets\/Fill-[\w-]+\.js$/.test(f.rel);
       if (calls.length && !allowed)
-        fail(`${f.rel}: chrome.scripting.executeScript outside the worker and the Fill chunk`);
+        fail(`${f.rel}: chrome.scripting.executeScript outside the worker, the Fill chunk and the page-user chunk`);
       if (!allowed) continue;
       if (flavour === "dev") continue;
       if (calls.length !== 3) fail(`${f.rel}: expected the finder's 3 executeScript calls, found ${calls.length}`);
@@ -2403,168 +2440,59 @@ if (prod) {
   }
 }
 
-// The Sync section (scripts/sync-ui.mjs): its code is the chunk assets/sync-ui-<hash>.js and its text the catalogs
-// assets/sync-locale-<lang>-<hash>.js and assets/sync-manage-locale-<lang>-<hash>.js (the managing screens'; named in
-// scripts/build.mjs), all loaded by the settings page only when the section is shown. Where the gate keeps it out,
-// nothing of it ships: no assets/sync-* file at all, and no shipped file names a key of either catalog, as a string or as
-// an identifier (the section's code names its keys, and its minified catalogs are objects keyed by them, unquoted, so
-// either would show under any file name).
-// Where it is in: exactly one code chunk, and one chunk of each catalog per language, each exactly the generated file
-// with the same keys in every language, none of them a key of the full catalogs nor of the other catalog, each within
-// SYNC_CATALOG_GZ; the settings page reaches them only lazily (not from its HTML), and the popup not at all.
-// The popup's one piece of it, the lock screen's line about keys changed on another device (SYNC-DESIGN §6 P2,
-// src/popup/screens/Locked.tsx), follows the same gate: its element id (LOCK_LINE_ID) is in no shipped file where the gate
-// keeps the sync user interface out, and in code the popup loads where it lets it in.
-// So does the settings page's rail (src/options/Rail.tsx): its line of the live sync (RAIL_SYNC_ID) is in the page's
-// code where the gate lets the section in and in no shipped file where it keeps it out; there, and only there, the
-// backup in Chrome sync's line (RAIL_CSB_ID) is in its place.
-const LOCK_LINE_ID = "lock-keys-elsewhere";
-const RAIL_SYNC_ID = "rail-sync";
+// The settings page's Sync section (sign-in by e-mail, the code, the join), gone from every build with the developer
+// sync page (OWNER-DECISIONS/25): no flavour may carry any of it (test/unit/no-sync-section.test.ts builds each and alters
+// copies). What would show that it came back, under any file name and through minification:
+//   - its files' names: its code was the chunk assets/sync-ui-<hash>.js, its text the catalogs
+//     assets/sync-locale-<lang>-<hash>.js and assets/sync-manage-locale-<lang>-<hash>.js, its style assets/sync-<hash>.css,
+//     and the engine's chunk assets/sync-engine-<hash>.js was the one it shared with the developer page: no asset of any
+//     build is named sync-*;
+//   - its route: the settings page's #sync and #sync/join, as a string of the code (the rail's link, the ways in);
+//   - its elements' ids, its ways in and its lines elsewhere: SECTION_IDS (the section's own, the rail's line of the live
+//     sync, the popup lock screen's line, first run's way to the join, the Security section's box), each a string the
+//     minifier keeps;
+//   - its text: SECTION_KEYS, keys of its two catalogs as they last were, named as strings or as the unquoted keys of a
+//     minified catalog.
+// In their place the rail shows the backup in Chrome sync's line (RAIL_CSB_ID), in the settings page's code (what it
+// loads up front), in every build.
+const SECTION_IDS = [
+  "sync-off-card",
+  "sync-turn-on",
+  "sync-join-start",
+  "sync-signin",
+  "sync-email",
+  "sync-send-code",
+  "rail-sync",
+  "lock-keys-elsewhere",
+  "fr-to-join",
+  "sec-keys-in-sync",
+];
+const SECTION_KEYS = ["syncLead", "syncOffTitle", "syncPairTitle", "syncClose", "syncLabel", "syncOff"];
+const SECTION_ROUTE = /["'`]#sync(?:\/[A-Za-z-]*)?["'`]/;
 const RAIL_CSB_ID = "rail-csb";
 {
   const assetNames = readdirSync(resolve(dist, "assets"));
-  const syncFiles = assetNames.filter((n) => n.startsWith("sync-")); // the engine's chunk included: a store build has no developer page to share it
-  // the section's two catalogs: [name of the generated file, chunk name prefix]
-  const SYNC_CATALOGS = [
-    ["sync", "sync-locale-"],
-    ["sync-manage", "sync-manage-locale-"],
-  ];
-  const syncKeysOf = (name, loc) => {
-    const p = resolve(root, "catalogs", `${name}-${loc}.json`);
-    if (!existsSync(p)) {
-      fail(`catalogs/${name}-${loc}.json missing: run python3 scripts/messages.py`);
-      return null;
-    }
-    return JSON.parse(readFileSync(p, "utf8"));
-  };
-  const enSync = Object.assign({}, ...SYNC_CATALOGS.map(([name]) => syncKeysOf(name, "en") ?? {}));
-  // the rail's two lines: the gate's in the settings page's code (what it loads up front), the other in no shipped file
-  {
-    const [mine, other] = SYNC_UI ? [RAIL_SYNC_ID, RAIL_CSB_ID] : [RAIL_CSB_ID, RAIL_SYNC_ID];
-    const gate = SYNC_UI ? "lets the sync user interface in" : "keeps the sync user interface out";
-    const settings = [...staticImports(htmlScripts("options/index.html"))];
-    if (!settings.some((f) => readFileSync(f, "utf8").includes(mine)))
-      fail(`the settings page's code has no rail line ${mine} in a build whose release gate ${gate}`);
-    for (const f of shipped)
-      if (f.text.includes(other)) fail(`${f.rel}: the rail line ${other} in a build whose release gate ${gate}`);
+  for (const n of assetNames.filter((x) => x.startsWith("sync-")))
+    fail(`assets/${n}: the Sync section in the ${flavour} build (no build carries it)`);
+  const named = new RegExp(`(?<![A-Za-z0-9_$])(?:${SECTION_KEYS.join("|")})(?![A-Za-z0-9_$])`);
+  for (const f of scripts) {
+    const route = SECTION_ROUTE.exec(f.text)?.[0];
+    if (route) fail(`${f.rel}: the Sync section's route (${route}) in the ${flavour} build`);
+    for (const id of SECTION_IDS)
+      if (f.text.includes(`"${id}"`) || f.text.includes(`'${id}'`) || f.text.includes(`\`${id}\``))
+        fail(`${f.rel}: the Sync section's element ${id} in the ${flavour} build`);
+    const key = named.exec(f.text)?.[0];
+    if (key) fail(`${f.rel}: names the Sync section's text (${key}) in the ${flavour} build`);
   }
-  if (!SYNC_UI) {
-    for (const n of syncFiles)
-      fail(`assets/${n}: the sync user interface in a build whose release gate keeps it out (scripts/sync-ui.mjs)`);
-    {
-      const keys = Object.keys(enSync).filter((k) => /^sync[A-Z][A-Za-z0-9_]*$/.test(k));
-      const named = new RegExp(`(?<![A-Za-z0-9_$])(?:${keys.join("|")})(?![A-Za-z0-9_$])`);
-      for (const f of shipped) {
-        const hit = keys.length ? named.exec(f.text)?.[0] : undefined;
-        if (hit) fail(`${f.rel}: names the Sync section's text (${hit}) in a build whose release gate keeps it out`);
-      }
-    }
-    for (const f of shipped)
-      if (f.text.includes(LOCK_LINE_ID))
-        fail(
-          `${f.rel}: the popup's lock-screen sync line (${LOCK_LINE_ID}) in a build whose release gate keeps it out`,
-        );
-  } else {
-    const code = assetNames.filter((n) => /^sync-ui-[A-Za-z0-9_-]+\.js$/.test(n));
-    if (code.length !== 1) fail(`expected one Sync section chunk assets/sync-ui-*.js, found ${code.length}`);
-    const full = msgsOf(m.default_locale);
-    const catalogOf = new Map(); // key -> the sync catalog that has it
-    const sectionFiles = new Map(); // locale -> the section's catalog chunks, in load order
-    for (const [name, chunkPrefix] of SYNC_CATALOGS) {
-      let keysSeen;
-      for (const loc of readdirSync(resolve(dist, "_locales"))) {
-        const prefix = `${chunkPrefix}${loc}-`;
-        const mine = assetNames.filter(
-          (n) => n.startsWith(prefix) && /^[A-Za-z0-9_-]+\.js$/.test(n.slice(prefix.length)),
-        );
-        if (mine.length !== 1) {
-          fail(`locale ${loc}: expected one Sync section catalog chunk assets/${prefix}*.js, found ${mine.length}`);
-          continue;
-        }
-        const file = resolve(dist, "assets", mine[0]);
-        sectionFiles.set(loc, [...(sectionFiles.get(loc) ?? []), file]);
-        const gz = gzipSync(readFileSync(file)).length;
-        console.log(`${name} catalog ${loc}: ${(gz / 1024).toFixed(1)} KB gz (limit ${SYNC_CATALOG_GZ / 1024} KB)`);
-        if (flavour !== "dev" && gz > SYNC_CATALOG_GZ)
-          fail(`${name} catalog ${loc} is ${gz} B gz, over its limit of ${SYNC_CATALOG_GZ} B`);
-        let cat;
-        try {
-          cat = (await import(pathToFileURL(file).href)).default;
-        } catch (e) {
-          fail(`${mine[0]}: cannot be read as a catalog (${e})`);
-          continue;
-        }
-        const want = syncKeysOf(name, loc);
-        if (want && JSON.stringify(cat) !== JSON.stringify(want))
-          fail(`${name} catalog chunk for ${loc} differs from catalogs/${name}-${loc}.json`);
-        const ks = Object.keys(cat).sort().join(",");
-        if (!Object.keys(cat).length) fail(`${name} catalog ${loc} is empty`);
-        if (keysSeen === undefined) keysSeen = ks;
-        else if (ks !== keysSeen) fail(`${name} catalogs have different keys per language (${loc})`);
-        for (const k of Object.keys(cat)) {
-          if (Object.hasOwn(full, k)) fail(`${name} catalog ${loc}: ${k} is also a key of the full catalog`);
-          if ((catalogOf.get(k) ?? name) !== name) fail(`${name} catalog ${loc}: ${k} is also in ${catalogOf.get(k)}`);
-          catalogOf.set(k, name);
-        }
-      }
-    }
-    // and both together, as one gzip stream (the section loads both before it draws), within the same limit: the measure
-    // it was set on, when the section's text was one catalog
-    for (const [loc, files] of sectionFiles) {
-      if (files.length !== SYNC_CATALOGS.length) continue; // a missing chunk has failed above
-      const gz = gzipSync(Buffer.concat(files.map((f) => readFileSync(f)))).length;
-      console.log(
-        `Sync section text ${loc}, loaded together: ${(gz / 1024).toFixed(1)} KB gz (limit ${SYNC_CATALOG_GZ / 1024} KB)`,
-      );
-      if (flavour !== "dev" && gz > SYNC_CATALOG_GZ)
-        fail(`the Sync section (${loc}) loads ${gz} B gz of text together, over its limit of ${SYNC_CATALOG_GZ} B`);
-    }
-    // lazily: not in the settings page's HTML; the popup reaches none of it
-    const pageRefs = (page) =>
-      [...read(page).matchAll(/<(?:script|link)[^>]*?(?:src|href)="([^"]+)"/g)].map((x) => x[1]);
-    for (const u of pageRefs("options/index.html"))
-      if (/\/sync-(?:ui|locale|manage-locale)-/.test(u))
-        fail(`options/index.html loads ${u} up front; the Sync section must load when it is shown`);
-    const js = assetNames.filter((n) => n.endsWith(".js"));
-    const reachFrom = (page) => {
-      const reach = new Set();
-      const todo = pageRefs(page)
-        .filter((u) => u.endsWith(".js"))
-        .map((u) => resolve(dirname(resolve(dist, page)), u));
-      while (todo.length) {
-        const f = todo.pop();
-        if (reach.has(f)) continue;
-        reach.add(f);
-        const text = readFileSync(f, "utf8");
-        for (const n of js) if (text.includes(n)) todo.push(resolve(dist, "assets", n));
-      }
-      return [...reach]; // full paths (a page's own scripts beside it included)
-    };
-    const popupReach = reachFrom("popup/index.html");
-    const fromPopup = popupReach.map((f) => basename(f)).filter((n) => /^sync-(?:ui|locale|manage-locale)-/.test(n));
-    if (fromPopup.length) fail(`the popup can load the Sync section (${fromPopup.join(", ")})`);
-    // nor the side panel, which draws the popup's screens
-    const fromPanel = existsSync(resolve(dist, "sidepanel/index.html"))
-      ? reachFrom("sidepanel/index.html")
-          .map((f) => basename(f))
-          .filter((n) => /^sync-(?:ui|locale|manage-locale)-/.test(n))
-      : [];
-    if (fromPanel.length) fail(`the side panel can load the Sync section (${fromPanel.join(", ")})`);
-    if (!popupReach.some((f) => readFileSync(f, "utf8").includes(LOCK_LINE_ID)))
-      fail(
-        `the popup's code has no lock-screen sync line (${LOCK_LINE_ID}) in a build that carries the sync user interface`,
-      );
-    if (code.length === 1 && !reachFrom("options/index.html").includes(resolve(dist, "assets", code[0])))
-      fail(`the settings page cannot load the Sync section chunk ${code[0]}`);
-  }
-  if (prod)
-    console.log(
-      `sync user interface: ${SYNC_UI ? "in" : "out"} (release gate SYNC_UI_IN_STORE_BUILD = ${SYNC_UI_IN_STORE_BUILD})`,
-    );
+  const settings = [...staticImports(htmlScripts("options/index.html"))];
+  if (!settings.some((f) => readFileSync(f, "utf8").includes(RAIL_CSB_ID)))
+    fail(`the settings page's code has no rail line ${RAIL_CSB_ID} (the backup in Chrome sync's)`);
 }
 
 if (errors.length) {
-  console.error(`check-dist (${idDraft ? "ID draft" : flavour}) FAILED:\n - ` + errors.join("\n - "));
+  console.error(
+    `check-dist (${idDraft ? "ID draft" : testBuild ? "test build" : flavour}) FAILED:\n - ` + errors.join("\n - "),
+  );
   process.exit(1);
 }
-console.log(`check-dist (${idDraft ? "ID draft" : flavour}) OK`);
+console.log(`check-dist (${idDraft ? "ID draft" : testBuild ? "test build" : flavour}) OK`);

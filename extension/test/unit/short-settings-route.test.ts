@@ -1,21 +1,13 @@
 // Which leaf of the settings page is shown (src/options/route.ts, SHORT-SETTINGS-NOTES.md): the hash maps to a
 // leaf of a group; every hash the rest of the extension opens still lands where it did; and the rules in the source that make
-// the page show one section at a time, keep the sync section running, move the focus only on a switch, and never hide
-// the install notice for good. The browser's own part (Back and Forward, focus, scrolling) is short-settings.spec.ts's.
+// the page show one section at a time, move the focus only on a switch, and never hide the install notice for good. The
+// browser's own part (Back and Forward, focus, scrolling) is short-settings.spec.ts's. The Sync section is gone from every
+// build (OWNER-DECISIONS/25): #sync names no leaf, and nothing opens it.
 import fc from "fast-check";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  DEFAULT_LEAF,
-  GROUPS,
-  groupOf,
-  groupsOf,
-  leafOfHash,
-  leavesOf,
-  nextPicked,
-  panelOfHash,
-} from "../../src/options/route";
+import { DEFAULT_LEAF, GROUPS, groupOf, LEAVES, leafOfHash, nextPicked, panelOfHash } from "../../src/options/route";
 
 const EXT = resolve(__dirname, "../..");
 const SRC = join(EXT, "src");
@@ -29,17 +21,16 @@ const files = sources().map((p) => ({ path: relative(SRC, p).split("\\").join("/
 const code = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
 const src = (p: string) => files.find((f) => f.path === p)!.text;
 
-const LEAVES = leavesOf(true);
-const STORE = leavesOf(false);
 /** Hashes that are not about leaves: the wizard, the reset, the install notice (App.tsx, InstallNotice.tsx). */
 const NOT_LEAVES = ["#setup", "#setup-restore", "#setup-csb", "#reset", "#install"];
 
 describe("the groups and their leaves", () => {
-  it("five groups in the rail's order, the first leaf being what the group's own link opens; the store build has no Sync", () => {
-    // (Plugins, the sixth, went with the plugin platform: #plugins names no leaf, below)
-    expect(GROUPS.map((g) => g.id)).toEqual(["accounts", "security", "appearance", "sync", "advanced"]);
+  it("four groups in the rail's order, the first leaf being what the group's own link opens; no build has Sync", () => {
+    // (Plugins went with the plugin platform, and Sync with the server sync: #plugins and #sync name no leaf, below)
+    expect(GROUPS.map((g) => g.id)).toEqual(["accounts", "security", "appearance", "advanced"]);
     expect(LEAVES).toEqual([
       "add",
+      "groups", // the owner's report of 2026-11-18: accounts moved into a group many at a time
       "backup",
       "trash",
       "security",
@@ -47,13 +38,11 @@ describe("the groups and their leaves", () => {
       "security-log",
       "autofill", // AUTOFILL2 patch 2: the sites for autofill, a leaf of the Security group
       "appearance",
-      "sync",
       "advanced",
     ]);
-    expect(STORE).not.toContain("sync");
     expect(groupOf("plugins")).toBeUndefined(); // the plugin platform's leaf, removed
+    expect(groupOf("sync")).toBeUndefined(); // the Sync section's, removed
     expect(groupOf("autofill")!.id).toBe("security");
-    expect(groupsOf(false).map((g) => g.id)).toEqual(["accounts", "security", "appearance", "advanced"]);
     expect(groupOf("security-keys")!.id).toBe("security");
     expect(groupOf("trash")!.id).toBe("accounts");
     expect(groupOf("clipboard")).toBeUndefined(); // a panel inside the Appearance leaf, not a leaf
@@ -77,9 +66,11 @@ describe("leafOfHash", () => {
     expect(leafOfHash("#guide", LEAVES)).toBeNull(); // the removed Guide panel's name: the default leaf shows
     expect(leafOfHash("#plugins", LEAVES)).toBeNull(); // the removed Settings › Plugins: the default leaf shows
     expect(leafOfHash("#plugins/add=" + "a".repeat(32), LEAVES)).toBeNull();
+    expect(leafOfHash("#sync", LEAVES)).toBeNull(); // the removed Settings › 同步: the default leaf shows
+    expect(leafOfHash("#sync/join", LEAVES)).toBeNull();
   });
 
-  it("a hash names a leaf by its first word: the popup's, the notice's and the sync section's", () => {
+  it("a hash names a leaf by its first word: the popup's and the notice's", () => {
     const table: [string, string | null][] = [
       ["#add-paste", "add"],
       ["#add-upload", "add"],
@@ -89,8 +80,7 @@ describe("leafOfHash", () => {
       ["#security-log", "security-log"],
       ["#security-keys", "security-keys"],
       ["#security-else", "security"],
-      ["#sync/join", "sync"],
-      ["#sync/anything/else", "sync"],
+      ["#sync/anything/else", null],
       ["#backup", "backup"],
       ["#backup-x", "backup"],
       ["#advanced", "advanced"],
@@ -117,10 +107,11 @@ describe("leafOfHash", () => {
       expect(leafOfHash(h, LEAVES), h).toBeNull();
   });
 
-  it("a leaf the build does not have is not named (a store build has no sync section)", () => {
-    expect(leafOfHash("#sync", STORE)).toBeNull();
-    expect(leafOfHash("#sync/join", STORE)).toBeNull();
-    expect(leafOfHash("#backup", STORE)).toBe("backup");
+  it("a leaf not among those given is not named", () => {
+    const some = LEAVES.filter((l) => l !== "backup");
+    expect(leafOfHash("#backup", some)).toBeNull();
+    expect(leafOfHash("#accounts", some)).toBe("add");
+    expect(leafOfHash("#advanced", some)).toBe("advanced");
   });
 
   it("whatever the hash, the answer is one of the leaves or null", () => {
@@ -177,9 +168,9 @@ describe("every hash the extension opens lands on a leaf or is one the page hand
         "#setup-restore",
         "#setup-csb", // the welcome's restore from Chrome Sync (popup/screens/CsbFound.tsx)
         "#reset",
-        "#sync",
       ]),
     );
+    expect(seen).not.toContain("#sync"); // the popup lock screen's way to the Sync section went with it
     const menu = code(src("popup/main/AddMenu.tsx"));
     expect(menu).toMatch(/openOptions\(`#add-\$\{id\}`\)/);
     expect(code(src("ui/errors.ts"))).toMatch(/"backup" \| "advanced" \| null/);
@@ -196,9 +187,8 @@ describe("every hash the extension opens lands on a leaf or is one the page hand
     }
   });
 
-  it("the rail's 'set a master password' link and the sync section's names of leaves are leaves", () => {
+  it("the rail's 'set a master password' link names a leaf", () => {
     expect(leafOfHash("#security-keys", LEAVES)).toBe("security-keys");
-    expect(leafOfHash("#sync", LEAVES)).toBe("sync");
   });
 });
 
@@ -210,8 +200,9 @@ describe("what is static in the source (the behaviour is the e2e specs')", () =>
     expect(app).not.toMatch(/popstate/);
   });
 
-  it("the rail keeps the release gate's shape: the sync group only where the build has it", () => {
-    expect(app).toMatch(/\.\.\.\(SYNC_UI \? \[\["sync", "syncLabel", "sync"\] as const\] : \[\]\)/);
+  it("the rail has no sync group, and the page no way to the Sync section", () => {
+    expect(app).not.toMatch(/\bsync(?:Label|Rail|Host)\b|SYNC_UI|#sync/);
+    expect(app).toMatch(/\["appearance", "lookTitle", "sun"\],\n {2}\["advanced", "advancedTitle", "sliders"\],/);
   });
 
   it("the few scrollIntoView calls are inside their own leaf or at the page's top", () => {
@@ -224,13 +215,11 @@ describe("what is static in the source (the behaviour is the e2e specs')", () =>
       "options/Backup.tsx", // the error line, in Backup
       "options/FirstRun.tsx", // SetupReady, at the top of Add accounts
       "options/Security.tsx", // the refusal at the top of Password & recovery, brought into view when it comes
-      "options/sync/StatusView.tsx", // the unlock bar's field, at the top of the page
     ]);
   });
 
   it("the page's panels are focusable headings (the focus goes there on a switch)", () => {
     expect(code(src("options/shared.tsx"))).toMatch(/<h2 tabIndex=\{-1\}>\{p\.title\}<\/h2>/);
-    expect(code(src("options/SyncHost.tsx"))).toMatch(/<h2 tabIndex=\{-1\}>\{t\("syncLabel"\)\}<\/h2>/);
   });
 });
 

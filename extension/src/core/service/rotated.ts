@@ -3,8 +3,8 @@
 // box's one-touch "turn back on" right after it reads it (device-admin.ts target(); OWNER-DECISIONS/17 Q3); nothing
 // else does.
 // And each page's own key event of any kind (VaultService.committed: a key change, a new master password, a reset, a new
-// recovery key, shares confirmed; with sync on, the same through the sync engine), its secret typed for it: the keyring's
-// wraps it left and when (never a key adopted, a join or a restore: nobody typed anything for them). The PIN box's
+// recovery key, shares confirmed), its secret typed for it: the keyring's wraps it left and when (never a restore: nobody
+// typed anything for it). The PIN box's
 // "turn back on" of the PIN after a restart reads it: right after this page's own key event, the PIN alone turns it
 // back on (OWNER-DECISIONS/20: "在设置里输一次 PIN 就能重新开启"; pin-restart-admin.ts); nothing else does.
 

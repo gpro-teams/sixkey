@@ -1,10 +1,9 @@
-// The settings page's rail (src/options/Rail.tsx) in both settings of the Sync section's release gate
-// (scripts/sync-ui.mjs, __SYNC_UI__). Closed, as in the store build: no line of the live sync, and in its place the
-// backup in Chrome sync's, in every state its card can be in (csb/model.ts cardView), in a few of the card's and the
-// popup pill's words, with its tone. Open, as in dev and e2e builds: the live sync's line exactly as before, and none
-// of the backup's. In both, the last backup's line keeps its date (lastBackup, as App reads it), but while the backup
-// in Chrome sync runs, no date or an old one is neutral, not amber or red. Rendered by Preact into a minimal document
-// (test/helpers/mini-dom.ts); the store build itself is test/e2e/store-rail.spec.ts's.
+// The settings page's rail (src/options/Rail.tsx), as every build has it since the Sync section went from all of them
+// (OWNER-DECISIONS/25): no line of the live sync, and in its place the backup in Chrome sync's, in every state its card
+// can be in (csb/model.ts cardView), in a few of the card's and the popup pill's words, with its tone. The last backup's
+// line keeps its date (lastBackup, as App reads it), but while the backup in Chrome sync runs, no date or an old one is
+// neutral, not amber or red. Rendered by Preact into a minimal document (test/helpers/mini-dom.ts); the store build
+// itself is test/e2e/store-rail.spec.ts's.
 import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -49,12 +48,10 @@ afterEach(() => {
 type RailProps = {
   lastBackup: number | null;
   csb: { cfg: CsbConfig; st: CsbState } | null;
-  syncLine?: { text: string; tone: "none" | "good" | "warn" | "bad" } | null;
 };
-/** The rail of a build whose gate is `gate`, in `lang`: a fresh copy of its modules, which read the gate. */
-async function railOf(gate: boolean, lang: Lang = "en") {
+/** The rail in `lang`: a fresh copy of its modules. */
+async function railOf(lang: Lang = "en") {
   vi.resetModules();
-  vi.stubGlobal("__SYNC_UI__", gate);
   const i18n = await import("../../src/ui/i18n");
   i18n.setLangChoice(lang);
   await i18n.loadCatalog(async (l) => full[l]);
@@ -163,12 +160,12 @@ describe("the rail's words for the backup in Chrome sync", () => {
   });
 });
 
-describe("the gate closed (the store build): the backup in Chrome sync's line, no live sync's", () => {
+describe("the backup in Chrome sync's line, in every build; no live sync's", () => {
   it("every state of the card, in a few of its words, with its tone; never a line of the live sync", async () => {
-    const draw = await railOf(false);
+    const draw = await railOf();
     const now = Date.now();
     for (const [name, cfg, st] of states(now)) {
-      draw({ lastBackup: null, csb: recs(cfg, st), syncLine: { text: "On", tone: "good" } });
+      draw({ lastBackup: null, csb: recs(cfg, st) });
       const [text, tone] = WANT[name]!;
       expect(root.byId("rail-csb")?.textContent, name).toBe(text);
       expect(byClass("csb")[0]!.getAttribute("class"), name).toBe(`csb ${tone}`);
@@ -181,14 +178,14 @@ describe("the gate closed (the store build): the backup in Chrome sync's line, n
     }
   });
   it("the records not read yet: the line waits, with no tone", async () => {
-    const draw = await railOf(false);
+    const draw = await railOf();
     draw({ lastBackup: null, csb: null });
     expect(root.byId("rail-csb")!.textContent).toBe("…");
     expect(byClass("csb")[0]!.getAttribute("class")).toBe("csb none");
     expect(root.byId("rail-sync")).toBeNull();
   });
   it("in Chinese, the same states in the card's words", async () => {
-    const draw = await railOf(false, "zh_CN");
+    const draw = await railOf("zh_CN");
     const now = Date.now();
     const said = (cfg: Partial<CsbConfig>, st: Partial<CsbState>) => {
       draw({ lastBackup: null, csb: recs(cfg, st) });
@@ -218,14 +215,14 @@ describe("the gate closed (the store build): the backup in Chrome sync's line, n
       ["en", "Browser sync"],
       ["zh_CN", "浏览器同步"],
     ] as const) {
-      const draw = await railOf(false, lang);
+      const draw = await railOf(lang);
       draw({ lastBackup: null, csb: recs({ on: true }, { lastOk: Date.now() - MIN }) });
       expect(rows()[2]![1], lang).toBe(label);
     }
   });
   it("the time goes on while the page is open: how long ago is drawn again", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
-    const draw = await railOf(false);
+    const draw = await railOf();
     draw({ lastBackup: null, csb: recs({ on: true }, { lastOk: Date.now() - 3 * MIN }) });
     expect(root.byId("rail-csb")!.textContent).toBe("Handed over · 3 minutes ago");
     act(() => void vi.advanceTimersByTime(2 * MIN));
@@ -241,7 +238,7 @@ describe("the gate closed (the store build): the backup in Chrome sync's line, n
   });
   it("one timer while the backup is on, however often drawn; none once it is off, or the rail is gone", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
-    const draw = await railOf(false);
+    const draw = await railOf();
     const on = (lastOk: number) => draw({ lastBackup: null, csb: recs({ on: true }, { lastOk }) });
     draw({ lastBackup: null, csb: null });
     expect(vi.getTimerCount()).toBe(0); // the records not read yet
@@ -259,62 +256,23 @@ describe("the gate closed (the store build): the backup in Chrome sync's line, n
   });
 });
 
-describe("the gate open: the backup in Chrome sync's line is not drawn, so it keeps no timer", () => {
-  it("none, the backup on and drawn again", async () => {
-    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
-    const draw = await railOf(true);
-    for (let i = 0; i < 3; i++) draw({ lastBackup: null, csb: recs({ on: true }, { lastOk: Date.now() - MIN }) });
-    act(() => void vi.advanceTimersByTime(2 * MIN));
-    expect(vi.getTimerCount()).toBe(0);
-    expect(root.byId("rail-csb")).toBeNull();
-  });
-});
-
-describe("the gate open (dev and e2e builds): the live sync's line exactly as before, none of the backup's", () => {
-  it("off, not known yet, and the section's line with its tone, whatever the backup in Chrome sync does", async () => {
-    const draw = await railOf(true);
+describe("the last backup's line: its own date, no reminder while the backup in Chrome sync runs", () => {
+  it("never, an old date and a recent one, in every state", async () => {
+    const draw = await railOf();
     const now = Date.now();
-    for (const [name, cfg, st] of states(now)) {
+    for (const [name, cfg, st, runs] of states(now)) {
       const csb = recs(cfg, st);
       draw({ lastBackup: null, csb });
-      expect(root.byId("rail-sync")?.textContent, name).toBe("Off · this device");
-      expect(byClass("sync")[0]!.getAttribute("class"), name).toBe("sync");
-      expect(root.byId("rail-csb"), name).toBeNull();
-      expect(byClass("csb"), name).toEqual([]);
-      expect(
-        rows().map((r) => r[1]),
-        name,
-      ).toEqual(["Accounts", "Last backup", "Sync"]);
-      draw({ lastBackup: null, csb, syncLine: null });
-      expect(root.byId("rail-sync")?.textContent, name).toBe("…");
-      expect(byClass("sync")[0]!.getAttribute("class"), name).toBe("sync");
-      for (const tone of ["none", "good", "warn", "bad"] as const) {
-        draw({ lastBackup: null, csb, syncLine: { text: "On · 2 devices", tone } });
-        expect(root.byId("rail-sync")?.textContent, name).toBe("On · 2 devices");
-        expect(byClass("sync")[0]!.getAttribute("class"), name).toBe(`sync ${tone}`);
-      }
+      expect(freshClass(), `${name}, never`).toBe(runs ? "fresh none" : "fresh bad");
+      expect(rows()[1]![2], name).toBe("Never");
+      draw({ lastBackup: now - 8 * DAY, csb });
+      expect(freshClass(), `${name}, 8 days`).toBe(runs ? "fresh none" : "fresh warn");
+      expect(rows()[1]![2], name).toBe("8 days ago");
+      draw({ lastBackup: now - DAY, csb });
+      expect(freshClass(), `${name}, a day`).toBe("fresh good");
     }
+    // the records not read yet: as before, a reminder
+    draw({ lastBackup: null, csb: null });
+    expect(freshClass()).toBe("fresh bad");
   });
-});
-
-describe("the last backup's line: its own date, no reminder while the backup in Chrome sync runs", () => {
-  for (const gate of [false, true])
-    it(`never, an old date and a recent one, in every state (gate ${gate ? "open" : "closed"})`, async () => {
-      const draw = await railOf(gate);
-      const now = Date.now();
-      for (const [name, cfg, st, runs] of states(now)) {
-        const csb = recs(cfg, st);
-        draw({ lastBackup: null, csb });
-        expect(freshClass(), `${name}, never`).toBe(runs ? "fresh none" : "fresh bad");
-        expect(rows()[1]![2], name).toBe("Never");
-        draw({ lastBackup: now - 8 * DAY, csb });
-        expect(freshClass(), `${name}, 8 days`).toBe(runs ? "fresh none" : "fresh warn");
-        expect(rows()[1]![2], name).toBe("8 days ago");
-        draw({ lastBackup: now - DAY, csb });
-        expect(freshClass(), `${name}, a day`).toBe("fresh good");
-      }
-      // the records not read yet: as before, a reminder
-      draw({ lastBackup: null, csb: null });
-      expect(freshClass()).toBe("fresh bad");
-    });
 });

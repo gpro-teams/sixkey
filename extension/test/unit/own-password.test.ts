@@ -1,8 +1,9 @@
 // The master password is the user's own (OWNER-DECISIONS/15; docs/design/notes/OWN-PASSWORD-NOTES.md):
 //   §1 below 50 bits is a warning with "Use anyway" (masterAccepts, meterView's own mode), the service's floor still blocks,
-//      generated passwords are handled as before, backup files and the sync key operations keep the bar;
+//      generated passwords are handled as before, backup files keep the bar;
 //   §2 new master-password wraps at PBKDF2_PASSWORD_WRAP_ITERATIONS; a 600k wrap still opens and is re-wrapped only by the
-//      next password change, never by an unlock; the PIN, backup files and the sync engine keep 600k;
+//      next password change, never by an unlock; the PIN and backup files keep 600k (the server sync's engine, which
+//      kept it too, went with its client: OWNER-DECISIONS/25, DV-0b);
 //   §3 the lock screen's line for a PIN that needs the master password once: its conditions, never in a shared profile,
 //      and no read more than before.
 // The page's own wiring (the warning, the toggle, the order) is own-password-dom.test.ts's; the browser's is
@@ -27,7 +28,6 @@ import { restartOffer } from "../../src/core/service/pin-restart-count";
 import { notePassword as pinStepsNote, unlock as pinStepsUnlock } from "../../src/core/service/pin-restart-steps";
 import { ServiceError } from "../../src/core/service/service-error";
 import { VaultService } from "../../src/core/service/service";
-import { newBundleAuth } from "../../src/core/sync/crypto/keybundle";
 import { emptyVault } from "../../src/core/vault/model";
 import { createRuntime } from "../../src/platform/runtime";
 import { buildRuntime, createPopupRuntime } from "../../src/platform/runtime-base";
@@ -45,8 +45,6 @@ import {
   suggestPassword,
   type Strength,
 } from "../../src/ui/strength";
-import { changePassword as syncChangePassword } from "../../src/core/sync/engine/keys";
-import { EMAIL, firstDevice, joinDevice, World } from "../helpers/m3-world";
 import { codeOf, legacyDeviceVault, NO_PAGE, resetWithCode, STRONG } from "../helpers/vaults";
 
 const SRC = join(__dirname, "../../src");
@@ -356,23 +354,18 @@ describe("§1 below 50 bits: a warning and 'Use anyway', never the floor", () =>
     ]);
   });
 
-  it("backup files and the sync key operations keep the bar: no 'Use anyway' reaches them", () => {
+  it("backup files keep the bar: no 'Use anyway' reaches them", () => {
     const backup = read("options/Backup.tsx");
     expect(backup).not.toMatch(/anyway|masterAccepts/);
     expect(backup.match(/if \(!\(await measure\((pw|subPw)\)\)\.ok\) throw/g)).toHaveLength(2);
-    const sync = read("options/sync/ManageViews.tsx");
-    expect(sync).not.toMatch(/anyway|masterAccepts/);
-    expect(sync).toMatch(/strength\?\.ok === true/);
-    // the service-level floors stay where they were
+    // (the Sync section's key operations, which kept it too, are gone from every build with the server sync's client:
+    // OWNER-DECISIONS/25, DV-0b) the service-level floor stays where it was
     expect(read("core/backup/backup.ts")).toMatch(/if \(!checkPasswordPolicy\(password\)\.ok\) throw new BackupError/);
-    expect(
-      read("core/sync/engine/keys.ts").match(/checkPasswordPolicy\([^)]*\)\.ok\) throw new KeyOpError/g),
-    ).toHaveLength(2);
   });
 });
 
 describe("§2 new master-password wraps at the new count; older ones still open; the rest at 600k", () => {
-  it("the counts: the new one within the read-time range; the default (PIN, backup files, sync) unchanged", () => {
+  it("the counts: the new one within the read-time range; the default (PIN, backup files) unchanged", () => {
     expect(PBKDF2_PASSWORD_WRAP_ITERATIONS).toBe(2_000_000);
     expect(PBKDF2_DEFAULT_ITERATIONS).toBe(600_000);
     expect(PBKDF2_MIN_ITERATIONS).toBe(600_000);
@@ -450,27 +443,14 @@ describe("§2 new master-password wraps at the new count; older ones still open;
     expect(read("core/service/pin-admin.ts")).toMatch(/newPinKdf\(this\.s\["rng"\], this\.s\["iterations"\]\)/);
   });
 
-  it("the sync engine is decoupled: its wraps, rotations and pw_auth keep the 600k default", async () => {
-    // the calls the engine makes (keys.ts: { now, rng } only), and its auth
+  it("only the service's own key operations name the new count: the keyring's default wraps keep 600k", async () => {
+    // a wrap made without the service's count (what the PIN's and the backup file's paths rely on) is at the default
     const { keyring, vk } = await createKeyring();
     const rng = (n: number) => crypto.getRandomValues(new Uint8Array(n));
     const now = () => 1_800_000_000_000;
     expect(wrapIterations(await setPassword(keyring, vk, STRONG, { now, rng }))).toBe(600_000);
     expect(wrapIterations((await rekey(keyring, vk, STRONG, { now, rng })).keyring)).toBe(600_000);
-    const auth = newBundleAuth(newPbkdf2Params().salt);
-    expect(auth.kdf.iterations).toBe(600_000);
-    const keys = read("core/sync/engine/keys.ts");
-    const calls = keys.match(/\b(?:setPassword|rekey)\([^;]*?\{[^}]*\}\)/gs) ?? [];
-    expect(calls).toHaveLength(3);
-    for (const c of calls) expect(c, c).not.toMatch(/iterations|PBKDF2_PASSWORD_WRAP_ITERATIONS/);
-    expect(read("core/sync/crypto/keybundle.ts")).toMatch(/const kdf = newPbkdf2Params\(rng\);/);
-    // only the service's own key operations name the new count
-    for (const f of [
-      "core/sync/engine/keys.ts",
-      "core/sync/crypto/keybundle.ts",
-      "core/crypto/pin.ts",
-      "core/backup/backup.ts",
-    ])
+    for (const f of ["core/crypto/pin.ts", "core/backup/backup.ts"])
       expect(read(f), f).not.toMatch(/PBKDF2_PASSWORD_WRAP_ITERATIONS/);
     expect(read("core/service/service.ts")).toMatch(
       /iterations: this\.iterations \?\? PBKDF2_PASSWORD_WRAP_ITERATIONS/,
@@ -487,30 +467,6 @@ describe("§2 new master-password wraps at the new count; older ones still open;
     const naming = files.filter((f) => /kdfIterations/.test(read(f)));
     expect(naming).toEqual(["core/service/service-core.ts"]); // its declaration and the constructor's one read
     expect(read("core/service/service-core.ts").match(/kdfIterations/g)).toHaveLength(2);
-  });
-});
-
-describe("§2 with sync: the 2M wrap travels, the engine's own wraps stay at 600k", () => {
-  it("the first upload publishes the local 2M wrap, a join opens it, and a change through sync wraps at 600k", async () => {
-    const w = new World();
-    w.productionKdf = true; // the service's own count, as shipped (the sync suites pin 600k: m3-world.ts)
-    const a = await firstDevice(w, ["GitHub"]);
-    await a.engine.round();
-    const bundle = () =>
-      JSON.parse(w.server.account(EMAIL).vault!.bundle) as { keyring: Keyring; auth: { kdf: { iterations: number } } };
-    expect(wrapIterations((await a.generation()).keyring)).toBe(2_000_000);
-    expect(wrapIterations(bundle().keyring)).toBe(2_000_000); // inside the contract's 600k to 20M
-    expect(bundle().auth.kdf.iterations).toBe(600_000); // pw_auth: the engine's, unchanged
-    const b = await joinDevice(w, "B");
-    await b.engine.round();
-    expect(await opens((await b.generation()).keyring, w.password)).toBe(true);
-    // the engine's change of password: its own count, as before this change
-    const next = "violet-harbour-cinder-93";
-    await syncChangePassword(a.engine, w.password, next);
-    expect(wrapIterations(bundle().keyring)).toBe(600_000);
-    expect(bundle().auth.kdf.iterations).toBe(600_000);
-    expect(wrapIterations((await a.generation()).keyring)).toBe(600_000);
-    expect(await opens((await a.generation()).keyring, next)).toBe(true);
   });
 });
 

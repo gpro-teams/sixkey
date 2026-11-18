@@ -355,11 +355,21 @@ describe("the security log on its own", () => {
     expect(kv.data.get(SECURITY_LOG_KEY)).toEqual(before);
   });
 
-  it("the sync kinds are kept like the others: keys adopted, and keys this device committed before adopted back", async () => {
-    const { log } = make();
-    await log.append("keys_adopted");
-    await log.append("keys_adopted_back");
-    expect(await kindsOldestFirst(log)).toEqual(["keys_adopted", "keys_adopted_back"]);
+  it("the server sync's kinds, no kinds since its client went (DV-0b), are kept in a record that has them, like a newer version's", async () => {
+    const kv = new MemoryKV();
+    const { log } = make(kv);
+    kv.data.set(SECURITY_LOG_KEY, {
+      v: 2,
+      entries: [
+        { at: 1, kind: "keys_adopted" },
+        { at: 2, kind: "keys_adopted_back" },
+      ],
+      failed: 0,
+    });
+    await log.append("unlock_failed");
+    const kinds = await kindsOldestFirst(log);
+    expect(kinds).toHaveLength(3);
+    expect(kinds).toEqual(expect.arrayContaining(["keys_adopted", "keys_adopted_back", "unlock_failed"]));
   });
 
   // the form: a lower-case ASCII letter, then lower-case ASCII letters and underscores, 1 to 32 in all

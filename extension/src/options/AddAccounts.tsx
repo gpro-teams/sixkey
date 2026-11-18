@@ -49,6 +49,13 @@ const reason = (r: string) => t(REASONS[r] ?? "rMalformed");
 
 const hasFiles = (dt: DataTransfer | null) => !!dt && Array.from(dt.types ?? []).includes("Files");
 
+/**
+ * Whether Add deletes a file itself: a file of otpauth links only (file-formats.ts "links"), not an image, every entry of
+ * which is added. Any other format may hold what Sixkey never reads (a password column, a password manager's logins).
+ */
+const deletesItself = (o: { source: Source; left: number }): boolean =>
+  o.left === 0 && !o.source.image && o.source.out.kind === "accounts" && o.source.out.format === "links";
+
 export function AddAccounts({ rt, vault, status, reload }: Ctx) {
   const [text, setText] = useState("");
   const [sources, setSources] = useState<Source[]>([]);
@@ -151,6 +158,14 @@ export function AddAccounts({ rt, vault, status, reload }: Ctx) {
   // itself; the files' accounts follow the box's lines, in the order the files were chosen.
   const plan = useMemo(() => planSettings(text, lines, existing, columns), [text, lines, existing, columns]);
   const hasInput = text.trim().length > 0 || lines.length > 0;
+  // the files Add will delete (add() above): every entry of theirs is added, and the browser gave their handle
+  const autoDelete = useMemo(
+    () =>
+      offerDelete(sources, plan.add, columns)
+        .filter((o) => deletesItself(o) && o.source.handle?.requestPermission)
+        .map((o) => o.source.name),
+    [sources, plan, columns],
+  );
 
   async function readImages(files: File[]) {
     setError(null);
@@ -170,6 +185,20 @@ export function AddAccounts({ rt, vault, status, reload }: Ctx) {
     const adding = plan.add;
     const from = sources;
     const cols = columns;
+    // A file of links only, every one of which is added now, is deleted once they are written (the owner's report of
+    // 2026-11-18: the file of keys was left behind). Chrome lets Sixkey change a file only after its own prompt, in a
+    // click: asked here, first thing, for those files only. Any other file keeps its question (Keep, then Delete): one
+    // with entries not added, and every other format, whose other columns or fields (a password) Sixkey never read.
+    const offer = offerDelete(from, adding, cols);
+    const asked = new Map<Source["id"], Promise<string>>();
+    for (const o of offer) {
+      const h = o.source.handle;
+      if (!deletesItself(o) || !h?.requestPermission) continue;
+      asked.set(
+        o.source.id,
+        h.requestPermission({ mode: "readwrite" }).catch(() => "denied"),
+      );
+    }
     setBusy(true);
     setError(null);
     try {
@@ -177,7 +206,6 @@ export function AddAccounts({ rt, vault, status, reload }: Ctx) {
       setDone(t("addedN", adding.length));
       // Only a file that brought in at least one of the accounts just added is offered for deletion, saying what
       // deleting it would lose (its entries not imported) and which of its accounts cannot make codes yet (HOTP).
-      const offer = offerDelete(from, adding, cols);
       setAsks((cur) => [
         ...cur.filter((a) => a.state === "ask" || a.state === "busy"),
         ...offer.map(({ source: s, left, hotp }) => ({
@@ -187,9 +215,15 @@ export function AddAccounts({ rt, vault, status, reload }: Ctx) {
           seen: s.seen,
           left,
           hotp,
-          state: "ask" as const,
+          state: asked.has(s.id) ? ("busy" as const) : ("ask" as const),
         })),
       ]);
+      // the files asked for above: deleted once allowed, as Delete file does (unchanged since read, that file only)
+      for (const [id, allowed] of asked) {
+        const o = offer.find((x) => x.source.id === id)!;
+        const outcome = (await allowed) === "granted" ? await deletePicked(o.source.handle, o.source.seen) : "denied";
+        setAsks((cur) => cur.map((x) => (x.id === id ? { ...x, state: outcome } : x)));
+      }
       clearInput();
       await reload();
     } catch (e) {
@@ -309,6 +343,12 @@ export function AddAccounts({ rt, vault, status, reload }: Ctx) {
           <Icon name="check" size={15} />
           {done}
         </div>
+      )}
+      {autoDelete.length > 0 && (
+        <p class="muted" id="add-del-note">
+          <Icon name="trash" size={14} />
+          {t("delAuto", autoDelete.join(", "))}
+        </p>
       )}
       <div class="row2">
         <button

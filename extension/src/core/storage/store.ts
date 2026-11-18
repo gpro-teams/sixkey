@@ -14,10 +14,9 @@
 //   after a password change) first writes sk_keychange, before it commits. transact() does this by itself whenever the
 //   keyring changes (compared as canonicalJson: a new key, a device key gone, a new password or recovery wrap of the same
 //   key) and when it overwrites lost data. A write that leaves such material without changing the keyring (M2: the
-//   previous-VK fallback in openVault, and only that) must go through transact with { keyChange: true }. applyRemote does
-//   not: it writes under the current key with the keyring unchanged byte for byte, into the other slot, so it only ever
-//   overwrites old material, never makes any (SYNC-DESIGN §0.0i item 2, revision 12; a merge that changes the keyring,
-//   R3, goes through commitKeys and gets the marker from the keyring change).
+//   previous-VK fallback in openVault, and only that) must go through transact with { keyChange: true }. (The server
+//   sync's applyRemote did not: it wrote under the current key with the keyring unchanged byte for byte, SYNC-DESIGN
+//   §0.0i item 2, revision 12; that sync's client is gone, DV-0b.)
 //   - The marker is changed only by finishKeyChange(), in the same locked step that checked the copies. Once this store
 //     is clean (every copy under the current key, or rewritten to be) it becomes a mirror-only marker; once the mirror
 //     is clean too it is removed. A full marker means "check at the next open or unlock"; a mirror-only one, "check the
@@ -39,18 +38,22 @@
 //   lost vault, after the user typed DELETE; a join that crashed before its cleanup) is dropped, and counts as stale, so
 //   a cleanup does run for it. A record in a newer format is never deleted.
 //
-// Sync (SYNC-DESIGN §3.13, §4.6, M2). The store knows nothing of sync; three hooks carry it:
+// Sync (SYNC-DESIGN §3.13, §4.6, M2). The store knows nothing of sync; three hooks carried the server sync's (its client
+// is gone, DV-0b), and the backup in Chrome sync uses the first and the last:
 //   - beforeRecoveryWrite (a StoreOptions hook, D1): called inside the lock before every write that makes the active state
 //     something else than what was last committed or replaces lost data: recover() moving the pointer (a damaged or lost
 //     pointer write, a newer slot) or rolling back an unfinished key change (FIXa2), writeBoth (rebuilt from a snapshot or
 //     the mirror), the decrypt fallback's write, and any transact over lost data (there before the caller's function
-//     runs, M3). The sync layer clears lastSynced there and keeps the outbox as the orphan (SYNC-DESIGN §4.7, revision
-//     19), so an older local state is never uploaded without a merge. A hook that throws stops the write.
+//     runs, M3). The server sync cleared lastSynced there and kept the outbox as the orphan (SYNC-DESIGN §4.7, revision
+//     19); the backup in Chrome sync marks its link held there (platform/runtime-base.ts), so an older local state is
+//     never written over a newer copy without a merge. A hook that throws stops the write.
 //     Redundancy heals (the other slot, the keyring copy, the mirror, a missing snapshot) do not call it: they change
 //     nothing the next open shows.
 //   - transact's ensureCurrentSnapshot (§4.4, F11): before a changing write, the state it replaces is made the newest
-//     rolling snapshot if it is not already (applyRemote). Not redundancy: a failure fails the write.
-//   - transact's afterCommit (D2): runs after the commit, still inside the lock (the outbox). Guarded like the
+//     rolling snapshot if it is not already (the server sync's applyRemote; no caller since DV-0b). Not redundancy: a
+//     failure fails the write.
+//   - transact's afterCommit (D2): runs after the commit, still inside the lock (the settings page's message about the
+//     generation it wrote, for the backup in Chrome sync; the server sync's outbox was the other). Guarded like the
 //     redundancy writes: a committed save never reports a failure. It must not start a cleanup (the lock is not
 //     re-entrant) or touch the network.
 import { CryptoError, randomBytes } from "../crypto/bytes";
@@ -99,9 +102,15 @@ export type TransactOptions = {
   overwriteLost?: boolean;
   /** The write leaves material that an old secret opens although the keyring is unchanged: write the marker (store.ts top). */
   keyChange?: boolean;
-  /** Before a write that changes the data, make the state it replaces the newest rolling snapshot (applyRemote, §4.6). */
+  /**
+   * Before a write that changes the data, make the state it replaces the newest rolling snapshot (§4.6: the server sync's
+   * applyRemote used it; no caller since its client went, DV-0b).
+   */
   ensureCurrentSnapshot?: boolean;
-  /** After the commit, inside the lock, guarded (the sync outbox, D2). Gets the generation just committed. */
+  /**
+   * After the commit, inside the lock, guarded (D2): the settings page's message about the generation it wrote, for the
+   * backup in Chrome sync. Gets the generation just committed.
+   */
   afterCommit?: (gen: Generation) => Promise<void>;
   /** A notice for the user, recorded after the commit (a cloud restore, §4.13). Guarded. */
   event?: { kind: StorageEventKind; restoredTo: number; detail: string };
@@ -131,8 +140,9 @@ export type StoreOptions = {
   /** Non-fatal problems (a failed mirror write, a snapshot that could not be pruned). Never contains key material. */
   onDiag?: (message: string, err?: unknown) => void;
   /**
-   * Called inside the lock before every recovery write (see the top of this file; SYNC-DESIGN §3.13, D1). The sync layer
-   * clears lastSynced and the outbox here. It must not call the store. A throw stops the recovery write.
+   * Called inside the lock before every recovery write (see the top of this file; SYNC-DESIGN §3.13, D1). The backup in
+   * Chrome sync marks its link held here (platform/runtime-base.ts). It must not call the store. A throw stops the
+   * recovery write.
    */
   beforeRecoveryWrite?: () => Promise<void>;
 };
@@ -635,9 +645,8 @@ export class VaultStore {
     if (cur.status === "lost" && !opts.overwriteLost)
       throw new StorageError("lost_needs_confirm", "stored data is unreadable; refusing to overwrite it");
     const prev = cur.status === "ok" ? cur.gen : null;
-    // Replacing lost data is a recovery write (D1), and its hook runs before the caller's function: a flow writing over
-    // lost data (the cloud restore) clears its own sync state inside that function, and the hook must find the outbox of
-    // the lost generation first (SYNC-DESIGN §4.7, revision 19: kept as the orphan, never deleted).
+    // Replacing lost data is a recovery write (D1), and its hook runs before the caller's function, so that function finds
+    // what the hook did already done (the server sync's cloud restore relied on that, SYNC-DESIGN §4.7, revision 19).
     if (cur.status === "lost") await this.beforeRecovery();
     const info: TransactInfo = {
       cleanupPending: async () => {
@@ -663,7 +672,8 @@ export class VaultStore {
     if (!(await checkGeneration(gen)))
       throw new StorageError("verify_failed", "refusing to write an inconsistent generation");
     const changed = !prev || prev.envelope.checksum !== gen.envelope.checksum;
-    // The state being replaced is kept as the newest rolling snapshot before anything is written (applyRemote, F11).
+    // With ensureCurrentSnapshot, the state being replaced is kept as the newest rolling snapshot before anything is
+    // written (F11).
     // It normally is already (every changing commit adds one); a failure to make sure fails the write.
     if (opts.ensureCurrentSnapshot && prev && changed) await this.ensureSnapshotOf(prev);
     // The decrypt fallback's restore: a recovery write (D1). Over lost data the hook already ran, above.

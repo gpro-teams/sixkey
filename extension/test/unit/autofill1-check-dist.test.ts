@@ -439,7 +439,7 @@ describe("check-dist: the three chrome.scripting calls, as built (the review's m
     [
       "executeScript in the popup's code",
       (d) => editText(d, popupChunk(d), (t) => `${t}\nchrome.scripting.executeScript({target:{tabId:1},func:()=>1});`),
-      /outside the worker and the Fill chunk/,
+      /outside the worker, the Fill chunk and the page-user chunk/,
     ],
     [
       // (AUTOFILL2 patch 3 registers one content script: a second registration call is refused)

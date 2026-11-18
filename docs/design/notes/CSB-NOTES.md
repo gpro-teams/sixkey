@@ -103,7 +103,7 @@ one in any order.
 | `AREA_MARGIN` | 256 B | kept free of the whole area |
 | `ROOM_BYTES` | 102,144 B | the most one slot, or all of them together, may take |
 | `MAX_CHUNKS` | 13 | the most chunks a slot has (thirteen full chunks are past the room) |
-| `EMPTY_BELOW` | 256 | a vault's ciphertext shorter than this is an empty vault's (rule 1) |
+| `EMPTY_BELOW` | 256 | a vault's ciphertext shorter than this is an empty vault's (no longer used by the write rule since 2026-11-17) |
 | `MAX_MINE` | 16 | how many of the slot ids it created a link remembers |
 | `SOON_MS` | 30 s | the debounce: a write this long after the last change (5 s in the e2e build) |
 | `MAX_WAIT_MS` | 5 min | the debounce's ceiling after the first of changes that keep coming |
@@ -124,7 +124,7 @@ the store reads it with no key (its save counter, envelope checksum, vault id, k
 
 | # | When | Then |
 |---|---|---|
-| 1 | the vault is empty and no slot of this vault exists yet | skip: a new, empty device never writes (an empty vault's ciphertext is at most 168 characters, one entry makes it 356, so below 256 is empty, with no key) |
+| 1 | (none since 2026-11-17) | an empty vault is written like any other, so a second computer finds it as soon as the master password is set; it used to be skipped, and a second computer then offered a new master password instead of the restore |
 | 2 | no link (never written, or the record did not check out) | a new slot |
 | 3 | the link is held (the store fell back to an older copy, or rule 7 held it) | hold, until a page merges the slot |
 | 4 | its own slot is absent (Chrome's "Clear data", an uninstall elsewhere, a merge's removal) | write it again under the same id |
@@ -265,8 +265,8 @@ Held by source rules (`test/unit/source-rules.test.ts`) and by check-dist:
   of Settings › Backup at 1400 × 900, in every state (`test/e2e/csb-card-visual.spec.ts`).
 - **First run's box** (`src/options/csb/CsbFirstRun.tsx` `CsbBox`): "自动备份到 Chrome 同步（推荐）" at the last step of every
   first run (a new vault, starting over, a restore from a file or from Chrome Sync), ticked when the profile is "only
-  me", cleared for a shared one, with the cost line beside it. Ticked, the backup is turned on after "完成" (an empty
-  vault is never written); cleared, it is recorded as turned off (`declined`), so the popup's one click does not turn it
+  me", cleared for a shared one, with the cost line beside it. Ticked, the backup is turned on after "完成" and the
+  vault is handed over at once, empty or not; cleared, it is recorded as turned off (`declined`), so the popup's one click does not turn it
   on later; a shared profile's box, never ticked, records nothing. A vault that already exists is never turned on by
   itself.
 - **The copy found, and the restore.** On a new install, first run reads Chrome Sync keyless and read only, and a whole

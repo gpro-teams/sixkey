@@ -294,20 +294,21 @@ describe("password changes and key rotation", () => {
     await w.svc.unlockWithRecoveryCode(r2.recoveryCode);
     expect(aliveEntries((await w.svc.read()).vault)).toHaveLength(1);
   });
-  it("forgot the password: the recovery code sets a new one and issues a new code", async () => {
+  it("forgot the password: the recovery code sets a new one and keeps working itself (owner, 2026-11-18)", async () => {
     const w = await protectedWorld();
     await w.svc.lock();
     await expect(resetWithCode(w.svc, "0000-0000-0000-0000-0000-0000-00VM", STRONG2)).rejects.toMatchObject({
       code: "wrong_secret",
     });
     const r = await resetWithCode(w.svc, w.code, STRONG2);
-    expect(r).not.toBe(w.code);
+    expect(r).toBe(w.code);
     expect((await w.svc.status()).state).toBe("unlocked");
     await w.svc.lock();
     await expect(w.svc.unlockWithPassword(STRONG)).rejects.toMatchObject({ code: "wrong_secret" });
     await w.svc.unlockWithPassword(STRONG2);
     await w.svc.lock();
-    await expect(w.svc.unlockWithRecoveryCode(w.code)).rejects.toMatchObject({ code: "wrong_secret" });
+    await w.svc.unlockWithRecoveryCode(w.code);
+    expect((await w.svc.status()).state).toBe("unlocked");
   });
   it("a fresh recovery code replaces the old one", async () => {
     const w = await protectedWorld();

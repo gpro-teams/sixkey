@@ -32,7 +32,49 @@ const byTier = (rows: Row[]) => [
 ];
 
 /** What the search looks in: the name, the account, the group and the registered sites. */
-const searchText = (e: Entry) => `${e.issuer} ${e.label} ${e.group ?? ""} ${(e.domains ?? []).join(" ")}`.toLowerCase();
+const searchText = (e: Entry) =>
+  `${e.issuer} ${e.label} ${e.group ?? ""} ${(e.domains ?? []).join(" ")} ${e.note ?? ""}`.toLowerCase();
+
+/** An account's name as sameNames compares it: issuer and account, case and outer spaces aside. */
+export const nameKey = (e: Pick<Entry, "issuer" | "label">): string =>
+  `${e.issuer.trim().toLowerCase()}\n${e.label.trim().toLowerCase()}`;
+
+/**
+ * A section's rows with the accounts of one name side by side, at the first of them (the owner's report of 2026-11-18:
+ * same-name accounts together, framed; List draws the frame). Only the display moves: the vault's order is untouched.
+ */
+export function sameTogether(rows: Row[]): Row[] {
+  const by = new Map<string, Row[]>();
+  for (const r of rows) {
+    const k = nameKey(r.entry);
+    by.set(k, [...(by.get(k) ?? []), r]);
+  }
+  const out: Row[] = [];
+  const done = new Set<string>();
+  for (const r of rows) {
+    const k = nameKey(r.entry);
+    if (done.has(k)) continue;
+    done.add(k);
+    out.push(...by.get(k)!);
+  }
+  return out;
+}
+
+/**
+ * The accounts whose name (issuer and account, case aside) another account has too, each with its number among them in
+ * the list's order (1, 2, …): the owner's report of 2026-11-18, two "NbdPay OTC / admin" with different keys looked the
+ * same. The list marks them; a note (Entry.note) tells them apart in the person's own words.
+ */
+export function sameNames(entries: readonly Entry[]): Map<string, number> {
+  const by = new Map<string, string[]>();
+  for (const e of entries) {
+    const k = nameKey(e);
+    by.set(k, [...(by.get(k) ?? []), e.id]);
+  }
+  const out = new Map<string, number>();
+  for (const ids of by.values()) if (ids.length > 1) ids.forEach((id, i) => out.set(id, i + 1));
+  return out;
+}
 
 /**
  * Entries matching the search `q` (already normalized), each with how it belongs to `host`. While searching, site matches
@@ -47,6 +89,40 @@ export function filterRows(entries: Entry[], q: string, host: string | null, ali
     return { entry, tier: note ? "related" : tier, note };
   });
   return q ? byTier(mapped) : mapped;
+}
+
+/**
+ * Whether an account is the one the page's user name box names (platform/page-user.ts): its label equals it, or the
+ * part of either before an "@" equals the other, case aside. An empty user name names none.
+ */
+export function namesUser(e: Pick<Entry, "label">, user: string | null): boolean {
+  const u = (user ?? "").trim().toLowerCase();
+  const l = e.label.trim().toLowerCase();
+  if (!u || !l) return false;
+  const local = (s: string) => (s.includes("@") ? s.slice(0, s.indexOf("@")) : s);
+  return l === u || local(l) === u || local(u) === l;
+}
+
+/**
+ * The site's rows, those used more often in this browser first (`uses`: id → times, ./uses.ts), the others in their order
+ * (the owner's question of 2026-11-18). Only the site's sections are sorted so: the groups keep the list's order.
+ */
+export function byUse(rows: Row[], uses: Readonly<Record<string, number>>): Row[] {
+  const n = (r: Row) => {
+    const v = uses[r.entry.id];
+    return typeof v === "number" && Number.isFinite(v) ? v : 0;
+  };
+  return rows
+    .map((r, i) => ({ r, i, n: n(r) }))
+    .sort((a, b) => b.n - a.n || a.i - b.i)
+    .map((x) => x.r);
+}
+
+/** The site's rows (registered, related) with the account the page's user name names first; nothing else moves. */
+export function userFirst(rows: Row[], user: string | null): Row[] {
+  if (!user) return rows;
+  const hit = rows.filter((r) => r.tier && namesUser(r.entry, user));
+  return hit.length ? [...hit, ...rows.filter((r) => !hit.includes(r))] : rows;
 }
 
 /** Rows by name: the name shown in bold (issuer, else label), then the label, then the id so the order is total. */
@@ -113,4 +189,35 @@ export function appendDomain(list: readonly string[] | undefined, d: string): st
   const cur = [...(list ?? [])];
   if (cur.includes(d)) return cur;
   return cur.length >= LIMITS.domains ? "too_many" : [...cur, d];
+}
+
+/** The first word of an issuer ("DynastyX-Admin": "DynastyX"; "Amazon Web Services": "Amazon"; "乐支付": itself). */
+const firstWord = (issuer: string): string => issuer.trim().split(/[\s\-_.:|/()·,，]+/)[0] ?? "";
+
+/**
+ * Grouping by name in one click (the owner's report of 2026-11-18: 57 accounts, many of one service): the accounts in no
+ * group whose issuer starts with the same word as another such account's (case aside), each with the group it goes in: a
+ * group already named so (any case), else their issuer when they all share it, else that word; cut to the longest group
+ * name. Accounts already in a group are never moved, and a service with one account makes no group.
+ */
+export function autoGroups(entries: readonly Entry[]): Map<string, string> {
+  const free = new Map<string, Entry[]>();
+  const named = new Map<string, string>(); // the groups there are, by their name in lower case
+  for (const e of entries) {
+    if (e.group) named.set(e.group.toLowerCase(), e.group);
+    else {
+      const w = firstWord(e.issuer).toLowerCase();
+      if (w) free.set(w, [...(free.get(w) ?? []), e]);
+    }
+  }
+  const out = new Map<string, string>();
+  for (const [w, list] of free) {
+    const issuer = list[0]!.issuer.trim();
+    const same = list.every((e) => e.issuer.trim().toLowerCase() === issuer.toLowerCase());
+    const there = named.get(w) ?? (same ? named.get(issuer.toLowerCase()) : undefined);
+    if (!there && list.length < 2) continue;
+    const name = (there ?? (same ? issuer : firstWord(issuer))).slice(0, LIMITS.group);
+    for (const e of list) out.set(e.id, name);
+  }
+  return out;
 }

@@ -1,12 +1,12 @@
-# The settings page's rail in a build without the Sync section (scripts/sync-ui.mjs): in place of the live sync's line,
-# the backup in Chrome's sync storage, in a few of the words its card (catalogs/csb-<lang>.json) and the popup's pill
-# (catalogs/csb-popup-<lang>.json) use: the act ("已交给", "handed over"), never "backed up". The label is the pill's
-# (railCsb is cbPill, railCsbBrowser cbBrowser and csBrowser, railCsbStopped cbStopped; test/unit/rail-csb-dom.test.ts
-# holds them equal), "Chrome 同步" written as this browser's word for it elsewhere (src/ui/csb-brand.ts). The time is
-# the browser's (src/ui/ago.ts). A copy due is the card's csSaving, shortened ("正在交给…"). Off, and on with nothing
-# to hand over yet, are the words the settings page uses for a switch's state (railCsbOff is clipOff, railCsbOn
-# clipOn; the same test holds them equal), as keys of their own, so the clipboard's text can change without the rail's.
-# All in the page's core: the rail is on every view.
+# The settings page's rail (every build's since the Sync section went from all of them, OWNER-DECISIONS/25): in place of
+# the live sync's line, the backup in Chrome's sync storage, in a few of the words its card (catalogs/csb-<lang>.json)
+# and the popup's pill (catalogs/csb-popup-<lang>.json) use: the act ("已交给", "handed over"), never "backed up". The
+# label is the pill's (railCsb is cbPill, railCsbBrowser cbBrowser and csBrowser, railCsbStopped cbStopped;
+# test/unit/rail-csb-dom.test.ts holds them equal), "Chrome 同步" written as this browser's word for it elsewhere
+# (src/ui/csb-brand.ts). The time is the browser's (src/ui/ago.ts). A copy due is the card's csSaving, shortened
+# ("正在交给…"). Off, and on with nothing to hand over yet, are the words the settings page uses for a switch's state
+# (railCsbOff is clipOff, railCsbOn clipOn; the same test holds them equal), as keys of their own, so the clipboard's
+# text can change without the rail's. All in the page's core: the rail is on every view.
 EN = {
     "railCsb": "Chrome Sync",
     "railCsbBrowser": "browser sync",

@@ -53,9 +53,11 @@ test("a new install has no way to add an account before the master password, and
 
   // every way into "Add accounts" on the settings page lands on the wizard instead
   await pop.evaluate((u) => chrome.storage.session.set({ sk_scan_text: u }), GITHUB_URI); // as if a QR code had been read from a page
-  for (const hash of ["", "#add", "#add-scanned", "#backup"]) {
+  for (const hash of ["", "#add", "#add-scanned", "#backup", "#sync/join"]) {
     const opt = await openOptions(p, hash);
     await expect(opt.locator("#setup")).toBeVisible();
+    // no way to join a synced vault instead: the Sync section and its join are gone from every build (OWNER-DECISIONS/25)
+    await expect(opt.locator("#fr-to-join"), hash).toHaveCount(0);
     // Backup's encrypted export is a fold (BACKUP-VISUAL): its box stands for the leaf
     for (const id of ["#add", "#paste-box", "#qr-file", "#choose-file", "#cam-start", "#manual-add", "#encrypted"])
       await expect(opt.locator(id), `${hash} ${id}`).toHaveCount(0);
@@ -94,8 +96,8 @@ test("'shared or automated': lock every time, clipboard guidance, and still unlo
   await opt.locator("#fr-finish").click();
   await expect(opt.locator("#fr-clip")).toBeVisible(); // the guidance (the e2e build already holds the permission)
   await expect(opt.locator("#fr-clip-state").or(opt.locator("#fr-clip-enable"))).toBeVisible();
-  // the vault is written by now: no "restore instead" or "join instead" any more (UI sweep)
-  await expect(opt.locator("#fr-to-restore, #fr-to-create, #fr-to-join")).toHaveCount(0);
+  // the vault is written by now: no "restore instead" any more (UI sweep)
+  await expect(opt.locator("#fr-to-restore, #fr-to-create")).toHaveCount(0);
   await opt.locator("#fr-clip-next").click();
 
   // step 4, same page: unlocked, the answer applied, the key in this page's memory only

@@ -7,7 +7,7 @@ import { restartOffer } from "../../core/service/pin-restart-count";
 import type { DeviceView, UnlockedView, UnlockResult } from "../../core/service/service-core";
 import { ServiceError } from "../../core/service/service-error";
 import { hereNow, peekRequest, REQ_MS, requestArea, watchRequest, type FillReq } from "../../platform/fill-request";
-import { keysChangedElsewhere, type PopupRuntime } from "../../platform/runtime-base";
+import type { PopupRuntime } from "../../platform/runtime-base";
 import { usePageLock } from "./page-lock";
 import { LOCK_EPOCH_KEY } from "../../platform/session";
 import { VaultDial } from "../../ui/art";
@@ -70,13 +70,9 @@ function usePendingFill(): FillReq | null {
   return req;
 }
 
-// The release gate (scripts/sync-ui.mjs), read here as the settings page's host reads it (options/SyncHost.tsx): a
-// constant of this module, which the build folds, so a build without the sync user interface drops KeysElsewhere and
-// everything it uses.
-declare const __SYNC_UI__: boolean;
-const SYNC_UI = typeof __SYNC_UI__ === "boolean" && __SYNC_UI__;
-// The in-page suggestion's release gate (scripts/suggest-ui.mjs), read the same way: with it open, a page's fill request
-// (R v2) on this screen brings the rules of ./page-lock.ts; with it closed, none of them is in the build.
+// The in-page suggestion's release gate (scripts/suggest-ui.mjs), read here as a constant of this module, which the build
+// folds: with it open, a page's fill request (R v2) on this screen brings the rules of ./page-lock.ts; with it closed,
+// none of them is in the build.
 declare const __SUGGEST_UI__: boolean;
 const SUGGEST_UI = typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__;
 /** The line for a PIN sent by Enter at another length than the PIN's (page-lock.ts R2-M1 c): the gate's words only. */
@@ -115,51 +111,6 @@ const capped = (p: Promise<unknown>): Promise<void> =>
     };
     p.then(end, end);
   });
-
-/** The line's way to the settings page, drawn as a link. */
-const LINK = {
-  background: "none",
-  border: 0,
-  padding: 0,
-  color: "inherit",
-  font: "inherit",
-  textDecoration: "underline",
-  cursor: "pointer",
-} as const;
-
-/**
- * §6 P2: keys changed on another device. This device's own keys still open with the master password they had, so the
- * line says where the new password or keys are taken over: the settings page's Sync section (the popup carries no sync
- * code). It is looked up after an unlock attempt fails (`failed` counts them), the moment it explains, so an unlock that
- * works reads nothing more (test/e2e/perf.spec.ts's read gates). Rendered only where the release gate lets the sync user
- * interface in; a build without it carries none of this.
- */
-function KeysElsewhere({
-  rt,
-  failed,
-  say,
-}: {
-  rt: PopupRuntime;
-  failed: number;
-  say: Record<"password" | "keys" | "pending" | "open", string>;
-}) {
-  const [news, setNews] = useState<"password" | "keys" | "pending" | null>(null);
-  useEffect(() => {
-    if (failed > 0) void keysChangedElsewhere(rt).then(setNews, () => undefined);
-  }, [failed]);
-  if (!news) return null;
-  return (
-    <p class="hint" id="lock-keys-elsewhere">
-      <Icon name="alert" size={14} />
-      <span>
-        {say[news]}{" "}
-        <button type="button" style={LINK} onClick={() => openOptions("#sync")}>
-          {say.open}
-        </button>
-      </span>
-    </p>
-  );
-}
 
 /**
  * The lock screen. With a PIN that opens Sixkey now (its record's field: restartOffer; QUICK-UNLOCK §5.4) it opens on it, so
@@ -560,20 +511,6 @@ export function Locked({
             </div>
           )}
         </div>
-        {/* its words looked up here, inside the gate: a build without the sync user interface ships none of them (the
-            popup's catalog keys, scripts/catalog-keys.mjs rule 5) */}
-        {SYNC_UI && (
-          <KeysElsewhere
-            rt={rt}
-            failed={shake}
-            say={{
-              password: t("lockPasswordElsewhere"),
-              keys: t("lockKeysElsewhere"),
-              pending: t("lockPendingChange"),
-              open: t("lockOpenSync"),
-            }}
-          />
-        )}
         <p class="hint">
           <Icon name="info" size={14} />
           <span>{t("lockHint")}</span>

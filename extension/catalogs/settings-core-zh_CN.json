@@ -11,9 +11,6 @@
   "saved": {
     "message": "已保存"
   },
-  "delete": {
-    "message": "删除"
-  },
   "copy": {
     "message": "复制"
   },
@@ -22,9 +19,6 @@
   },
   "continue": {
     "message": "继续"
-  },
-  "retry": {
-    "message": "重试"
   },
   "gotIt": {
     "message": "知道了"
@@ -260,12 +254,6 @@
   "navMenu": {
     "message": "分区"
   },
-  "syncLabel": {
-    "message": "同步"
-  },
-  "syncOff": {
-    "message": "未开启 · 仅本机"
-  },
   "frSoloTitle": {
     "message": "只有我用（标准）"
   },
@@ -374,11 +362,8 @@
   "errNextUpdate": {
     "message": "请先更新 Sixkey，然后重试。数据没有被改动。"
   },
-  "errSyncOn": {
-    "message": "此配置文件已开启同步，这项改动必须经同步进行"
-  },
-  "errNextSyncOn": {
-    "message": "请在同步设置中进行，这样每台设备都会更新。数据没有被改动。"
+  "groupsTitle": {
+    "message": "分组"
   },
   "errCleanupPending": {
     "message": "这台电脑上还有一次密钥更改没有收尾"
@@ -480,7 +465,7 @@
     "message": "备份已停"
   },
   "sharesInsteadLink": {
-    "message": "我有分片"
+    "message": "我把恢复密钥分成了几份（分片）"
   },
   "sharesStopWarn": {
     "message": "用当前恢复密钥做的分片也会一起失效。"

@@ -67,8 +67,8 @@ test("manifest declares only the permissions shipped code uses", async () => {
   expect(m.optional_permissions).toContain("scripting");
   expect(await page.evaluate(() => chrome.permissions.contains({ permissions: ["scripting"] }))).toBe(false);
   expect(Number(m.minimum_chrome_version)).toBeGreaterThanOrEqual(140);
-  // since autofill Stage 2 patch 2, https sites one at a time, only optional, nothing granted at install; the sync API's
-  // origin not at all in the store build while its release gate keeps sync out
+  // since autofill Stage 2 patch 2, https sites one at a time, only optional, nothing granted at install; the server
+  // sync's API origin in no build since its client went (DV-0b)
   expect(m.host_permissions).toBeUndefined();
   expect(m.optional_host_permissions).toEqual(["https://*/*"]);
   expect(JSON.stringify(m.content_security_policy)).toContain("connect-src 'none'");

@@ -5,7 +5,8 @@
 //   unsafe   on, but this browser did not let the worker close storage.sync to scripts in web pages in this run of it
 //            (the worker writes `unsafe` in its state): nothing is written here, and the card says
 //            why. Off and unsafe: the off state with that line
-//   empty    on, and a run found no account to hand over yet (an empty vault is never written)
+//   empty    on, and a run went through with nothing written and nothing waiting (an empty vault is written since
+//            2026-11-17, so this is a passing state, not the normal one for a new vault)
 //   saving   on, nothing handed over yet, a run due
 //   ok       handed to Chrome Sync, with when: never "backed up", Sixkey cannot see what Chrome uploads
 //   waiting  changes not handed over yet, no error
@@ -54,8 +55,7 @@ export function cardView(cfg: CsbConfig, st: CsbState, now: number): CardView {
       return { kind: "failed", err: s.err as CsbError };
     case "waiting":
       if (s.at !== null) return { kind: "waiting" };
-      // a run went through with nothing to write and nothing waiting: the vault has no account yet (an empty vault is
-      // never written, core/cloud/slots.ts rule 1)
+      // a run went through with nothing to write and nothing waiting, and no copy was ever handed over
       return st.lastRun !== null && st.pendingSince === null ? { kind: "empty" } : { kind: "saving" };
     case "ok":
       return { kind: "ok", at: s.at };

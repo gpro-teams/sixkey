@@ -5,7 +5,7 @@ import { KEYS } from "../../src/core/storage/format";
 import { VaultStore } from "../../src/core/storage/store";
 import { VaultService } from "../../src/core/service/service";
 import { KvSettingsStore, MemorySession } from "../../src/core/service/types";
-import { addEntry, deleteEntry } from "../../src/core/vault/ops";
+import { addEntry, deleteEntry, editEntry } from "../../src/core/vault/ops";
 import { decryptVault } from "../../src/core/crypto/envelope";
 import { unlockWithPassword } from "../../src/core/crypto/keyring";
 import { deserializeVault } from "../../src/core/vault/validate";
@@ -36,12 +36,15 @@ describe("Delete forever", () => {
             algorithm: "SHA1",
             digits: 6,
             period: 30,
+            domains: ["bank.example"],
+            note: "Shop A",
           },
           c,
         ).vault,
     );
     await store.ensureDailySnapshot(); // any service-worker wake-up
     const id = (await svc.read()).vault.entries[0]!.id;
+    await svc.mutate((v, c) => editEntry(v, id, { autofill: ["login.bank.example"] }, c));
     await svc.mutate((v, c) => deleteEntry(v, id, c));
     await svc.purgeForever([id], STRONG); // options page > Trash > Delete forever, with the master password
 
@@ -57,6 +60,8 @@ describe("Delete forever", () => {
         try {
           const vault = deserializeVault(await decryptVault(env, vk));
           if (vault.entries.some((e) => e.secret === "MFRGGZDFMZTWQ2LKNNWG23TPOBYXE43U")) readable.push(`${name}:${k}`);
+          // and none of its details: its sites, its note, the sites turned on for it (0.1.1)
+          if (vault.entries.some((e) => e.domains || e.note || e.autofill)) readable.push(`${name}:${k} (details)`);
         } catch {
           /* other key */
         }

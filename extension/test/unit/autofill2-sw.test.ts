@@ -9,7 +9,7 @@ import { PENDING_KEY, SITES_KEY } from "../../src/platform/autofill-sites";
 import { loadWorker, unload, wait, type World } from "../helpers/sw-world";
 
 const list = (...hosts: string[]) => ({ [SITES_KEY]: { v: 1, hosts } });
-/** What the worker asked Chrome about sites (sync asks about the API origin on the same events: its own tests). */
+/** What the worker asked Chrome about sites (the old API origin's pattern left out: the server sync asked about it, until DV-0b). */
 const asked = (w: World) =>
   w.perms.filter(([k, o]) => k === "contains" && !o.includes("https://api.sixkey.app/*")).map(([, o]) => o);
 const lines = (w: World) => ((w.local.data.get("sk_diag") ?? []) as { message: string }[]).map((d) => d.message);
@@ -79,7 +79,7 @@ describe("the worker reconciles autofill's sites", () => {
       if (how !== "hang") expect(lines(w)).toContain(`storage access level not restricted: ${area}`); // both lines kept
     }, 20_000);
 
-  it("the worker's end of an ask: exactly the asked site's pattern puts it on the list; On all sites and the API do not", async () => {
+  it("the worker's end of an ask: exactly the asked site's pattern puts it on the list; On all sites and another site's (the old API origin's) do not", async () => {
     const w = await loadWorker({ grants: [] });
     await w.session.set({ [PENDING_KEY]: { v: 1, host: "github.com", at: Date.now() } });
     fire(w, "permAdded", ["https://*/*"]);

@@ -10,9 +10,9 @@ Sixkey 是一个 Chrome 两步验证器：一个 Manifest V3 扩展，把 TOTP �
 >
 > - **扩展（`extension/`）** 是最先发布的部分，形态是**只在本机**的验证器。商店版本不发任何网络请求，也没有开启同步的
 >   入口。它还没有上架 Chrome 应用商店。
-> - **同步已经做好，但在发行版本里关着。** 同步引擎、设置页的"同步"一节和服务器都已实现并有测试。一个发布开关
->   （`extension/scripts/sync-ui.mjs`）让商店版本不含"同步"一节和入网代码，直到托管服务上线。开发版本包含它们，连接
->   你本机上的服务器。
+> - **服务器同步已经搁置。** 扩展里的同步客户端（同步引擎、后台的同步和网络传输，以及设置页用邮箱登录的"同步"一节）
+>   已经从所有版本里删掉，开发版本也一样；需要时可以从历史里找回。服务器和 API 契约保留，测试照旧，留给以后可能做的
+>   付费云。同一个人的多台设备以后改用 Chrome 同步。
 > - **同步服务器（`api/server/`）与 API 契约（`api/openapi.yaml`、`contract/`）尚未发布。** 服务器只能在开发与测试
 >   模式下运行：在生产环境的登录提供方实现之前，它拒绝以生产模式启动。
 > - **暂时无法自行部署。** 原因见 [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)（英文）。
@@ -78,7 +78,8 @@ npm run typecheck     # TypeScript 严格模式
 npm test              # 单元、故障注入与回归测试（vitest）
 npm run build         # 商店版本 -> dist/（在 chrome://extensions 以"加载已解压的扩展程序"载入）
 npm run check         # check-dist：按硬性规则检查构建结果
-npm run build:dev     # 含"同步"一节的开发版本 -> dist-dev/
+npm run build:test    # 手工测试用：商店版本，名字是"Sixkey (test)"，扩展 ID 固定 -> dist-test/
+npm run build:dev     # 开发版本，含商店版本里关着的功能 -> dist-dev/
 npm run e2e           # 在 Chromium 里跑端到端测试；需要先执行一次 `npx playwright install chromium`，并且 127.0.0.1:8787 空闲
 ```
 
@@ -87,7 +88,7 @@ npm run e2e           # 在 Chromium 里跑端到端测试；需要先执行一�
 ```
 make venv             # 只需一次：按 requirements-dev.txt 的确切版本建立 .venv
 make check            # 在 .pg/ 里启动一个私有 PostgreSQL（只用 unix socket），然后运行测试
-make run              # 在 http://127.0.0.1:8787 提供 API，供扩展的开发版本使用
+make run              # 在 http://127.0.0.1:8787 提供 API（扩展的任何版本都不再连接它）
 ```
 
 **契约**（在仓库根目录）：
@@ -103,15 +104,15 @@ python3 -I contract/tools/check_consistency.py          # 对照设计文档与 
 
 ## 仓库结构
 
-| 路径               | 内容                                                                                                                                                                                                                                |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `extension/`       | Chrome 扩展（TypeScript、Preact、Vite）。`src/core` 是纯逻辑（TOTP、密码学、库、存储、同步引擎）；`src/platform` 把它接到 Chrome；`src/popup`、`src/sidepanel`、`src/options`、`src/background`、`src/offscreen` 是扩展的各个上下文 |
-| `api/server/`      | 同步 API（FastAPI、PostgreSQL），尚未发布                                                                                                                                                                                           |
-| `api/openapi.yaml` | API 契约：29 个操作、错误、限额、请求签名（JSON 语法，也是合法 YAML）                                                                                                                                                               |
-| `contract/`        | 扩展与服务器共用的已知答案测试向量、向量生成器、另行编写的 Python 参考实现，以及对照设计文档与契约的检查器                                                                                                                          |
-| `docs/`            | 设计、安全与隐私文档，以及审计记录。索引见 [docs/README.md](docs/README.md)                                                                                                                                                         |
-| `tools/`           | 扩展之外的开发工具：`webauthn-probe/`，一个仅供开发的扩展，为快速解锁的设计在真机上测量通行密钥（passkey）的能力                                                                                                                    |
-| `LICENSES/`        | 各许可证的全文；`REUSE.toml` 把每个路径对应到它的许可证（[LICENSE.md](LICENSE.md)，英文）                                                                                                                                           |
+| 路径               | 内容                                                                                                                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `extension/`       | Chrome 扩展（TypeScript、Preact、Vite）。`src/core` 是纯逻辑（TOTP、密码学、库、存储、备份）；`src/platform` 把它接到 Chrome；`src/popup`、`src/sidepanel`、`src/options`、`src/background`、`src/offscreen` 是扩展的各个上下文 |
+| `api/server/`      | 同步 API（FastAPI、PostgreSQL），尚未发布                                                                                                                                                                                       |
+| `api/openapi.yaml` | API 契约：29 个操作、错误、限额、请求签名（JSON 语法，也是合法 YAML）                                                                                                                                                           |
+| `contract/`        | 扩展与服务器共用的已知答案测试向量、向量生成器、另行编写的 Python 参考实现，以及对照设计文档与契约的检查器                                                                                                                      |
+| `docs/`            | 设计、安全与隐私文档，以及审计记录。索引见 [docs/README.md](docs/README.md)                                                                                                                                                     |
+| `tools/`           | 扩展之外的开发工具：`webauthn-probe/`，一个仅供开发的扩展，为快速解锁的设计在真机上测量通行密钥（passkey）的能力                                                                                                                |
+| `LICENSES/`        | 各许可证的全文；`REUSE.toml` 把每个路径对应到它的许可证（[LICENSE.md](LICENSE.md)，英文）                                                                                                                                       |
 
 ## 本项目是怎样做出来的
 

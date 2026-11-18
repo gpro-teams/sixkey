@@ -1,31 +1,17 @@
-// Builds the one VaultService every extension context shares but the popup (options page, service worker, the developer
-// page): the wiring in runtime-base.ts with the whole service. The popup builds the same wiring with the part of the
-// service it uses (createPopupRuntime, runtime-base.ts).
+// Builds the one VaultService every extension context shares but the popup (options page, service worker): the wiring in
+// runtime-base.ts with the whole service. The popup builds the same wiring with the part of the service it uses
+// (createPopupRuntime, runtime-base.ts).
 import type { PasswordFormat } from "../core/crypto/password-candidates";
 import { formatFor } from "../core/service/pw-format";
 import { VaultService } from "../core/service/service";
-import { SYNC_KEYS } from "../core/sync/local/keys";
-import { prejoinItems } from "../core/sync/local/records";
 import { buildRuntime, type RuntimeStorage } from "./runtime-base";
 
-export { keysChangedElsewhere, SYNC_SOON_MESSAGE, type RuntimeStorage } from "./runtime-base";
+export { type RuntimeStorage } from "./runtime-base";
 
 export function createRuntime(o: RuntimeStorage = {}) {
   return buildRuntime(o, (deps) => new VaultService(deps));
 }
 export type Runtime = ReturnType<typeof createRuntime>;
-
-/**
- * How many vaults this profile keeps from before a sync join (sk_prejoin's list, SYNC-DESIGN §3.5 ④): the settings page's
- * start over says it leaves them (they are not the unreadable remains it erases). One read; 0 when it cannot read it.
- */
-export async function keptVaultCount(rt: Runtime): Promise<number> {
-  try {
-    return prejoinItems((await rt.local.get([SYNC_KEYS.prejoin]))[SYNC_KEYS.prejoin])?.length ?? 0;
-  } catch {
-    return 0;
-  }
-}
 
 /**
  * The master-password prompts' input hint, for the settings page (core/service/pw-format.ts): the record in

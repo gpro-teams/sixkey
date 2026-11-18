@@ -238,9 +238,14 @@ describe("the lazy screens chunk cannot be loaded: a locked vault is not an empt
     expect(root.all((e) => e.localName === "input")).toEqual([]);
     const before = tries;
     const retry = root.all((e) => e.localName === "button" && e.textContent === "Retry")[0]!;
+    // Retry: the chunk asked for again; failed again, the page is reloaded (its build may be gone from disk)
+    const reload = vi.fn();
+    vi.stubGlobal("location", { reload });
     await act(async () => void retry.dispatch("click", {}));
     await ticks();
     expect(tries).toBeGreaterThan(before);
+    expect(reload).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
   });
 });
 

@@ -1,6 +1,6 @@
-// The settings page's rail in the store build (dist/, whose Sync section's release gate is closed:
-// scripts/sync-ui.mjs), in the real extension, loaded unpacked as store-backup.spec.ts loads it. No line of the live
-// sync: in its place the backup in Chrome sync's, in every state of its card, from the worker's two records written
+// The settings page's rail in the store build (dist/; every build's rail is the same since the Sync section went from
+// all of them: OWNER-DECISIONS/25), in the real extension, loaded unpacked as store-backup.spec.ts loads it. No line of
+// the live sync: in its place the backup in Chrome sync's, in every state of its card, from the worker's two records written
 // here as the worker writes them (its alarms cleared, or far off where a change waits, so it does not write them again
 // meanwhile: the method of csb-card-visual.spec.ts), in English and in Chinese, in both themes, at 1400, 420 and 320 px
 // (the last two where the rail's three facts sit in a row), nothing squashed, overflowing, clipped or unstyled

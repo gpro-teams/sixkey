@@ -61,9 +61,8 @@ describe("1. the security record's kinds: by name on the settings page only", ()
   const PASSED: Record<string, string[]> = {
     "core/service/service.ts": ["failed", "`export_${kind}`", "kind"], // in the order they are written
     "core/service/service-core.ts": ["failed", "used", "kind"], // the last: record()'s own append
-    "core/service/sync-flows.ts": ["kind", "kind"],
     "core/service/pin-admin.ts": ["kind"],
-    "core/sync/engine/keys.ts": ['"password" in secret ? "unlock_failed" : "recovery_failed"'],
+    // (the server sync's flows and engine passed theirs too, until its client went: DV-0b)
   };
   /**
    * The first argument of every call of record(…), the element access ["record"](…), recordAction(…), guarding(…) and
@@ -81,14 +80,6 @@ describe("1. the security record's kinds: by name on the settings page only", ()
       }
     return out;
   };
-  /** The sync engine's key events name theirs in a field (`record: "…"`, or a choice of quoted names, or their type). */
-  const fields = () => {
-    const out: { at: string; arg: string }[] = [];
-    for (const f of files)
-      if (f.path.startsWith("core/sync/"))
-        for (const m of f.code.matchAll(/\brecord\??:\s*([^,}\n]*)/g)) out.push({ at: f.path, arg: m[1]!.trim() });
-    return out;
-  };
   /** The name the whole argument is, in quotes; undefined for anything else (a template, an identifier, a cast ...). */
   const quoted = (arg: string) => {
     const m = /^"([^"]*)"$|^'([^']*)'$/.exec(arg);
@@ -96,7 +87,7 @@ describe("1. the security record's kinds: by name on the settings page only", ()
   };
   it("every call names a kind of the list in quotes, or passes on one of the few typed parameters listed (not vacuous)", () => {
     const all = calls();
-    expect(all.length).toBeGreaterThan(30);
+    expect(all.length).toBeGreaterThan(25); // (the server sync's flows and engine had a few more, until DV-0b)
     const seen: Record<string, string[]> = {};
     for (const c of all) {
       const name = quoted(c.arg);
@@ -106,16 +97,6 @@ describe("1. the security record's kinds: by name on the settings page only", ()
     }
     expect(seen).toEqual(PASSED); // and none listed is gone, so the list cannot go stale
     for (const k of ["unlock_failed", "recovery_failed"]) expect(SECURITY_KINDS as readonly string[]).toContain(k);
-    // (a `record` field of another kind, the outbox's, names no string: not one of them)
-    const keyEvents = fields().filter((c) => c.arg.includes('"'));
-    expect(keyEvents.map((c) => c.at).sort()).toEqual([
-      "core/sync/engine/engine.ts",
-      "core/sync/engine/keys.ts",
-      "core/sync/engine/keys.ts",
-    ]);
-    for (const c of keyEvents)
-      for (const m of c.arg.matchAll(/"([^"]*)"/g))
-        expect(SECURITY_KINDS as readonly string[], `${c.at}: ${c.arg}`).toContain(m[1]);
     // the PIN switch's two lines went with the switch (OWNER-DECISIONS/20, its second 2026-10-30 note): no call names them
     const where = (k: string) => [...new Set(all.filter((c) => quoted(c.arg) === k).map((c) => c.at))].sort();
     expect(where("pin_restart_on")).toEqual([]);

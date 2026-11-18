@@ -6,13 +6,13 @@ import type { Vault } from "../../core/vault/model";
 import { editEntry, setGroup } from "../../core/vault/ops";
 
 /** Which of the sheet's fields the user changed from what the account held. */
-export type EditChanged = { issuer: boolean; label: boolean; group: boolean; domains: boolean };
+export type EditChanged = { issuer: boolean; label: boolean; group: boolean; domains: boolean; note?: boolean };
 
 /** The sheet's save as an edit of the vault: `v` itself when nothing changed. No sites is stored as no field at all. */
 export function editSaved(
   v: Vault,
   id: string,
-  f: { issuer: string; label: string; group: string; domains: string[] },
+  f: { issuer: string; label: string; group: string; domains: string[]; note?: string },
   changed: EditChanged,
   clock: Clock,
 ): Vault {
@@ -20,6 +20,7 @@ export function editSaved(
     ...(changed.issuer ? { issuer: f.issuer } : {}),
     ...(changed.label ? { label: f.label } : {}),
     ...(changed.domains ? { domains: f.domains.length ? f.domains : undefined } : {}),
+    ...(changed.note ? { note: f.note || undefined } : {}), // no note is stored as no field at all
   };
   const next = Object.keys(patch).length ? editEntry(v, id, patch, clock) : v;
   return changed.group ? setGroup(next, id, f.group || undefined, clock) : next;

@@ -44,7 +44,18 @@ export function Late({
   // the page's own words (the counted catalog), and offer another try
   useEffect(() => {
     setFailed(false);
-    late().then(setM, () => setFailed(true));
+    late().then(setM, () => {
+      // failed again after Retry: this page's build may be gone from disk (an unpacked install updated under an open
+      // popup or side panel: the owner's report of 2026-11-18), and a reload loads the new one
+      if (tries > 0)
+        try {
+          location.reload();
+          return;
+        } catch {
+          // no page to reload: say so again
+        }
+      setFailed(true);
+    });
   }, [tries]);
   if (failed)
     return (

@@ -53,7 +53,14 @@ addEventListener("pageshow", (e: PageTransitionEvent) => {
 
 // The profile first: one read of the settings, before anything is drawn. A read that fails is not a shared profile
 // (the lock screen then asks for the password as in the popup), and the guard looks again at every settings change.
-void chrome.storage.local.get("sk_settings").then(
-  (r) => (sharedNow(r.sk_settings) ? shut() : boot("panel")),
+// The icon then opens the panel (platform/action-mode.ts OPENER_KEY), however the panel was opened (the popup's button,
+// the browser's side panel menu): the owner's report of 2026-11-18, the popup opened over an open panel. The panel's own
+// button takes it back to the popup (popup/main/Main.tsx toPopup).
+void chrome.storage.local.get(["sk_settings", "sk_opener"]).then(
+  (r) => {
+    if (sharedNow(r.sk_settings)) return shut();
+    if (r.sk_opener !== "panel") void chrome.storage.local.set({ sk_opener: "panel" }).catch(() => undefined);
+    boot("panel");
+  },
   () => boot("panel"),
 );

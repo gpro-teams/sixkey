@@ -18,8 +18,11 @@
 //     files under it, so a restore never brings back a recovery key that another computer replaced. A password restore
 //     stays one step and keeps the password wrap the typed password opened, so a wrong clock elsewhere can never lock the
 //     user out; when a password wrap dated later exists, `outdated` says so, and the page offers a new master password
-//     right then (patch 5), which the user may skip. A recovery-key restore keeps the recovery wrap alone and asks for a
-//     new master password next (`needsPassword`), as the reset does.
+//     right then (patch 5), which the user may skip. A recovery-key restore keeps the recovery wrap and, when the copy
+//     has one, the newest master-password wrap too (`keepsPassword`): the person goes on with the same master password
+//     as their other computers, or sets a new one if they forgot it; only a copy with no password wrap at all must set
+//     one (`needsPassword`). (Until 2026-11-18 it kept the recovery wrap alone and always asked for a new master
+//     password, so one vault ended with a different master password on each computer.)
 //     createdAt is not authenticated and comes from each computer's clock: a clock far ahead, or someone who controls the
 //     Google account and holds an old secret, can make an old wrap look new. Neither can lock the user out of a password
 //     restore; such a person already holds what that secret opened, and a new vault key is the cure (§1.5).
@@ -64,8 +67,10 @@ export type CloudRestore = {
   skipped: SkippedFile[];
   /** A wrap of the typed secret's method dated later than the one it opened exists (changed on another computer). */
   outdated: boolean;
-  /** A recovery-key restore: the keyring has the recovery wrap only, and a new master password is set next. */
+  /** A recovery-key restore whose copy had no password wrap: a new master password must be set next. */
   needsPassword: boolean;
+  /** A recovery-key restore that kept the copy's master-password wrap: the same master password goes on, or a new one. */
+  keepsPassword: boolean;
   /** A password restore: the spelling that opened the kept wrap (openWithPassword; PASSWORD-SETUP-NOTES §7). */
   password?: string;
 };
@@ -227,7 +232,8 @@ export async function openCloudBackups(
   const typed = fittedWraps[0] ?? best.get(method);
   const outdated = !typed || (best.get(method)?.wrap.createdAt ?? -Infinity) > typed.wrap.createdAt || !opens(typed);
   // after a password restore, the password the user typed, never one dated later (R2-04)
-  const kept = method === "recovery" ? [best.get("recovery")] : [typed, best.get("recovery")];
+  const kept = method === "recovery" ? [best.get("password"), best.get("recovery")] : [typed, best.get("recovery")];
+  const keepsPassword = method === "recovery" && best.get("password") !== undefined;
   const keyring: Keyring = {
     ...base,
     wraps: kept.filter((h): h is Held => h !== undefined).map((h) => h.wrap),
@@ -243,7 +249,8 @@ export async function openCloudBackups(
     merged: opened.map((o) => o.c.id),
     skipped,
     outdated,
-    needsPassword: method === "recovery",
+    needsPassword: method === "recovery" && !keepsPassword,
+    keepsPassword,
     ...(method === "password" && spelling !== undefined ? { password: spelling } : {}),
   };
 }

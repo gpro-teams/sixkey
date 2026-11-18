@@ -603,13 +603,12 @@ for (const lang of ["en", "zh_CN"] as const)
     const groups = await settings
       .locator(".rail nav a")
       .evaluateAll((a) => a.map((x) => x.getAttribute("href")!.slice(1)));
-    expect(groups).toEqual(["accounts", "security", "appearance", "sync", "advanced"]);
+    expect(groups).toEqual(["accounts", "security", "appearance", "advanced"]); // no Sync in any build (OWNER-DECISIONS/25)
     const LEAVES = [
       "security",
       "security-keys",
       "security-log",
       "autofill", // AUTOFILL2 patch 2 (harness.ts is frozen and does not know it: reached by its address below)
-      "sync",
       "add",
       "backup",
       "trash",
@@ -691,7 +690,8 @@ for (const lang of ["en", "zh_CN"] as const)
     await expect(settings.locator("#del-ask .del-ok")).toBeVisible();
     await check(settings, "settings: add account, the delete prompt without a handle");
     await settings.locator("#del-ask .del-ok").click();
-    await stubPicker(settings, "export.txt", `${link("Picked", "me", "MFRGGZDFMZTWQ2LKMFRGGZDF")}\n`);
+    // (a line that is not a link: not all of it added, so Add asks instead of deleting it by itself)
+    await stubPicker(settings, "export.txt", `${link("Picked", "me", "MFRGGZDFMZTWQ2LKMFRGGZDF")}\na note\n`);
     await settings.locator("#choose-file").click();
     await expect(settings.locator("#preview")).toContainText(/1/);
     await settings.locator("#add-confirm").click();

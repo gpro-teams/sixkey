@@ -99,8 +99,9 @@ describe("contract vectors: labels and encodings", () => {
     expect(inCode.size).toBeGreaterThanOrEqual(5);
     const listed = new Set(G.labels.hkdf_info.map((l: J) => l.label));
     for (const l of inCode) expect(listed.has(l) || LOCAL_ONLY_LABELS.includes(l), l).toBe(true);
-    // the pairing code's check-bit tag lives with the code in core/crypto (pairing-code.ts) and is a contract tag
-    expect(text).toContain('"sixkey-pairing-code|1|"');
+    // the pairing code's check-bit tag is a contract tag; its code (core/crypto/pairing-code.ts) went with the server
+    // sync's client (OWNER-DECISIONS/25, DV-0b), so no shipped code holds it now
+    expect(text).not.toContain('"sixkey-pairing-code|1|"');
     expect(G.labels.domain_tags.some((t: J) => t.tag === "sixkey-pairing-code|1|")).toBe(true);
   });
   it("the local-only labels and tags (the PIN, QUICK-UNLOCK §5.2) are in the code, distinct from the contract's, and prefix-free", () => {

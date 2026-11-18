@@ -201,7 +201,10 @@ export async function unlockWithDevice(keyring: Keyring): Promise<Vk> {
   );
 }
 
-/** The password exactly as given (NFKC aside). The sync engine checks with this one (see openWithPassword). */
+/**
+ * The password exactly as given (NFKC aside): the contract's reading (test/unit/contract-vectors.test.ts). The server
+ * sync's engine checked with this one; its client is gone (DV-0b). The local prompts use openWithPassword.
+ */
 export async function unlockWithPassword(keyring: Keyring, password: string): Promise<Vk> {
   const w = find(keyring, "password");
   return unwrapVk(w, await deriveKekFromPassword(password, requireKdf(w)), keyring.vaultId);
@@ -211,12 +214,12 @@ export async function unlockWithPassword(keyring: Keyring, password: string): Pr
  * The master password as a person types it back (password-candidates.ts; PASSWORD-SETUP-NOTES §7): `typed` as given,
  * then, only when it has a generated shape and is not already the generator's spelling, that spelling once. Returns the
  * vault key and the spelling that opened it. Whatever is derived from the password after the check (a rotation's new
- * wrap; later the sync engine's proofs) must use that spelling, never `typed`: then the stored password is exactly what
+ * wrap) must use that spelling, never `typed`: then the stored password is exactly what
  * it would be had the person typed it exactly, and a loose spelling can never become the stored password.
  * At most two key derivations; failing both is one failure (the second one's unwrap_failed, recorded once by the
  * caller). Only a wrong key moves on to the second: an empty password, a missing wrap or bad parameters throw at once.
- * The local prompts (the service, the PIN box) use this; the sync engine keeps unlockWithPassword until it resolves
- * the spelling once per operation (its server proofs and new wraps: docs/design/notes/PASSWORD-SETUP-NOTES.md §7.5).
+ * The local prompts (the service, the PIN box) use this (the server sync's engine, removed in DV-0b, kept
+ * unlockWithPassword: docs/design/notes/PASSWORD-SETUP-NOTES.md §7.5).
  */
 export async function openWithPassword(keyring: Keyring, typed: string): Promise<{ vk: Vk; password: string }> {
   const w = find(keyring, "password");

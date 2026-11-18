@@ -218,7 +218,8 @@ describe("the boundary (§7.2 Option I item 1): autofill reaches a code through 
     expect(between(fill, "awaitfillCand(", "waiting:")).toMatch(
       /^awaitfillCand\(s\.tabId,e,pick,\{code,minLeft:s\.minLeft,$/,
     );
-    expect(file("popup/main/Main.tsx")).toMatch(/m\.connect\(\(\)=>rt\.service\.grantKeys\(\)\)/);
+    // (its second argument marks a site turned on for an account, for the other computers: core/autofill-marks.ts)
+    expect(file("popup/main/Main.tsx")).toMatch(/m\.connect\(\(\)=>rt\.service\.grantKeys\(\),\(id,host\)=>\{/);
     // the shortcut's fillOnTab takes it from runShortcut's deps, which the worker gives (required, no default)
     const cmd = file("background/fill-command.ts");
     expect(cmd).toMatch(/deps:FillDeps&\{code:GatedCode;off:\(\)=>Promise<boolean>\};/);
@@ -311,9 +312,17 @@ describe("`scripting` is optional (§7.2 Option I item 3)", () => {
     expect(file("platform/plugins/autofill-switch.ts")).toMatch(
       /returnp\.request\(\{permissions:\["scripting"\],\.\.\.\(origins\.length\?\{origins\}:\{\}\)\}\)/,
     );
+    // the popup's first click (platform/page-user.ts armScripting; the owner's report of 2026-11-18): not while held, not
+    // while autofill is off (the page hint, read in the click), and nothing awaited before the request
+    const arm = between(file("platform/page-user.ts"), "constask=()=>{", "addEventListener(");
+    expect(arm).toMatch(
+      /if\(wasHeld\)return;try\{if\(localStorage\.getItem\("sk_af_off"\)!==null\)return;voidchrome\.permissions\.request\(\{permissions:\["scripting"\]\}\)/,
+    );
+    expect(arm).not.toMatch(/await/);
     // nowhere else is `scripting` asked for
     expect(using(/request\(\{permissions:\["scripting"\]/)).toEqual([
       "platform/autofill-sites.ts",
+      "platform/page-user.ts",
       "platform/plugins/autofill-switch.ts",
       "popup/main/Fill.tsx",
     ]);
@@ -401,7 +410,9 @@ describe("Off (§7.2 Option I item 2): the list kept, the worker unregisters bef
   });
 
   it("the page hint sk_af_off: one module's key, written only where the switch is shown or met", () => {
-    expect(using(/"sk_af_off"/)).toEqual(["platform/autofill-sites.ts"]);
+    // written by that module only; page-user.ts reads it, restated, in the popup's first click (armScripting)
+    expect(using(/"sk_af_off"/)).toEqual(["platform/autofill-sites.ts", "platform/page-user.ts"]);
+    expect(file("platform/page-user.ts")).not.toMatch(/setItem|removeItem/);
     expect(using(/setOffHint\(/)).toEqual([
       "options/AutofillSwitch.tsx",
       "platform/autofill-sites.ts",

@@ -11,9 +11,6 @@
   "saved": {
     "message": "Saved"
   },
-  "delete": {
-    "message": "Delete"
-  },
   "copy": {
     "message": "Copy"
   },
@@ -22,9 +19,6 @@
   },
   "continue": {
     "message": "Continue"
-  },
-  "retry": {
-    "message": "Retry"
   },
   "gotIt": {
     "message": "Got it"
@@ -260,12 +254,6 @@
   "navMenu": {
     "message": "Sections"
   },
-  "syncLabel": {
-    "message": "Sync"
-  },
-  "syncOff": {
-    "message": "Off · this device"
-  },
   "frSoloTitle": {
     "message": "Only me (standard)"
   },
@@ -374,11 +362,8 @@
   "errNextUpdate": {
     "message": "Update Sixkey, then try again. Nothing has been changed."
   },
-  "errSyncOn": {
-    "message": "Sync is on in this profile, so this change has to go through sync"
-  },
-  "errNextSyncOn": {
-    "message": "Make it from the sync settings, so that every device gets it. Nothing was changed."
+  "groupsTitle": {
+    "message": "Groups"
   },
   "errCleanupPending": {
     "message": "An earlier key change is still being finished on this computer"
@@ -480,7 +465,7 @@
     "message": "Backup stopped"
   },
   "sharesInsteadLink": {
-    "message": "I have shares instead"
+    "message": "I split my recovery key into shares"
   },
   "sharesStopWarn": {
     "message": "Shares made of the current recovery key stop working too."

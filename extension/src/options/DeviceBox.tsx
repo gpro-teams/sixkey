@@ -63,7 +63,6 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
   const [open, setOpen] = useState(false);
   const [pw, setPw] = useState("");
   const [optIn, setOptIn] = useState(false);
-  const [syncOn, setSyncOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const unlocked = status.state === "unlocked";
@@ -75,10 +74,6 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
   const refresh = () => admin.state().then(setSt, () => setSt(null));
   useEffect(() => {
     if (!ready) void dx.loaded.then(() => setReady(true));
-    void rt.sync.context().then(
-      (c) => setSyncOn(c !== null),
-      () => setSyncOn(false),
-    );
   }, []);
   useEffect(() => {
     void refresh();
@@ -274,10 +269,7 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
           {upgrading && !st.shared && (
             <div class="callout bad" id="device-also-notice">
               <Icon name="alert" size={16} />
-              <span>
-                {dx("dvOptInNotice", name)}
-                {syncOn ? ` ${dx("dvOptInSync")}` : ""}
-              </span>
+              <span>{dx("dvOptInNotice", name)}</span>
               <div class="row2">
                 <button
                   type="button"
@@ -316,10 +308,7 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
               {optIn && !st.shared && (
                 <p class="callout bad" id="device-optin-notice">
                   <Icon name="alert" size={16} />
-                  <span>
-                    {dx("dvOptInNotice", name)}
-                    {syncOn ? ` ${dx("dvOptInSync")}` : ""}
-                  </span>
+                  <span>{dx("dvOptInNotice", name)}</span>
                 </p>
               )}
               <p class="muted">{dx("dvPick")}</p>

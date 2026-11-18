@@ -138,15 +138,14 @@ test.describe("files", () => {
     );
   });
 
-  test("Delete file through a real handle: deleted; refused; changed after it was read", async () => {
+  test("Add deletes a file all of whose accounts it added, through a real handle (the owner's report of 2026-11-18); refused; changed after it was read; one with entries left keeps its question", async () => {
     const opt = await addPage(p);
-    const text = `${link("Opfs", "a", K1)}\n`;
-    // granted (a real handle of the extension's private file system): the file is gone
-    await stubPicker(opt, "export-1.txt", text);
+    // granted (a real handle of the extension's private file system): Add says it, and the file is gone after it
+    await stubPicker(opt, "export-1.txt", `${link("Opfs", "a", K1)}\n`);
     await opt.locator("#choose-file").click();
     await expect(opt.locator("#preview")).toContainText(/1 to add|将添加 1/);
+    await expect(opt.locator("#add-del-note")).toContainText("export-1.txt");
     await opt.locator("#add-confirm").click();
-    await opt.locator("#del-ask .del-yes").click();
     await expect(opt.locator("#del-ask .del-row")).toHaveAttribute("data-state", "deleted");
     expect(await opfsHas(opt, "export-1.txt")).toBe(false);
     await opt.locator("#del-ask .del-ok").click();
@@ -155,29 +154,41 @@ test.describe("files", () => {
     await stubPicker(opt, "export-2.txt", `${link("Opfs", "b", K2)}\n`, "denied");
     await opt.locator("#choose-file").click();
     await opt.locator("#add-confirm").click();
-    await opt.locator("#del-ask .del-yes").click();
     await expect(opt.locator("#del-ask .del-row")).toHaveAttribute("data-state", "denied");
     await expect(opt.locator("#del-ask")).toContainText(/Trash|废纸篓/);
     expect(await opfsHas(opt, "export-2.txt")).toBe(true);
     await opt.locator("#del-ask .del-ok").click();
 
-    // Keep it: nothing happens to the file
-    await stubPicker(opt, "export-3.txt", `${link("Opfs", "c", "MFRGGZDFMZTWQ2LKMFRGGZDF")}\n`);
+    // a line of the file is not added: not deleted by Add; its question, Keep first, and Keep leaves it
+    await stubPicker(opt, "export-3.txt", `${link("Opfs", "c", "MFRGGZDFMZTWQ2LKMFRGGZDF")}\nnot a key at all\n`);
     await opt.locator("#choose-file").click();
+    await expect(opt.locator("#preview")).toContainText(/1 to add|将添加 1/);
+    await expect(opt.locator("#add-del-note")).toHaveCount(0);
     await opt.locator("#add-confirm").click();
+    await expect(opt.locator("#del-ask .del-left")).toBeVisible();
     await opt.locator("#del-ask .del-keep").click();
     await expect(opt.locator("#del-ask")).toHaveCount(0);
     expect(await opfsHas(opt, "export-3.txt")).toBe(true);
 
+    // columns (a name, a password, a key): the password is never read, so Add never deletes the file; its question
+    await stubPicker(opt, "keys.txt", "Columns | hunter2 | GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJR\n");
+    await opt.locator("#choose-file").click();
+    await expect(opt.locator("#preview")).toContainText(/1 to add|将添加 1/);
+    await expect(opt.locator("#add-del-note")).toHaveCount(0);
+    await opt.locator("#add-confirm").click();
+    await expect(opt.locator("#del-ask .del-row")).toHaveAttribute("data-state", "ask");
+    expect(await opfsHas(opt, "keys.txt")).toBe(true);
+    await opt.locator("#del-ask .del-keep").click();
+
     // the file changed after Sixkey read it: not deleted
     await stubPicker(opt, "export-4.txt", `${link("Opfs", "d", "NBSWY3DPO5XXE3DENBSWY3DP")}\n`);
     await opt.locator("#choose-file").click();
-    await opt.locator("#add-confirm").click();
+    await expect(opt.locator("#preview")).toContainText(/1 to add|将添加 1/);
     await opfsTouch(opt, "export-4.txt", "something else, written later\n");
-    await opt.locator("#del-ask .del-yes").click();
+    await opt.locator("#add-confirm").click();
     await expect(opt.locator("#del-ask .del-row")).toHaveAttribute("data-state", "changed");
     expect(await opfsHas(opt, "export-4.txt")).toBe(true);
-    expect(await rows(p)).toBe(4);
+    expect(await rows(p)).toBe(5);
   });
 
   test("two links on one line are both read; a word run into a secret is refused, in a file and in the paste box", async () => {
@@ -226,7 +237,7 @@ test.describe("files", () => {
     await expect(opt.locator("#choose-file")).toBeDisabled();
   });
 
-  test("two files with handles: nothing is deleted before a click, and a click deletes its own row's file only", async () => {
+  test("two files with handles: Add deletes the one all of whose accounts it added; the other keeps its question, and a click deletes it only", async () => {
     const opt = await addPage(p);
     await stubPicker(opt, [
       { name: "first.txt", text: `${link("One", "a", K1)}\n` },
@@ -234,19 +245,21 @@ test.describe("files", () => {
     ]);
     await opt.locator("#choose-file").click();
     await expect(opt.locator("#add-files .src")).toHaveCount(2);
+    await expect(opt.locator("#add-del-note")).toContainText("first.txt");
+    await expect(opt.locator("#add-del-note")).not.toContainText("second.txt");
     await opt.locator("#add-confirm").click();
     await expect(opt.locator("#del-ask .del-row")).toHaveCount(2);
-    expect([await opfsHas(opt, "first.txt"), await opfsHas(opt, "second.txt")]).toEqual([true, true]);
+    const first = opt.locator("#del-ask .del-row", { hasText: "first.txt" });
+    await expect(first).toHaveAttribute("data-state", "deleted");
+    expect([await opfsHas(opt, "first.txt"), await opfsHas(opt, "second.txt")]).toEqual([false, true]);
     const second = opt.locator("#del-ask .del-row", { hasText: "second.txt" });
     // its Steam account was not imported: it says so, and Keep it comes first
+    await expect(second).toHaveAttribute("data-state", "ask");
     await expect(second.locator(".del-left")).toBeVisible();
     await expect(second.locator(".row2 button").first()).toHaveClass(/del-keep/);
     await second.locator(".del-yes").click();
     await expect(second).toHaveAttribute("data-state", "deleted");
-    expect([await opfsHas(opt, "first.txt"), await opfsHas(opt, "second.txt")]).toEqual([true, false]);
-    const first = opt.locator("#del-ask .del-row", { hasText: "first.txt" });
-    await expect(first).toHaveAttribute("data-state", "ask");
-    await expect(first.locator(".row2 button").first()).toHaveClass(/del-yes/);
+    expect(await opfsHas(opt, "second.txt")).toBe(false);
   });
 });
 

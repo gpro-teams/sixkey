@@ -56,6 +56,15 @@
   "clipRowTitle": {
     "message": "复制 30 秒后自动清空"
   },
+  "afsOthersTitle": {
+    "message": "在你其他电脑上开启的网站"
+  },
+  "afsOthersLead": {
+    "message": "Chrome 要求每台电脑各自允许一次，在这里点一下就能在这台电脑开启。"
+  },
+  "afsHere": {
+    "message": "在这台电脑开启"
+  },
   "afsLead": {
     "message": "你开启了验证码提示的网站。在这些网站上，Chrome 允许 Sixkey 读取和更改网页；Sixkey 只查找验证码输入框，不向任何地方发送数据。仅限安全（https）网页。"
   },
@@ -76,11 +85,5 @@
   },
   "afsOld": {
     "message": "验证码提示需要 Chrome 140 或更高版本。"
-  },
-  "trashKeptUnchecked": {
-    "message": "本配置文件在加入同步库之前保留的 $1 个保险库无法在这里检查，你永久删除的账户可能仍在其中。如果它必须从所有地方消失，请到“设置 › 同步”删除它们。"
-  },
-  "startOverKept": {
-    "message": "本配置文件还保留着加入同步库之前的 $1 个保险库。重新开始不会删除它们；如果不想保留，请到“设置 › 同步”删除。"
   }
 }

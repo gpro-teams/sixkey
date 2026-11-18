@@ -11,7 +11,6 @@ import { FakeSyncArea } from "./fake-sync-area";
 type Listener = (...args: unknown[]) => unknown;
 export const SELF = "abcdefghijklmnopabcdefghijklmnop";
 export const OTHER = "ponmlkjihgfedcbaponmlkjihgfedcba";
-export const API = "https://api.sixkey.app/*";
 export const url = (path: string, id = SELF) => `chrome-extension://${id}${path}`;
 
 export type AccessBehaviour = "ok" | "reject" | "throw" | "hang" | "absent";
@@ -24,11 +23,6 @@ export type WorldOptions = {
   seedSync?: Record<string, unknown>;
   manifest?: Record<string, unknown>;
   dev?: boolean;
-  /**
-   * The sync user interface's release gate (scripts/sync-ui.mjs, the build's define): open unless false, as in the dev
-   * and e2e builds, whose worker has sync; false is the store build's worker, with no sync worker, bridge or transport.
-   */
-  syncUi?: boolean;
   seedLocal?: Record<string, unknown>;
   panel?: boolean;
   /** More of chrome.*, merged over the fake (chrome.tabs, chrome.scripting, chrome.i18n, ...): the fill shortcut's APIs. */
@@ -36,7 +30,7 @@ export type WorldOptions = {
   /**
    * The host permissions granted, as Chrome lists them (getAll): contains() then answers as Chrome matches patterns (one
    * granted pattern covers an asked one: https://*\/* covers every https origin). Absent: contains() is always true and
-   * getAll() lists the API origin, as before.
+   * getAll() lists nothing (it listed the server sync's API origin, until that sync's client went: DV-0b).
    */
   grants?: string[];
   /** Whether Sixkey holds `scripting` (optional since W1b): held unless false. */
@@ -258,7 +252,7 @@ export async function loadWorker(o: WorldOptions = {}) {
         perms.push(["remove", p.origins]);
         return !!grants && p.origins.every((x) => grants.delete(x));
       },
-      getAll: async () => ({ origins: grants ? [...grants] : [API] }),
+      getAll: async () => ({ origins: grants ? [...grants] : [] }),
       onAdded: on("permAdded"),
       onRemoved: on("permRemoved"),
     },
@@ -269,7 +263,6 @@ export async function loadWorker(o: WorldOptions = {}) {
     action: { ...chrome.action, ...(o.chrome?.action as object | undefined) },
   });
   if (o.dev !== undefined) vi.stubGlobal("__SYNC_DEV__", o.dev); // the build's define (scripts/build.mjs)
-  vi.stubGlobal("__SYNC_UI__", o.syncUi ?? true); // and the sync release gate's
   if (o.rules) {
     vi.stubGlobal("__RULES_UPDATE__", true);
     vi.stubGlobal("__SK_RULES_KEYS__", o.rules.keys);
@@ -282,7 +275,8 @@ export async function loadWorker(o: WorldOptions = {}) {
   });
   await import("../../src/background/sw");
   await wait(60); // the start's own reads
-  const syncReads = () => local.reads.filter((k) => k.includes("sk_sync_state")).length;
+  /** The reads of sk_quick (chrome.storage.session): one per re-arming of the idle alarm, whose quick expiry reads it. */
+  const quickReads = () => session.reads.filter((k) => k.includes("sk_quick")).length;
   /** Every message listener is called, as the browser does; the return values say which kept the channel open. */
   const answers: { type: unknown; reply: unknown }[] = [];
   const send = (msg: unknown, sender: unknown, respond: (r: unknown) => void = () => undefined) =>
@@ -304,7 +298,7 @@ export async function loadWorker(o: WorldOptions = {}) {
     sync: syncArea,
     alarms,
     badges,
-    syncReads,
+    quickReads,
     send,
     answers,
     icon,

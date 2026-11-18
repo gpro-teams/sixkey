@@ -164,27 +164,6 @@
   "secInvSession": {
     "message": "解锁期间：已打开的密钥，在浏览器只存于内存的会话存储里（每次都锁定时不放）。"
   },
-  "secKSyncOn": {
-    "message": "在此配置文件中开启了同步"
-  },
-  "secKSyncOff": {
-    "message": "在此配置文件中关闭了同步"
-  },
-  "secKIdentityRestored": {
-    "message": "从加密副本恢复了本设备的同步身份"
-  },
-  "secKKeysAdopted": {
-    "message": "采用了在另一台设备上更改的密钥"
-  },
-  "secKDeviceApproved": {
-    "message": "从此配置文件批准了一台新设备"
-  },
-  "secKDeviceRevoked": {
-    "message": "从此配置文件吊销了一台设备"
-  },
-  "secKHistoryCleared": {
-    "message": "清除了服务器上的历史版本"
-  },
   "secKPrfEnrolled": {
     "message": "添加了用 Touch ID 或 Windows Hello 解锁"
   },
@@ -193,18 +172,6 @@
   },
   "secKPrfFailed": {
     "message": "用 Touch ID 或 Windows Hello 解锁失败"
-  },
-  "secKeysInSyncTitle": {
-    "message": "主密码、恢复密钥与密钥"
-  },
-  "secKeysInSyncBody": {
-    "message": "同步已开启，这些改动要在“同步”一节进行，这样每台设备都会更新。"
-  },
-  "secKeysInSyncOpen": {
-    "message": "打开同步"
-  },
-  "secKKeysAdoptedBack": {
-    "message": "从服务器取回了本机以前用过的密钥"
   },
   "pinBoxTitle": {
     "message": "PIN 快速解锁"

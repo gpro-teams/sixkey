@@ -21,7 +21,7 @@
 //     createdAt          the export time
 //     type, issuer, label, secret, algorithm, digits, period   the account itself: what the codes need
 //     counter            HOTP only, where the counter stands (a counter left on a TOTP entry is dropped)
-//     group, domains     only if set on that account: the user put it there. A group name appears only as the group of
+//     group, domains, note   only if set on that account: the user put it there. A group name appears only as the group of
 //                        a selected account, so the names of other groups never do
 //     hlc, phlc          stamps of a clock made for this export: the export time, a counter, and a new random device id
 //                        (not one of the vault's), so no edit time and no device of the source comes along
@@ -61,6 +61,7 @@ function contentOf(e: Entry): NewEntry {
     ...(e.type === "hotp" && e.counter !== undefined ? { counter: e.counter } : {}),
     ...(e.group ? { group: e.group } : {}),
     ...(e.domains && e.domains.length > 0 ? { domains: [...e.domains] } : {}),
+    ...(e.note ? { note: e.note } : {}),
   };
 }
 

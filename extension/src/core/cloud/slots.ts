@@ -23,7 +23,9 @@
 //
 // When a device writes (decideSlot), in order. The worker cannot decrypt, so the rule is about lineage, as rules.ts's
 // is for Drive: a device writes only the slot it made or adopted at a restore, and anything else becomes a new slot.
-//   1. its vault is empty and no slot of this vault exists yet: skip (a new, empty device never writes; isEmptyVault);
+//   1. (none: an empty vault is written like any other, so that a second computer finds it as soon as the master
+//      password is set, and is offered the restore instead of a second master password; until 2026-11-17 an empty
+//      vault was skipped, and the second computer of a person with no account yet saw nothing to restore);
 //   2. no link (never written, or the record did not check out): a new slot;
 //   3. the link is held (the store fell back to an older copy, or rule 7 held it): hold, until a page merges the slot;
 //   4. its own slot is absent (Chrome's "clear data", an uninstall elsewhere, a merge-and-remove): write it again,
@@ -457,12 +459,10 @@ export function ownSlot(a: Assembled): OwnSlot {
 export type WriteDecision =
   | { kind: "write"; to: "new"; why: "first" | "other_writer" | "other_vault" }
   | { kind: "write"; to: "same"; why: "gone" | "changed" | "repair" | "dirty" };
-export type SlotDecision =
-  { kind: "skip"; why: "empty" | "unchanged" } | { kind: "hold"; why: "held" | "older" } | WriteDecision;
+export type SlotDecision = { kind: "skip"; why: "unchanged" } | { kind: "hold"; why: "held" | "older" } | WriteDecision;
 
 /** The decision for one run (the header's rules, in order). `own` is read only when there is a link. */
 export function decideSlot(local: SlotLocal, link: SlotLink | null, own: OwnSlot): SlotDecision {
-  if (local.empty && (link === null || link.vaultId !== local.vaultId)) return { kind: "skip", why: "empty" };
   if (link === null) return { kind: "write", to: "new", why: "first" };
   if (link.held) return { kind: "hold", why: "held" };
   if (own === null) return { kind: "write", to: "same", why: "gone" };

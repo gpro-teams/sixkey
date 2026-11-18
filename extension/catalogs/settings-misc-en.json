@@ -56,6 +56,15 @@
   "clipRowTitle": {
     "message": "Clear 30 seconds after copying"
   },
+  "afsOthersTitle": {
+    "message": "Turned on on your other computers"
+  },
+  "afsOthersLead": {
+    "message": "Chrome asks on each computer before Sixkey may look at a site, so turn these on here once."
+  },
+  "afsHere": {
+    "message": "Turn on here"
+  },
   "afsLead": {
     "message": "Sites where you turned on code suggestions. On each, Chrome lets Sixkey read and change the site's pages; Sixkey looks only for the verification-code box and sends nothing anywhere. Secure (https) pages only."
   },
@@ -76,11 +85,5 @@
   },
   "afsOld": {
     "message": "Code suggestions need Chrome 140 or later."
-  },
-  "trashKeptUnchecked": {
-    "message": "$1 vault(s) this profile kept from before a sync join could not be checked here, so an account you erased may still be in them. Delete them in Settings › Sync if it must be gone everywhere."
-  },
-  "startOverKept": {
-    "message": "This profile also keeps $1 vault(s) from before a sync join. Starting over does not erase them; delete them in Settings › Sync if you want them gone."
   }
 }

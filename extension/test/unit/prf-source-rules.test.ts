@@ -100,8 +100,8 @@ describe("the device unlock's sources", () => {
     );
   });
 
-  it('"sk_prf" is spelled in keys.ts (and restated in the lazy prf-write.ts); it is written only by prf-store.ts and prf-write.ts, in the vault lock', () => {
-    expect(where(/"sk_prf"/).sort()).toEqual(["core/service/prf-write.ts", "core/sync/local/keys.ts"]);
+  it('"sk_prf" is spelled in local-keys.ts (and restated in the lazy prf-write.ts); it is written only by prf-store.ts and prf-write.ts, in the vault lock', () => {
+    expect(where(/"sk_prf"/).sort()).toEqual(["core/service/prf-write.ts", "core/storage/local-keys.ts"]);
     expect(file("core/service/prf-write.ts").code).toMatch(/^const KEY = "sk_prf";$/m);
     expect(where(/\bPRF_KEY\b/).sort()).toEqual([
       "core/service/prf-store.ts",

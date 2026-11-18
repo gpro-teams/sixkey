@@ -68,21 +68,24 @@ async function turnedOn(): Promise<{ p: Profile; opt: Page }> {
 test("turned on from the settings page alone; a change is written after the debounce, not before; a locked vault too", async () => {
   test.setTimeout(90_000);
   const { p, opt } = await turnedOn();
-  // the time of the area's first change, as the page sees it (none yet: the area is empty, and this computer alone
-  // writes it)
+  // the vault is empty, and turning on hands it over at once (since 2026-11-17), so a second computer finds it
+  await expect.poll(async () => (await seqOf(opt)) > 0, { timeout: 20_000 }).toBe(true);
+  const empty = await seqOf(opt);
+  await expect
+    .poll(
+      async () => ((await local(opt, "sk_csb_state")) as { pendingSince: number | null } | undefined)?.pendingSince,
+      {
+        timeout: 20_000,
+      },
+    )
+    .toBeNull();
+  // the time of the area's next change, as the page sees it (this computer alone writes it)
   await opt.evaluate(() => {
     const w = window as unknown as { firstSync: number | null };
     w.firstSync = null;
     chrome.storage.sync.onChanged.addListener(() => void (w.firstSync ??= Date.now()));
   });
   const firstSync = () => opt.evaluate(() => (window as unknown as { firstSync: number | null }).firstSync);
-  // the vault is empty: the run that turning on asked for ends, and nothing is written (rule 1)
-  await expect
-    .poll(async () => ((await local(opt, "sk_csb_state")) as { lastRun: number | null } | undefined)?.lastRun ?? null, {
-      timeout: 20_000,
-    })
-    .not.toBeNull();
-  expect(Object.keys(await area(opt))).toEqual([]);
   await addByPaste(p, GITHUB_URI);
   const st = (await local(opt, "sk_csb_state")) as { pendingSince: number | null };
   expect(st.pendingSince).not.toBeNull();
@@ -90,7 +93,7 @@ test("turned on from the settings page alone; a change is written after the debo
   expect(alarm).toBeTruthy();
   expect(alarm!.scheduledTime - st.pendingSince!).toBeGreaterThanOrEqual(5_000);
   expect(alarm!.scheduledTime - st.pendingSince!).toBeLessThan(6_000);
-  await expect.poll(() => seqOf(opt), { timeout: 20_000 }).toBeGreaterThan(0);
+  await expect.poll(() => seqOf(opt), { timeout: 20_000 }).toBeGreaterThan(empty);
   // nothing before the debounce, however fast or slow the machine: the area first changed at the alarm's time or after
   expect(await firstSync()).toBeGreaterThanOrEqual(alarm!.scheduledTime);
   const first = await seqOf(opt);
@@ -150,14 +153,18 @@ test("another computer's slot that leaves no room: this one stops as no_room, no
   while (theirs.bytes < ROOM_BYTES - 1_400) theirs = await otherSlot("elsewhr2", ++n);
   expect(theirs.bytes).toBeLessThanOrEqual(ROOM_BYTES);
   const { p, opt } = await turnedOn();
+  // the empty vault is handed over at once (since 2026-11-17): its small copy is there before theirs arrives
+  await expect.poll(async () => (await seqOf(opt)) > 0, { timeout: 20_000 }).toBe(true);
+  const before = await area(opt);
   await opt.evaluate((items) => chrome.storage.sync.set(items), theirs.items);
   await addByPaste(p, GITHUB_URI);
   await expect
     .poll(async () => ((await local(opt, "sk_csb_state")) as { err: unknown } | undefined)?.err, { timeout: 20_000 })
     .toBe("no_room");
-  expect(await own(opt)).toBeNull(); // no slot of its own, no link
+  // the account's copy is not written: this computer's slot still holds the empty vault, theirs is untouched
   const now = await area(opt);
-  expect(Object.keys(now).sort()).toEqual(Object.keys(theirs.items).sort());
+  expect(Object.keys(now).sort()).toEqual([...Object.keys(before), ...Object.keys(theirs.items)].sort());
+  for (const [k, v] of Object.entries(before)) expect(now[k], k).toEqual(v);
   for (const [k, v] of Object.entries(theirs.items)) expect(now[k], k).toEqual(v);
   expect(await opt.evaluate(() => chrome.alarms.get("sk-csb-retry"))).toBeFalsy(); // waits for the user
   await close(p);
@@ -173,7 +180,16 @@ test("a slot that shrinks: one set, then its chunks past the new count are remov
     return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(label)}?secret=${"JBSWY3DPEHPK3PXP".repeat(12)}&issuer=${encodeURIComponent(issuer)}`;
   };
   await addByPaste(p, Array.from({ length: 10 }, (_, i) => long(i)).join("\n"));
-  await expect.poll(() => seqOf(opt), { timeout: 20_000 }).toBeGreaterThan(0);
+  // (the empty vault's copy came first, at turning on: wait for the accounts' copy, two chunks)
+  await expect
+    .poll(
+      async () => {
+        const c = await own(opt);
+        return c?.read.kind === "ok" ? c.read.manifest.n : 0;
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThanOrEqual(2);
   const o = (await own(opt))!;
   const n = o.read.kind === "ok" ? o.read.manifest.n : 0;
   expect(n).toBeGreaterThanOrEqual(2);

@@ -26,6 +26,7 @@ export const LIMITS = {
   text: 256,
   secret: 512,
   group: 64,
+  note: 64,
   domain: 253,
   domains: 16,
   entries: 5000,
@@ -100,6 +101,11 @@ function parseEntry(x: unknown): Entry {
     e.domains = o.domains.map((d) => str(d, LIMITS.domain, "domain"));
   }
   if (o.group !== undefined) e.group = str(o.group, LIMITS.group, "group");
+  if (o.note !== undefined) e.note = str(o.note, LIMITS.note, "note");
+  if (o.autofill !== undefined) {
+    if (!Array.isArray(o.autofill) || o.autofill.length > LIMITS.domains) bad("autofill");
+    e.autofill = o.autofill.map((d) => str(d, LIMITS.domain, "autofill"));
+  }
   if (deleted !== undefined) e.deleted = deleted;
   if (o.dhlc !== undefined) e.dhlc = o.dhlc as string;
   return e;

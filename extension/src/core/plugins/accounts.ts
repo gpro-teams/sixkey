@@ -17,7 +17,7 @@
 import { aliveEntries, type Entry, type Vault } from "../vault/model";
 import { toWellFormed } from "./text";
 
-/** The HKDF label of K_h. Local only: not a sync label (src/core/sync/crypto/labels.ts has those). */
+/** The HKDF label of K_h. Local only: not a label of the contract's (contract/vectors/sync-v1.json lists those). */
 export const HANDLE_LABEL = "sixkey/v1/plugin-handles";
 
 /** `#/$defs/accountSummary`. */

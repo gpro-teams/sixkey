@@ -199,7 +199,11 @@ test("the same account with a new key: keep both, or replace, which moves the ol
   await addView(pop);
   await pasteText(pop, `otpauth://totp/GitHub:alice@example.com?secret=${OTHER}&issuer=GitHub`);
   await expect(pop.locator("#pa-verdict")).toContainText(/different key|密钥不同/);
-  await expect(pop.locator("#pa-keep")).toBeChecked(); // never replaces unless asked
+  // asked every time: no answer is chosen, and nothing can be added before one (the owner's report of 2026-11-18)
+  await expect(pop.locator("#pa-keep")).not.toBeChecked();
+  await expect(pop.locator("#pa-replace")).not.toBeChecked();
+  await expect(pop.locator("#pa-add")).toBeDisabled();
+  await expect(pop.locator("#pa-add-copy")).toBeDisabled();
   await pop.locator("#pa-replace").check();
   await pop.locator("#pa-add").click();
   await expect(pop.locator(".row")).toHaveCount(1);
@@ -209,6 +213,31 @@ test("the same account with a new key: keep both, or replace, which moves the ol
 
   const opt = await openOptions(p, "#trash");
   await expect(opt.locator("#trash")).toContainText("GitHub"); // the old one, restorable
+});
+
+test("several accounts at once: one whose name is saved with another key asks, on its row, to replace or keep both", async () => {
+  await startFresh(p);
+  await addByPaste(p, GITHUB_URI);
+  const pop = await openPopup(p);
+  await addView(pop);
+  await pasteText(
+    pop,
+    migrationUri([
+      { secret: base32Bytes(OTHER), name: "alice@example.com", issuer: "GitHub" },
+      { secret: base32Bytes("MFRGGZDFMZTWQ2LK"), name: "team", issuer: "Zoom" },
+    ]),
+  );
+  await expect(pop.locator("#pa-list li")).toHaveCount(2);
+  await expect(pop.locator("#pa-add")).toHaveText(/Add 1|添加 1/); // the same name is not ticked by default
+  await pop.locator("#pa-list li", { hasText: "GitHub" }).locator("input[type=checkbox]").check();
+  await expect(pop.locator("#pa-choose")).toBeVisible();
+  await expect(pop.locator("#pa-add")).toBeDisabled(); // not before an answer
+  await pop.locator("#pa-list li", { hasText: "GitHub" }).locator(".pa-m-replace").check();
+  await expect(pop.locator("#pa-choose")).toHaveCount(0);
+  await pop.locator("#pa-add").click();
+  await expect(pop.locator(".row")).toHaveCount(2); // GitHub replaced (the old one in the trash), Zoom added
+  const opt = await openOptions(p, "#trash");
+  await expect(opt.locator("#trash")).toContainText("GitHub");
 });
 
 test("a Google export with two accounts offers Add 2 and copies nothing; one already saved is shown and not ticked", async () => {

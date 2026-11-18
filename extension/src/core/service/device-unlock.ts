@@ -2,8 +2,8 @@
 // the ceremony, by the popup, the side panel and the settings page's unlock bar (src/ui/DeviceUnlock.tsx), so none of it,
 // nor the crypto and WebAuthn it uses, is in the popup's counted bundle.
 //
-// It reuses the service's own steps, taken from the service itself by element access (as sync-flows.ts and pin-admin.ts
-// do; TypeScript allows it for exactly this): the store and the keys its first read takes (`also`), the session, the
+// It reuses the service's own steps, taken from the service itself by element access (as pin-admin.ts does; TypeScript
+// allows it for exactly this): the store and the keys its first read takes (`also`), the session, the
 // settings, the clock and random source, the security record, the quick lock, the rules of the record (devicePlan), of the
 // session quick unlock (quickUsable, dropIfSame) and finishUnlock, the very end of every unlock. So the session a device
 // unlock starts is the password unlock's, with the lock epoch read before the ceremony: a lock during the OS dialog voids
