@@ -674,12 +674,6 @@
   "otpSpec": {
     "message": "$1 digits · $2 s · $3"
   },
-  "syncLabel": {
-    "message": "Sync"
-  },
-  "syncOff": {
-    "message": "Off · this device"
-  },
   "clipRowTitle": {
     "message": "Clear 30 seconds after copying"
   },
@@ -759,10 +753,7 @@
     "message": "Set a master password now"
   },
   "resetLead": {
-    "message": "Your recovery key lets you choose a new master password. You get a new recovery key with it, and nothing changes until you have saved that one."
-  },
-  "resetCodeNote": {
-    "message": "Nothing has changed yet: your current recovery key and password keep working until you press “$1” below. If you close this page before that, nothing changes, and this new key opens nothing."
+    "message": "Set a new master password with your recovery key. The recovery key stays the same and keeps working."
   },
   "resetChanged": {
     "message": "Your password or recovery key was changed in another window meanwhile, so nothing was changed here and the key that was shown will not work. Start again."
@@ -781,6 +772,15 @@
   },
   "siteBound": {
     "message": "This account is already remembered for $1. Remember only if this page is the same service."
+  },
+  "afsOthersTitle": {
+    "message": "Turned on on your other computers"
+  },
+  "afsOthersLead": {
+    "message": "Chrome asks on each computer before Sixkey may look at a site, so turn these on here once."
+  },
+  "afsHere": {
+    "message": "Turn on here"
   },
   "cmdFill": {
     "message": "Fill the verification code on this page"
@@ -865,6 +865,18 @@
   },
   "afSugWait": {
     "message": "One moment, then click again"
+  },
+  "autoGroup": {
+    "message": "Group"
+  },
+  "autoGroupTip": {
+    "message": "Group by name: the accounts of each service in a group of their own. Accounts already in a group stay."
+  },
+  "autoGrouped": {
+    "message": "$2 accounts in $1 groups"
+  },
+  "autoGroupUndo": {
+    "message": "Undo"
   },
   "listCodeHidden": {
     "message": "Code hidden"
@@ -954,7 +966,7 @@
     "message": "This key is already saved as $1. It may be the same QR code scanned twice."
   },
   "paRebind": {
-    "message": "You already have $1 with a different key. If the site gave you a new one, replace the old key."
+    "message": "You already have $1 with a different key. Replace the old one, or keep both?"
   },
   "paKeepBoth": {
     "message": "Keep both"
@@ -1316,6 +1328,51 @@
   "errNextUpdate": {
     "message": "Update Sixkey, then try again. Nothing has been changed."
   },
+  "fakeSiteTitle": {
+    "message": "This may be a fake site"
+  },
+  "fakeSite": {
+    "message": "$1 looks like $2's site $3, but it is not. Don't enter $2's code here."
+  },
+  "fakeSiteMore": {
+    "message": "($1 more accounts)"
+  },
+  "fakeCopyAgain": {
+    "message": "This page looks like a fake of this account's site. Click again to copy anyway."
+  },
+  "httpSiteTitle": {
+    "message": "This page is not secure"
+  },
+  "httpSite": {
+    "message": "$1 uses http: a code typed here can be read on the way."
+  },
+  "welcomeStartAlone": {
+    "message": "Don't restore: make a separate vault"
+  },
+  "toPopup": {
+    "message": "Use the popup instead"
+  },
+  "groupsTitle": {
+    "message": "Groups"
+  },
+  "groupsLead": {
+    "message": "Tick accounts, then move them into a group. Each group is a section of the popup's list; a new group comes last."
+  },
+  "groupsSearch": {
+    "message": "Search by name, account or group"
+  },
+  "groupsMove": {
+    "message": "Move $1 to this group"
+  },
+  "groupsClear": {
+    "message": "Take out of their groups"
+  },
+  "groupsMoved": {
+    "message": "Moved $1 account(s) to $2."
+  },
+  "groupsCleared": {
+    "message": "Took $1 account(s) out of their groups."
+  },
   "addNothing": {
     "message": "Paste links, choose a file or scan a QR code first."
   },
@@ -1403,38 +1460,14 @@
   "delManual": {
     "message": "Delete it yourself: move it to the Trash or Recycle Bin, then empty it."
   },
-  "errSyncOn": {
-    "message": "Sync is on in this profile, so this change has to go through sync"
-  },
-  "errNextSyncOn": {
-    "message": "Make it from the sync settings, so that every device gets it. Nothing was changed."
+  "delAuto": {
+    "message": "Adding also deletes $1, which holds your keys in plain text. Chrome asks you to allow it first."
   },
   "errCleanupPending": {
     "message": "An earlier key change is still being finished on this computer"
   },
   "errNextCleanupPending": {
     "message": "Lock Sixkey and unlock it again, then try again. Nothing was changed."
-  },
-  "secKSyncOn": {
-    "message": "Sync turned on in this profile"
-  },
-  "secKSyncOff": {
-    "message": "Sync turned off in this profile"
-  },
-  "secKIdentityRestored": {
-    "message": "This device's sync identity restored from its encrypted copy"
-  },
-  "secKKeysAdopted": {
-    "message": "Keys changed on another device were taken over here"
-  },
-  "secKDeviceApproved": {
-    "message": "A new device was approved from this profile"
-  },
-  "secKDeviceRevoked": {
-    "message": "A device was revoked from this profile"
-  },
-  "secKHistoryCleared": {
-    "message": "The server's history was cleared"
   },
   "secKPrfEnrolled": {
     "message": "Unlock with Touch ID or Windows Hello added"
@@ -1444,42 +1477,6 @@
   },
   "secKPrfFailed": {
     "message": "Unlocking with Touch ID or Windows Hello failed"
-  },
-  "frJoinSync": {
-    "message": "Join a synced vault instead"
-  },
-  "syncBadgeTitle": {
-    "message": "Sixkey · devices waiting for approval: $1"
-  },
-  "secKeysInSyncTitle": {
-    "message": "Master password, recovery key and keys"
-  },
-  "secKeysInSyncBody": {
-    "message": "Sync is on, so these change in the Sync section: every device then gets the change."
-  },
-  "secKeysInSyncOpen": {
-    "message": "Open Sync"
-  },
-  "secKKeysAdoptedBack": {
-    "message": "Keys this device had used before were taken back from the server"
-  },
-  "lockPasswordElsewhere": {
-    "message": "The master password was changed on another device. Here, unlock with your previous one, then take the new one in Settings › Sync."
-  },
-  "lockKeysElsewhere": {
-    "message": "The keys were changed on another device. Here, unlock with the master password this device last used, then enter the current one in Settings › Sync."
-  },
-  "lockOpenSync": {
-    "message": "Open Sync"
-  },
-  "lockPendingChange": {
-    "message": "A new master password set in Settings may not have reached this device yet. If yours fails here, unlock in Settings › Sync with the one you set."
-  },
-  "trashKeptUnchecked": {
-    "message": "$1 vault(s) this profile kept from before a sync join could not be checked here, so an account you erased may still be in them. Delete them in Settings › Sync if it must be gone everywhere."
-  },
-  "startOverKept": {
-    "message": "This profile also keeps $1 vault(s) from before a sync join. Starting over does not erase them; delete them in Settings › Sync if you want them gone."
   },
   "strengthHintOwn": {
     "message": "At least $1 characters. $2 bits or more is best: a few random words work well."
@@ -1685,8 +1682,23 @@
   "railCsbStopped": {
     "message": "Backup stopped"
   },
+  "paChoose": {
+    "message": "For each account of a name you already have: replace the old one, or keep both."
+  },
+  "sameName": {
+    "message": "Same name $1"
+  },
+  "sameNameSet": {
+    "message": "Same name · $1 accounts"
+  },
+  "fieldNote": {
+    "message": "Note"
+  },
+  "fieldNoteHint": {
+    "message": "To tell it from an account of the same name, e.g. Shop A"
+  },
   "sharesInsteadLink": {
-    "message": "I have shares instead"
+    "message": "I split my recovery key into shares"
   },
   "sharesFoldTitle": {
     "message": "Recovery key shares"
@@ -1705,6 +1717,18 @@
   },
   "sharesRemindGo": {
     "message": "Check my shares"
+  },
+  "shiftBack": {
+    "message": "Previous code"
+  },
+  "shiftNext": {
+    "message": "Next code"
+  },
+  "shiftReset": {
+    "message": "Back to the current code"
+  },
+  "shiftBy": {
+    "message": "$1 s"
   },
   "fileLockedMeanwhile": {
     "message": "Sixkey locked while the file was being read. Choose it again."

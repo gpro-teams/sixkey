@@ -15,12 +15,9 @@ import { restartOffer } from "../../src/core/service/pin-restart-count";
 import { unlock as viaRecord } from "../../src/core/service/pin-restart-steps";
 import { formatFor, formatRecord, PW_FORMAT_KEY } from "../../src/core/service/pw-format";
 import type { VaultService } from "../../src/core/service/service";
-import { renameDevice } from "../../src/core/sync/engine/keys";
-import { firstUpload } from "../../src/core/sync/engine/enroll";
 import { createRuntime, passwordFormat } from "../../src/platform/runtime";
 import { createPopupRuntime } from "../../src/platform/runtime-base";
 import { loadScreen } from "../../src/popup/load";
-import { EMAIL, newDisk, World } from "../helpers/m3-world";
 import { codeOf, createProtected, NO_PAGE, resetWithCode } from "../helpers/vaults";
 
 const GEN = "JDXT-NBSG-6JQG-XBTV";
@@ -231,45 +228,6 @@ describe("every prompt that asks for the master password again takes the same lo
     expect(await opens(w.page().service, LOOSE)).toBe(true);
     const { unlockWithPassword } = await import("../../src/core/crypto/keyring");
     expect((await unlockWithPassword(w.keyring(), GEN)).id).toBe(w.keyring().vkId);
-  });
-});
-
-describe("the sync enable flow takes it at every step; the engine's key operations stay exact until §7.5", () => {
-  it("step 2, step 4 (b) and the first upload, loosely; the server's verifier is the stored spelling's", async () => {
-    const w = new World();
-    w.password = GEN;
-    const a = w.device("A", newDisk());
-    w.code = (await createProtected(a.svc, GEN)).recoveryCode;
-    await a.svc.openView();
-    await a.svc.verifyPassword(LOOSE); // step 2
-    await a.flows.prepareUploadRecovery(LOOSE); // step 4 (b), prepared only
-    const session = await w.server.session(EMAIL);
-    const r = await firstUpload(a.engine, {
-      session,
-      password: LOOSE,
-      recoveryCode: w.code,
-      deviceName: "A",
-      email: EMAIL,
-    });
-    expect(r).toEqual({ kind: "done" });
-    // the verifier was derived from the stored spelling: an operation the server checks takes GEN
-    const id = w.server.state(EMAIL).devices[0]!.device_id;
-    await renameDevice(a.engine, id, "A2", GEN);
-    // the engine's own key operations stay exact until the resolver (PASSWORD-SETUP-NOTES §7.5)
-    await expect(renameDevice(a.engine, id, "A3", LOOSE)).rejects.toMatchObject({ code: "wrong_secret" });
-  });
-
-  it("a wrong one at the first upload is refused, nothing sent", async () => {
-    const w = new World();
-    const a = w.device("A", newDisk());
-    w.code = (await createProtected(a.svc, GEN)).recoveryCode;
-    await a.svc.openView();
-    const n = w.server.requests.length;
-    const session = await w.server.session(EMAIL);
-    await expect(
-      firstUpload(a.engine, { session, password: WRONG, recoveryCode: w.code, deviceName: "A", email: EMAIL }),
-    ).rejects.toMatchObject({ code: "wrong_secret" });
-    expect(w.server.requests.slice(n).map((q) => q.op)).not.toContain("POST /v1/vault/init");
   });
 });
 

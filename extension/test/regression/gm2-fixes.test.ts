@@ -240,7 +240,9 @@ describe("GM2-1(a): a key change that committed is never reported as failed when
       const code = await run(w, w.svc(w.kv, w.mirror, s), r1);
       await w.store().selfCheck();
       expect(await opensWithCode((await active(w)).keyring, code), name).toBe(true);
-      if (r1) expect(await opensWithCode((await active(w)).keyring, r1), name).toBe(false);
+      // a reset keeps the recovery key (the owner's report of 2026-11-18); the other two replace it
+      if (r1)
+        expect(await opensWithCode((await active(w)).keyring, r1), name).toBe(name === "resetPasswordWithRecovery");
       expect(w.diag, name).toContain("session not stored after a key change");
       // the user unlocks again (SYNC-DESIGN I2) and finds everything
       const fresh = w.svc(w.kv, w.mirror, new MemorySession());
@@ -374,15 +376,16 @@ describe("GM2-13: the popup's reset is prepared in memory and written only after
     expect(await keyringsOpenedBy(w, (x) => opensWithCode(x, p.recoveryCode))).toEqual([]);
   });
 
-  it("commitReset: the new password and code open everything, no copy anywhere opens with the old ones, unlocked; the code's use and the reset recorded once each", async () => {
+  it("commitReset: the new password opens everything, no copy anywhere opens with the old one, the recovery key goes on, unlocked; the code's use and the reset recorded once each", async () => {
     const { w, r1, s, log } = await lockedWorld();
     const p = await s.prepareReset(r1, STRONG2);
+    expect(p.recoveryCode).toBe(""); // no new recovery key (the owner's report of 2026-11-18)
     await s.commitReset(p);
     expect((await s.status()).state).toBe("unlocked");
     const k = (await active(w)).keyring;
-    expect(await opensWithCode(k, p.recoveryCode)).toBe(true);
+    expect(await opensWithCode(k, r1)).toBe(true);
     expect(await opensWithPw(k, STRONG2)).toBe(true);
-    expect(await keyringsOpenedBy(w, (x) => opensWithCode(x, r1))).toEqual([]);
+    expect(await keyringsOpenedBy(w, (x) => opensWithPw(x, STRONG))).toEqual([]);
     expect(await keyringsOpenedBy(w, (x) => opensWithPw(x, STRONG))).toEqual([]);
     expect(await kinds(log)).toEqual(["password_reset", "recovery_used"]); // newest first
     await expect(s.commitReset(p)).rejects.toMatchObject({ code: "bad_state" }); // spent
@@ -448,10 +451,10 @@ describe("GM2-13: the popup's reset is prepared in memory and written only after
       },
     });
     await expect(w.svc(kv, w.mirror, w.session).commitReset(p)).rejects.toThrow("IO error after the write");
-    expect(await opensWithCode((await active(w)).keyring, p.recoveryCode)).toBe(true); // it did commit
+    expect(await opensWithPw((await active(w)).keyring, STRONG2)).toBe(true); // it did commit
     await s.commitReset(p); // the retry recognises its own reset
     expect((await s.status()).state).toBe("unlocked");
-    expect(await keyringsOpenedBy(w, (x) => opensWithCode(x, r1))).toEqual([]);
+    expect(await keyringsOpenedBy(w, (x) => opensWithPw(x, STRONG))).toEqual([]);
   });
 });
 
@@ -533,7 +536,7 @@ describe("GM2-3 (P-5): a new password or recovery code of the same key leaves no
     expect(await keyringsOpenedBy(w, (k) => opensWithCode(k, r1))).toEqual([]);
     await w.svc().lock();
     const r3 = await resetWithCode(w.svc(), r2, STRONG);
-    expect(await keyringsOpenedBy(w, (k) => opensWithCode(k, r2))).toEqual([]);
+    expect(r3).toBe(r2); // a reset keeps the recovery key (the owner's report of 2026-11-18)
     expect(await keyringsOpenedBy(w, (k) => opensWithPw(k, STRONG2))).toEqual([]);
     expect(await keyringsOpenedBy(w, (k) => opensWithCode(k, r3))).toHaveLength(4);
     expect(w.kv.data.has(KEYS.keyChange)).toBe(false);

@@ -4,7 +4,7 @@ import { CryptoError, bs, fromB64, randomBytes, toB64, utf8, type Random } from 
 
 export const PBKDF2_MIN_ITERATIONS = 600_000; // OWASP floor for PBKDF2-HMAC-SHA256; also enforced when reading stored params
 export const PBKDF2_MAX_ITERATIONS = 20_000_000; // bound the work a hostile server can ask the client to do
-/** Every PBKDF2 use that names no count: backup files, the PIN (pin.ts), and the sync engine's wraps and pw_auth. */
+/** Every PBKDF2 use that names no count: backup files and the PIN (pin.ts); the server sync's engine too, until DV-0b. */
 export const PBKDF2_DEFAULT_ITERATIONS = 600_000;
 /**
  * New master-password wraps of this device's keyring (VaultService: first run, restore, start over, turning the master
@@ -12,7 +12,7 @@ export const PBKDF2_DEFAULT_ITERATIONS = 600_000;
  * the 50-bit bar (OWNER-DECISIONS/15), so each offline guess at a copied profile costs 3.3 times what 600k cost; the
  * value was measured in Chrome (docs/design/notes/OWN-PASSWORD-NOTES.md §2). A wrap is read at the count it carries, within
  * the range below, so a 600k wrap still opens; it is re-wrapped at this count only when a new wrap is made (the next
- * password change), never on an unlock. Nothing else uses it: the sync engine's wraps stay at the default.
+ * password change), never on an unlock. Nothing else uses it.
  */
 export const PBKDF2_PASSWORD_WRAP_ITERATIONS = 2_000_000;
 

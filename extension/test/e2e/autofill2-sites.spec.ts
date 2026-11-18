@@ -231,3 +231,29 @@ test("a grant withdrawn in Chrome's own settings (chrome://extensions › Site a
   await expect(row).toContainText("On");
   await expect(row).not.toContainText("Turned off");
 });
+
+test("the list across computers (the owner's request of 2026-11-18): this computer's site is marked on its accounts in the vault; a computer without it offers it, turned on by a click; Remove takes the mark off", async () => {
+  test.setTimeout(120_000);
+  w = await world({ surface: "popup" }); // Example is registered for fix.test
+  await worker(w).evaluate((hosts) => chrome.storage.local.set({ sk_af_sites: { v: 1, hosts } }), [GRANTED_TLS]);
+  const opt = await openOptions(w.p, "#autofill");
+  const row = opt.locator(`#afs-sites tr[data-host="${GRANTED_TLS}"]`);
+  await expect(row).toContainText("On");
+  await expect(opt.locator("#afs-others")).toHaveCount(0); // on this computer: nothing to offer
+  // another computer: the vault carries the mark, its own list does not have the site (here: the list emptied)
+  await wait(1000); // the mark is written once the page has read the list
+  await worker(w).evaluate(() => chrome.storage.local.set({ sk_af_sites: { v: 1, hosts: [] } }));
+  const other = opt.locator(`#afs-others tr[data-host="${GRANTED_TLS}"]`);
+  await expect(other).toBeVisible();
+  await expect(opt.locator("#afs-others")).toContainText("Turned on on your other computers");
+  expect(await sites(w)).toEqual({ v: 1, hosts: [] }); // only offered: never put on this computer's list by itself
+  await other.locator(".afs-here").click(); // Chrome's grant (a required one in this build), then this computer's list
+  await expect(row).toContainText("On");
+  await expect(opt.locator("#afs-others")).toHaveCount(0);
+  expect(await sites(w)).toEqual({ v: 1, hosts: [GRANTED_TLS] });
+  // Remove: off this computer's list and off the accounts, so no computer offers it any more
+  await row.locator(".afs-remove").click();
+  await expect(opt.locator("#autofill")).toContainText("No sites yet.");
+  await wait(1000);
+  await expect(opt.locator("#afs-others")).toHaveCount(0);
+});

@@ -11,7 +11,13 @@ import { appendDomain } from "./model";
 import { siteRules } from "./site-rules";
 import "./site.css";
 
-const fieldsOf = (e: Entry) => ({ issuer: e.issuer, label: e.label, group: e.group ?? "", domains: e.domains ?? [] });
+const fieldsOf = (e: Entry) => ({
+  issuer: e.issuer,
+  label: e.label,
+  group: e.group ?? "",
+  domains: e.domains ?? [],
+  note: e.note ?? "",
+});
 const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /**
@@ -33,6 +39,7 @@ export function EditDialog(p: {
   const [issuer, setIssuer] = useState(p.entry.issuer);
   const [label, setLabel] = useState(p.entry.label);
   const [group, setGroup] = useState(p.entry.group ?? "");
+  const [note, setNote] = useState(p.entry.note ?? "");
   const [domains, setDomains] = useState<string[]>(p.entry.domains ?? []);
   const [site, setSite] = useState("");
   const [siteError, setSiteError] = useState("");
@@ -56,6 +63,7 @@ export function EditDialog(p: {
     if (now.issuer !== was.issuer) setIssuer((cur) => (cur === was.issuer ? now.issuer : cur));
     if (now.label !== was.label) setLabel((cur) => (cur === was.label ? now.label : cur));
     if (now.group !== was.group) setGroup((cur) => (cur === was.group ? now.group : cur));
+    if (now.note !== was.note) setNote((cur) => (cur === was.note ? now.note : cur));
     if (!sameList(now.domains, was.domains) && sameList(list.current, was.domains)) setList(now.domains);
   }, [p.entry]);
   // The rules for adding sites load when the dialog opens, so adding one is immediate.
@@ -121,12 +129,19 @@ export function EditDialog(p: {
           if (site.trim()) sites = await addSite(site); // typed but not added yet: add it now, or stay open and say why not
           if (!sites) return;
           const was = base.current;
-          const f = { issuer: issuer.trim(), label: label.trim(), group: group.trim(), domains: sites };
+          const f = {
+            issuer: issuer.trim(),
+            label: label.trim(),
+            group: group.trim(),
+            domains: sites,
+            note: note.trim(),
+          };
           const changed = {
             issuer: f.issuer !== was.issuer,
             label: f.label !== was.label,
             group: f.group !== was.group,
             domains: !sameList(sites, was.domains),
+            note: f.note !== was.note,
           };
           const id = p.entry.id;
           void p.onSave(Object.values(changed).some(Boolean) ? (v, c) => editSaved(v, id, f, changed, c) : null);
@@ -178,6 +193,16 @@ export function EditDialog(p: {
               ))}
             </datalist>
           </div>
+        </div>
+        <div class="field">
+          <label for="e-note">{t("fieldNote")}</label>
+          <input
+            id="e-note"
+            value={note}
+            maxLength={LIMITS.note}
+            placeholder={t("fieldNoteHint")}
+            onInput={(e) => setNote((e.target as HTMLInputElement).value)}
+          />
         </div>
         <div class="field sites">
           <label for="e-site">{t("siteField")}</label>

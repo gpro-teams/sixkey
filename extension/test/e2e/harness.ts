@@ -86,6 +86,7 @@ export async function openOptions(p: Profile, hash = ""): Promise<Page> {
 /** The group of the rail each leaf of the settings page is in (src/options/route.ts); #clipboard is a panel. */
 const GROUP_OF: Record<string, string> = {
   add: "accounts",
+  groups: "accounts",
   backup: "accounts",
   trash: "accounts",
   security: "security",

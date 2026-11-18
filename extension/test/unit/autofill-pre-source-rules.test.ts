@@ -6,10 +6,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { BRIDGE_MESSAGE, SYNC_CHANGED_MESSAGE } from "../../src/platform/bridge-page";
 import { CONTENT_MESSAGES, CSB_MESSAGES, MESSAGE_SENDERS } from "../../src/platform/sender-policy";
 import { SCRIPT_ID } from "../../src/platform/autofill-register";
-import { SYNC_SOON_MESSAGE } from "../../src/platform/runtime-base";
 
 const EXT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const SRC = join(EXT, "src");
@@ -47,6 +45,7 @@ const ALARM_NAMES = [
   "sk-daily",
   "sk-autolock",
   "sk-quick-expiry",
+  // the server sync's four, named only to clear them (platform/server-sync-leftovers.ts; its client went, DV-0b)
   "sk-sync-sync",
   "sk-sync-kick",
   "sk-sync-retry",
@@ -77,9 +76,16 @@ describe("every message type has a sender policy", () => {
     expect(rulesRows.filter((r) => !literals.has(r))).toEqual([]);
   });
 
-  it("the constants that name a message are the table's rows", () => {
-    expect([BRIDGE_MESSAGE, SYNC_SOON_MESSAGE, SYNC_CHANGED_MESSAGE].every((m) => rows.includes(m))).toBe(true);
-    expect(new Set([BRIDGE_MESSAGE, SYNC_SOON_MESSAGE, SYNC_CHANGED_MESSAGE]).size).toBe(3);
+  it("the server sync's messages are gone with its client (DV-0b): no row, no literal, no constant; its alarms are named only to be cleared", () => {
+    for (const t of ["sk-sync-soon", "sk-sync-changed", "sk-api"]) expect(rows, t).not.toContain(t);
+    expect(
+      files.filter((f) =>
+        /["'`]sk-sync-(?:soon|changed)["'`]|["'`]sk-api["'`]|SYNC_SOON_MESSAGE|BRIDGE_MESSAGE/.test(f.code),
+      ),
+    ).toEqual([]);
+    expect(files.filter((f) => /["'`]sk-sync-/.test(f.code)).map((f) => f.path)).toEqual([
+      "platform/server-sync-leftovers.ts",
+    ]);
   });
 
   it("every runtime.sendMessage in the source is in a file this list knows, and sends a row's type", () => {
@@ -89,7 +95,6 @@ describe("every message type has a sender policy", () => {
       .sort();
     expect(senders).toEqual([
       "background/sw.ts",
-      "devsync/main.ts",
       "inject/suggest-ui.ts", // the in-page suggestion's two (AUTOFILL2 patch 4b): CONTENT_MESSAGES rows, as suggest.ts's
       "inject/suggest.ts", // the content script's one message: a CONTENT_MESSAGES row, never a page's (AUTOFILL2 patch 3)
       "offscreen/main.ts",
@@ -98,26 +103,22 @@ describe("every message type has a sender policy", () => {
       // (the PIN box no longer sends one: setting a PIN arms nothing in session memory since its record is its one way)
       "options/RulesUpdate.tsx", // the site rules' updater's switch (AF3-U2): sk-af-rules-status, its own table's
       "options/csb/merge.ts", // the backup in Chrome's sync storage's pages: their sk-csb-* rows, the worker's only
-      "options/sync/gateway.ts",
-      "platform/bridge-page.ts",
       "platform/clipboard.ts",
-      "platform/runtime-base.ts",
       "platform/site-rule.ts", // the Fill paths' ask of the updater (AF3-U2): sk-af-rule, its own table's
       "popup/App.tsx",
       "sidepanel/guard.ts", // the side panel's "list shown": sk-reschedule-autolock, as the popup's App sends it
     ]);
-    const consts: Record<string, string> = { BRIDGE_MESSAGE, SYNC_SOON_MESSAGE, SYNC_CHANGED_MESSAGE };
     for (const f of files)
       for (const m of f.code.matchAll(/runtime\.sendMessage\(\s*\{\s*type:\s*([^,}\s]+)/g)) {
-        const t = m[1]!.startsWith('"') ? m[1]!.slice(1, -1) : consts[m[1]!];
+        expect(m[1], `${f.path}: a literal type`).toMatch(/^"/);
+        const t = m[1]!.slice(1, -1);
         if (f.path === "inject/suggest.ts" || f.path === "inject/suggest-ui.ts")
           expect(contentRows, `${f.path}: ${m[1]}`).toContain(t);
         else if (f.path === "options/RulesUpdate.tsx" || f.path === "platform/site-rule.ts")
           expect(rulesRows, `${f.path}: ${m[1]}`).toContain(t);
         else expect(rows, `${f.path}: ${m[1]}`).toContain(t);
       }
-    // the one call that passes a variable (the bridge's transport) builds its message from BRIDGE_MESSAGE
-    expect(file("platform/bridge-page.ts").code).toMatch(/this\.post\(\{ type: BRIDGE_MESSAGE, req \}\)/);
+    // (the one call that passed a variable, the server sync's bridge, went with its client: DV-0b; every type is a literal)
     expect(files.filter((f) => /\btabs\.sendMessage\(|\bsendNativeMessage\b|\bconnectNative\b/.test(f.code))).toEqual(
       [],
     );
@@ -125,14 +126,14 @@ describe("every message type has a sender policy", () => {
 });
 
 describe("the listeners", () => {
-  it("runtime.onMessage has listeners in the worker (five: the pages', the bridge's, the backup in Chrome sync's, the content script's, the site rules' updater's) and the offscreen document (one), nowhere else", () => {
+  it("runtime.onMessage has listeners in the worker (four: the pages', the backup in Chrome sync's, the content script's, the site rules' updater's) and the offscreen document (one), nowhere else", () => {
     const where = Object.fromEntries(
       files
         .map((f) => [f.path, (f.code.match(/runtime\.onMessage\.addListener\(/g) ?? []).length])
         .filter(([, n]) => n),
     );
     // the site rules' updater's (AF3-U2) is registered with its release gate open only (the define, in the branch)
-    expect(where).toEqual({ "background/sw.ts": 5, "offscreen/main.ts": 1 });
+    expect(where).toEqual({ "background/sw.ts": 4, "offscreen/main.ts": 1 });
     expect(file("background/sw.ts").code).toMatch(
       /^if \(typeof __RULES_UPDATE__ === "boolean" && __RULES_UPDATE__\) chrome\.runtime\.onMessage\.addListener\(rulesListener\);$/m,
     );
@@ -247,9 +248,6 @@ describe("the listeners", () => {
       "options/csb/CsbCard.tsx", // the backup in Chrome's sync storage's card follows its two records (below)
       "options/settings-store.ts", // the settings page follows a change of the settings record made elsewhere (QUICKVIEW-NOTES.md)
       "options/shared.tsx",
-      "options/sync/SyncSection.tsx",
-      "options/sync/lock.ts",
-      "options/sync/widgets.tsx",
       "platform/action-mode.ts", // the worker's: what the toolbar icon opens (above)
       "platform/autofill-sites.ts", // the worker's: autofill's list of sites (above)
       "platform/csb-read.ts", // the backup in Chrome's sync storage: the slots, while a page waits for one (above)
@@ -269,7 +267,7 @@ describe("the listeners", () => {
 
   it("every listener's first act is the sender gate, for its own receiver; neither file reads a message's `type` any other way", () => {
     for (const [path, receivers] of [
-      ["background/sw.ts", ["worker", "bridge", "worker", "content", "rules"]],
+      ["background/sw.ts", ["worker", "worker", "content", "rules"]],
       ["offscreen/main.ts", ["offscreen"]],
     ] as const) {
       const c = file(path).code;
@@ -290,18 +288,6 @@ describe("the listeners", () => {
           );
           expect(call, `${path} listener ${i}`).toMatch(
             / : \(msg: unknown, sender\) => \{ if \(contentType\(msg\) === null\) return; void contentMessage\(msg, sender\)\.catch\(\(\) => undefined\); \}, \);/,
-          );
-          return;
-        }
-        if (receivers[i] === "bridge") {
-          // the bridge's: a named function, registered at the top level behind the sync release gate; its first act is
-          // the same gate as the worker's other listeners'
-          expect(c.slice(at, at + 60), `${path} listener ${i}`).toMatch(
-            /^runtime\.onMessage\.addListener\(bridgeListener\);/,
-          );
-          const fn = c.indexOf("function bridgeListener(");
-          expect(c.slice(fn, fn + 300).replace(/\s+/g, " "), `${path} listener ${i}`).toMatch(
-            /^function bridgeListener\(msg: unknown, sender: chrome\.runtime\.MessageSender, sendResponse: \(r: unknown\) => void\) \{ if \(acceptedType\(msg, sender, chrome\.runtime\.id, "worker"\) !== BRIDGE_MESSAGE \|\| !sync\) return;/,
           );
           return;
         }
@@ -330,26 +316,21 @@ describe("the listeners", () => {
     }
   });
 
-  it("the worker's handler tables have exactly the worker's rows (the bridge's is answered by its own listener)", () => {
+  it("the worker's handler tables have exactly the worker's rows", () => {
     const c = file("background/sw.ts").code;
     const block = c.slice(c.indexOf("const HANDLERS"), c.indexOf("const isCsb"));
     const keys = [...block.matchAll(/^ {2}"(sk-[a-z-]+)":/gm)].map((m) => m[1]!).sort();
     const csbBlock = c.slice(c.indexOf("const CSB_HANDLERS"), c.lastIndexOf("chrome.runtime.onMessage.addListener"));
     const csbKeys = [...csbBlock.matchAll(/^ {2}"(sk-[a-z-]+)":/gm)].map((m) => m[1]!).sort();
-    const worker = rows.filter(
-      (r) => MESSAGE_SENDERS[r as keyof typeof MESSAGE_SENDERS].to === "worker" && r !== BRIDGE_MESSAGE,
-    );
+    const worker = rows.filter((r) => MESSAGE_SENDERS[r as keyof typeof MESSAGE_SENDERS].to === "worker");
     // the backup in Chrome sync's (CSB-3) have their own table, answered after the work by their own listener; the
     // Google Drive backup's rows went with its code: every worker row has a handler, and every row has a sender
     expect([...keys, ...csbKeys].sort()).toEqual(worker);
     expect(csbKeys).toEqual([...CSB_MESSAGES].sort());
     for (const r of rows) expect(MESSAGE_SENDERS[r as keyof typeof MESSAGE_SENDERS].from.length, r).toBeGreaterThan(0);
     expect(c).not.toMatch(/sk-cloud-|CLOUD_HANDLERS|CloudMessage/);
-    expect(c).toMatch(
-      /const HANDLERS: \{\s*\[K in Exclude<MessageFor<"worker">, typeof BRIDGE_MESSAGE \| CsbMessage>\]:/,
-    ); // typed over the rows
+    expect(c).toMatch(/const HANDLERS: \{\s*\[K in Exclude<MessageFor<"worker">, CsbMessage>\]:/); // typed over the rows
     expect(c).toMatch(/const CSB_HANDLERS: \{ \[K in CsbMessage\]:/);
-    expect(c).toMatch(/acceptedType\(msg, sender, chrome\.runtime\.id, "worker"\) !== BRIDGE_MESSAGE/);
   });
 
   it("only the worker and the offscreen document import the sender policy (the popup's budget), and nothing there imports a page", () => {

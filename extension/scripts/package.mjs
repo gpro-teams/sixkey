@@ -20,9 +20,11 @@
 //                                           nothing it makes can be uploaded by mistake.
 // The first store uploads, step by step: README.md, "Publishing". The store package and the ID draft carry no manifest
 // `key` (check-dist (prod) refuses one); the store assigns the ID.
-// dev and e2e builds go to their own directories (dist-dev/, dist-e2e/) and fail the prod check anyway; nothing else
-// writes a zip. The archive is deterministic (scripts/zip.mjs): entries in path order, whatever order the file system
-// lists them in, one fixed timestamp, deflated, no extra fields.
+// dev, e2e and test builds go to their own directories (dist-dev/, dist-e2e/, dist-test/) and fail the prod check
+// anyway; nothing else writes a zip. A zip is made only of dist/ or dist-id-draft/, each built and checked just before;
+// the test build (npm run build:test: the prod build with a manifest key and its own name, for loading unpacked by hand)
+// is never packaged, and --test is refused here rather than ignored. The archive is deterministic (scripts/zip.mjs):
+// entries in path order, whatever order the file system lists them in, one fixed timestamp, deflated, no extra fields.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -41,6 +43,10 @@ const refuse = (why) => {
   process.exit(1);
 };
 if (localOnly && idDraft) refuse("--local-only and --id-draft are two different builds; pass one of them.");
+if (process.argv.includes("--test"))
+  refuse(
+    "--test is the build for testing by hand (npm run build:test, dist-test/), loaded unpacked; it is never packaged.",
+  );
 /**
  * Why the store package may not be made: every reason that holds, in the first uploads' order (step 2, the store ID),
  * then the rules' source (step 3: set when the repository is public; checked before step 4's package).

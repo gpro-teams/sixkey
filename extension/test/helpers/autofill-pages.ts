@@ -109,6 +109,9 @@ export type Ctx = { port: number };
 /** The pages, by path. A page may read its query string (`label`: the same box with different words). */
 export const PAGES: Record<string, (u: URL, c: Ctx) => string> = {
   "/owner": () => OWNER,
+  // the owner's report of 2026-11-18 (admin.cslink.vip): an Ant Design login form, the user name already typed
+  "/user-login": () =>
+    `${head("Login")}<form><label for="username">用户名</label><span class="ant-input-affix-wrapper"><span class="ant-input-prefix">@</span><input placeholder="用户名" id="username" aria-required="true" class="ant-input" type="text" value="admin2"></span><label for="password">密码</label><input id="password" type="password" value="password1"><button type="button">登 录</button></form>`,
   "/otc": () =>
     `${head("Verify")}<h1>Verify</h1>${box('autocomplete="one-time-code" inputmode="numeric" maxlength="6" name="code"', "")}`,
   "/label": (u) => {

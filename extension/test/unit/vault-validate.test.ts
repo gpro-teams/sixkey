@@ -134,3 +134,31 @@ describe("parseVault", () => {
     expect(() => deserializeVault(new TextEncoder().encode("{not json"))).toThrow(VaultError);
   });
 });
+
+describe("an account's note (the owner's report of 2026-11-18: two accounts of one name told apart)", () => {
+  it("is kept through bytes, may be absent, and is refused past its limit or when it is not text", () => {
+    const v = addEntry(
+      emptyVault("vault-0123456789"),
+      {
+        type: "totp",
+        issuer: "NbdPay OTC",
+        label: "admin",
+        secret: "JBSWY3DPEHPK3PXP",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        note: "Shop A",
+      },
+      clock,
+      { id: "entry-0000009" },
+    ).vault;
+    expect(deserializeVault(serializeVault(v)).entries[0]!.note).toBe("Shop A");
+    expect(parseVault(raw()).entries.every((e) => e.note === undefined)).toBe(true);
+    const long = raw();
+    long.entries[0].note = "x".repeat(65);
+    expect(() => parseVault(long)).toThrow(VaultError);
+    const notText = raw();
+    notText.entries[0].note = 7;
+    expect(() => parseVault(notText)).toThrow(VaultError);
+  });
+});

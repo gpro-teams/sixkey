@@ -11,10 +11,10 @@ family, published and maintained by VIEW TECH LTD.
 >
 > - **The extension (`extension/`)** is the part meant to ship first, as a **local-only** authenticator. Its store
 >   build makes no network requests and has no way to turn sync on. It is not in the Chrome Web Store yet.
-> - **Sync is built but switched off for releases.** The sync engine, the settings page's Sync section and the server
->   exist and are tested. A release gate (`extension/scripts/sync-ui.mjs`) keeps the Sync section and the enrolment
->   code out of the store build until a hosted service is running. Development builds include them and talk to a
->   server on your own machine.
+> - **The server sync is set aside.** The extension's sync client (its engine, its worker and transport, and the
+>   settings page's Sync section, sign-in by e-mail) is gone from every build, development builds included; it can be
+>   found in the history. The server and the API contract stay, tested, for a possible paid cloud. Devices of one person
+>   are to sync through Chrome sync instead.
 > - **The sync server (`api/server/`) and the API contract (`api/openapi.yaml`, `contract/`) are unreleased.** The
 >   server only runs in development and test mode: it refuses to start in production until a production sign-in
 >   provider exists.
@@ -90,7 +90,8 @@ npm run typecheck     # TypeScript, strict
 npm test              # unit, fault-injection and regression tests (vitest)
 npm run build         # the store build -> dist/ (load it unpacked at chrome://extensions)
 npm run check         # check-dist: the built extension against its hard rules
-npm run build:dev     # a development build with the Sync section -> dist-dev/
+npm run build:test    # the store build with a fixed ID, named "Sixkey (test)", for testing by hand -> dist-test/
+npm run build:dev     # a development build, with what the store build gates out -> dist-dev/
 npm run e2e           # end-to-end tests in Chromium; needs `npx playwright install chromium` once and a free port 127.0.0.1:8787
 ```
 
@@ -99,7 +100,7 @@ npm run e2e           # end-to-end tests in Chromium; needs `npx playwright inst
 ```
 make venv             # once: .venv with the exact versions in requirements-dev.txt
 make check            # starts a private PostgreSQL in .pg/ (unix socket only) and runs the test suite
-make run              # serves the API on http://127.0.0.1:8787 for development builds of the extension
+make run              # serves the API on http://127.0.0.1:8787 (no build of the extension talks to it any more)
 ```
 
 **Contract** (from the repository root):
@@ -115,15 +116,15 @@ how the pieces fit together.
 
 ## Repository map
 
-| Path               | What                                                                                                                                                                                                                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `extension/`       | The Chrome extension (TypeScript, Preact, Vite). `src/core` is pure logic (TOTP, crypto, vault, storage, sync engine); `src/platform` adapts it to Chrome; `src/popup`, `src/sidepanel`, `src/options`, `src/background`, `src/offscreen` are the extension's contexts. [extension/README.md](extension/README.md) |
-| `api/server/`      | The sync API (FastAPI, PostgreSQL), unreleased. [api/server/README.md](api/server/README.md)                                                                                                                                                                                                                       |
-| `api/openapi.yaml` | The API contract: 29 operations, errors, limits, request signatures (JSON syntax, valid YAML)                                                                                                                                                                                                                      |
-| `contract/`        | Known-answer test vectors shared by the extension and the server, a vector generator, a separately written Python reference implementation, and a checker that compares the design document with the contract. [contract/M0-NOTES.md](contract/M0-NOTES.md)                                                        |
-| `docs/`            | Design, security and privacy documents, and the audit trail. [docs/README.md](docs/README.md) is the index                                                                                                                                                                                                         |
-| `tools/`           | Development tools outside the extension: `webauthn-probe/`, a dev-only extension that measures passkeys on real hardware for the quick-unlock design                                                                                                                                                               |
-| `LICENSES/`        | The licence texts; `REUSE.toml` maps every path to its licence ([LICENSE.md](LICENSE.md))                                                                                                                                                                                                                          |
+| Path               | What                                                                                                                                                                                                                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `extension/`       | The Chrome extension (TypeScript, Preact, Vite). `src/core` is pure logic (TOTP, crypto, vault, storage, backups); `src/platform` adapts it to Chrome; `src/popup`, `src/sidepanel`, `src/options`, `src/background`, `src/offscreen` are the extension's contexts. [extension/README.md](extension/README.md) |
+| `api/server/`      | The sync API (FastAPI, PostgreSQL), unreleased. [api/server/README.md](api/server/README.md)                                                                                                                                                                                                                   |
+| `api/openapi.yaml` | The API contract: 29 operations, errors, limits, request signatures (JSON syntax, valid YAML)                                                                                                                                                                                                                  |
+| `contract/`        | Known-answer test vectors shared by the extension and the server, a vector generator, a separately written Python reference implementation, and a checker that compares the design document with the contract. [contract/M0-NOTES.md](contract/M0-NOTES.md)                                                    |
+| `docs/`            | Design, security and privacy documents, and the audit trail. [docs/README.md](docs/README.md) is the index                                                                                                                                                                                                     |
+| `tools/`           | Development tools outside the extension: `webauthn-probe/`, a dev-only extension that measures passkeys on real hardware for the quick-unlock design                                                                                                                                                           |
+| `LICENSES/`        | The licence texts; `REUSE.toml` maps every path to its licence ([LICENSE.md](LICENSE.md))                                                                                                                                                                                                                      |
 
 ## How this project is built
 

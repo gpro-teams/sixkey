@@ -12,7 +12,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { groupOf, leafOfHash, leavesOf, panelOfHash } from "../../src/options/route";
+import { groupOf, LEAVES, leafOfHash, panelOfHash } from "../../src/options/route";
 
 const SRC = join(__dirname, "../../src");
 /** A source file with its comments removed (a rule is not satisfied or broken by what a comment says). */
@@ -81,7 +81,13 @@ describe("what is asked for, and where the state lives", () => {
   });
 
   it("the keys are spelled in platform/autofill-sites.ts alone (so no sync, backup or export code names them)", () => {
-    expect(all.filter((f) => /sk_af_/.test(f.code)).map((f) => f.path)).toEqual(["platform/autofill-sites.ts"]);
+    // (and platform/page-user.ts, which reads the page hint sk_af_off, restated, in the popup's first click: it writes
+    // nothing, plugins-w1b-source-rules.test.ts)
+    expect(all.filter((f) => /sk_af_/.test(f.code)).map((f) => f.path)).toEqual([
+      "platform/autofill-sites.ts",
+      "platform/page-user.ts",
+    ]);
+    expect(code("platform/page-user.ts").match(/sk_af_\w+/g)).toEqual(["sk_af_off"]);
     const sites = code("platform/autofill-sites.ts");
     expect(sites).toMatch(/SITES_KEY = "sk_af_sites"/);
     expect(sites).toMatch(/PENDING_KEY = "sk_af_pending"/);
@@ -104,8 +110,9 @@ describe("the worker and the page", () => {
     const sw = code("background/sw.ts");
     const removed = sw.slice(sw.indexOf("chrome.permissions.onRemoved.addListener("));
     // and every event that names `scripting` (optional since W1b)
-    // (with the sync release gate closed there is no API permission to tell apart: every event that names a host)
-    expect(sw).toMatch(/const mayBeSite = SYNC_UI \? beyondApi : concernsApi;/);
+    // any event that names a host may be about a site: there is no API permission to tell apart (the store build never
+    // had one, and no build has since the server sync's client went, DV-0b); the code is read transpiled, its types gone
+    expect(sw).toMatch(/const mayBeSite = \(p\) => \(p\.origins\?\.length \?\? 0\) > 0;/);
     expect(removed.slice(0, removed.indexOf("});"))).toMatch(
       /if \(mayBeSite\(p\) \|\| namesScripting\(p\)\)\s*void reconcileSites\(\);/,
     );
@@ -126,11 +133,10 @@ describe("the worker and the page", () => {
   });
 
   it("Settings › Security › Autofill: #autofill is the Security group's fourth leaf", () => {
-    expect(leafOfHash("#autofill", leavesOf(true))).toBe("autofill");
-    expect(leafOfHash("#autofill", leavesOf(false))).toBe("autofill"); // the store build too
+    expect(leafOfHash("#autofill", LEAVES)).toBe("autofill"); // every build's page
     expect(groupOf("autofill")!.leaves).toEqual(["security", "security-keys", "security-log", "autofill"]);
-    expect(leafOfHash("#security", leavesOf(true))).toBe("security"); // the group's own link: Locking, as before
-    expect(leafOfHash("#appearance", leavesOf(true))).toBe("appearance"); // Appearance stays one page
+    expect(leafOfHash("#security", LEAVES)).toBe("security"); // the group's own link: Locking, as before
+    expect(leafOfHash("#appearance", LEAVES)).toBe("appearance"); // Appearance stays one page
     expect(panelOfHash("#autofill")).toBeNull();
   });
 });

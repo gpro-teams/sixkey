@@ -64,8 +64,5 @@
   },
   "frScanHint": {
     "message": "也可以在网站页面上点 Sixkey 图标，识别页面上的二维码。"
-  },
-  "frJoinSync": {
-    "message": "改为加入已同步的保险库"
   }
 }

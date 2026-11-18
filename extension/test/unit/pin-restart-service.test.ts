@@ -19,7 +19,8 @@ import { unlock as viaRecord } from "../../src/core/service/pin-restart-steps";
 import type { VaultService } from "../../src/core/service/service";
 import { applyPreset } from "../../src/core/service/presets";
 import { activeKeyring } from "../../src/core/storage/active-keyring";
-import { LOCAL_ONLY_KEYS, SYNC_OFF_KEYS } from "../../src/core/sync/local/keys";
+import { LOCAL_ONLY_KEYS } from "../../src/core/storage/local-keys";
+import { SERVER_SYNC_KEYS } from "../../src/platform/server-sync-leftovers";
 import { NO_PAGE, STRONG, resetWithCode } from "../helpers/vaults";
 import { notePassword, PIN, PIN2, quickWorld, restart, type QuickWorld } from "../helpers/quick-world";
 
@@ -824,9 +825,9 @@ describe("nothing secret on disk or in a log; local only", () => {
     expect(disk.includes("sk_quick")).toBe(false);
   });
 
-  it("its key is this profile's own: local only, not a sync key, kept by turning sync off; not vault data", async () => {
+  it("its key is this profile's own: local only, none of the server sync's records (their removal keeps it); not vault data", async () => {
     expect(LOCAL_ONLY_KEYS.restart).toBe(KEY);
-    expect(SYNC_OFF_KEYS).not.toContain(KEY);
+    expect(SERVER_SYNC_KEYS).not.toContain(KEY);
     const w = await quickWorld();
     for (const k of [...w.kv.data.keys()].filter((k) => k !== KEY)) w.kv.data.delete(k);
     expect((await w.ctx().service.openView()).state).toBe("empty"); // a profile holding only it opens as empty

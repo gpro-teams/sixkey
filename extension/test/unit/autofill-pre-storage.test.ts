@@ -158,7 +158,7 @@ describe("the service worker's start", () => {
   for (const how of ["reject", "throw", "absent"] as const)
     it(`storage.sync ${how}: the worker still starts with every listener, one line of its own, autofill's areas set and unreported`, async () => {
       const w = await loadWorker({ sync: how });
-      expect(w.listeners.message).toHaveLength(4);
+      expect(w.listeners.message).toHaveLength(3); // the pages', the backup in Chrome sync's (CSB-3), the content script's
       expect(w.listeners.alarm).toHaveLength(1);
       await vi.waitFor(() => expect(lines(w)).toEqual(["storage access level not restricted: sync"]));
       expect([w.levels.local, w.levels.session]).toEqual([[LEVEL], [LEVEL]]);
@@ -176,8 +176,8 @@ describe("the service worker's start", () => {
 
   it("storage.sync that never answers: no listener waits for it; after GATE_MS it is a refusal, written down", async () => {
     const w = await loadWorker({ sync: "hang" });
-    expect(w.listeners.message).toHaveLength(4);
-    expect(w.badges).toEqual([""]); // sync's start ran
+    expect(w.listeners.message).toHaveLength(3);
+    await vi.waitFor(() => expect(w.alarms.has("sk-daily")).toBe(true)); // the start's routine ran
     expect(lines(w)).toEqual([]);
     await vi.waitFor(() => expect(lines(w)).toEqual(["storage access level not restricted: sync"]), {
       timeout: GATE_MS + 5_000,
@@ -196,7 +196,7 @@ describe("the service worker's start", () => {
   for (const how of ["reject", "throw", "absent"] as const)
     it(`${how}: the worker still starts and registers every listener, and the failure is written to the diagnostics log`, async () => {
       const w = await loadWorker({ local: how });
-      expect(w.listeners.message).toHaveLength(4); // the pages', the bridge's, the cloud backup's (CLOUDBK patch 4), the content script's
+      expect(w.listeners.message).toHaveLength(3); // the pages', the cloud backup's (CLOUDBK patch 4), the content script's
       expect(w.listeners.alarm).toHaveLength(1);
       await wait();
       expect(lines(w)).toEqual(["storage access level not restricted: local"]);
@@ -253,8 +253,8 @@ describe("the service worker's start", () => {
 
   it("a call that never settles does not hold the worker back: its listeners and its work run", async () => {
     const w = await loadWorker({ local: "hang", session: "hang", sync: "hang" });
-    expect(w.listeners.message).toHaveLength(4); // the pages', the bridge's, the backup in Chrome sync's (CSB-3), the content script's
-    expect(w.badges).toEqual([""]); // sync's start ran
+    expect(w.listeners.message).toHaveLength(3); // the pages', the backup in Chrome sync's (CSB-3), the content script's
+    await vi.waitFor(() => expect(w.alarms.has("sk-daily")).toBe(true)); // the start's routine ran
   });
 });
 
@@ -359,7 +359,9 @@ describe("source rules for the access level", () => {
     expect(files.filter((f) => /chrome\??\.scripting|\.executeScript\b/.test(f.code)).map((f) => f.path)).toEqual([
       "platform/autofill-register.ts",
       "platform/autofill.ts",
+      "platform/page-user.ts", // the page's user name, read for the list's order (behind the same gate)
     ]);
+    expect(files.find((f) => f.path === "platform/page-user.ts")!.code).toMatch(/!\(await storageClosed\(\)\)/);
     expect(files.find((f) => f.path === "platform/autofill-register.ts")!.code).toMatch(/\(await gate\(\)\)/);
   });
 });

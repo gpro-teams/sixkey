@@ -1,8 +1,6 @@
 // The keyring of the vault's active generation, read straight from the slots: the check every record kept beside the
-// vault under its key makes in its own critical section before a write (the VkRecord contract, service.ts: the sync
-// records, src/core/sync/local/records.ts, which re-exports this; the PIN's set-up, the device unlock's record, and the
-// PIN after a restart's, src/core/service/pin-restart-admin.ts). Storage-level code with no sync in it, so that a writer
-// outside sync (OWNER-DECISIONS/20) needs no import of core/sync (test/unit/sync-crypto-hygiene.test.ts).
+// vault under its key makes in its own critical section before a write (the VkRecord contract, service-core.ts: the PIN's
+// set-up, the device unlock's record, and the PIN after a restart's, src/core/service/pin-restart-admin.ts).
 // The generation itself, read the same way, is the backup in Chrome sync's view of "the vault on disk now"
 // (platform/csb-worker.ts).
 import type { Keyring } from "../crypto/keyring";

@@ -4,6 +4,7 @@ dist/
 dist-e2e/
 dist-dev/
 dist-id-draft/
+dist-test/
 release/
 *.tsbuildinfo
 

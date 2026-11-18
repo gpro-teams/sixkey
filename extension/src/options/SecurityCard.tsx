@@ -35,19 +35,11 @@ const KIND_LABEL: Record<SecurityKind, string> = {
   key_rotated: "secKKeyRotated",
   recovery_code_new: "secKRecoveryCodeNew",
   log_cleared: "secKLogCleared",
-  // Version 2 (M2, R8): the sync flows record them (M2's service flows, and from M6 the Sync section's actions on the
-  // server: a device approved or revoked, the server's history cleared); their text is M2's (scripts/i18n/m2.py).
-  sync_on: "secKSyncOn",
-  sync_off: "secKSyncOff",
-  identity_restored: "secKIdentityRestored",
-  keys_adopted: "secKKeysAdopted",
-  device_approved: "secKDeviceApproved",
-  device_revoked: "secKDeviceRevoked",
-  history_cleared: "secKHistoryCleared",
+  // Version 2 (M2, R8). The server sync's kinds went with its client (security-kinds.ts): their entries in a record are
+  // not listed.
   prf_enrolled: "secKPrfEnrolled",
   prf_removed: "secKPrfRemoved",
   prf_failed: "secKPrfFailed",
-  keys_adopted_back: "secKKeysAdoptedBack", // M6: keys this device committed before, taken back from the server
   // QUICK-UNLOCK Stage 1 (scripts/i18n/quick.py): the PIN set or removed, a wrong PIN, the session quick unlock ended
   pin_set: "secKPinSet",
   pin_removed: "secKPinRemoved",

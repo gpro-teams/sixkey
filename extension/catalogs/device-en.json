@@ -44,9 +44,6 @@
   "dvOptInNotice": {
     "message": "It is then kept in that company's cloud and on your other devices. Anyone who gets into that account and also has a copy of this browser profile could open Sixkey without your master password. If unsure, leave it off: $1 still works until the browser closes."
   },
-  "dvOptInSync": {
-    "message": "With sync on, they could also act as one of your devices."
-  },
   "dvRowPrf": {
     "message": "Also after a restart. A copy of this browser profile still needs your master password."
   },

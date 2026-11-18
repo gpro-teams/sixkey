@@ -105,7 +105,7 @@ describe("one file", () => {
     expect(r).toMatchObject({ skipped: [], outdated: false, needsPassword: false, olderKeys: 0 });
   });
 
-  it("opens with the recovery key, a file for both and a recovery-only one alike, and then asks for a new password", async () => {
+  it("opens with the recovery key, a file for both and a recovery-only one alike; the master password goes on", async () => {
     const onlyRecovery = await backup(a, base, 3, "recovery");
     const r = (await restore(
       [candidate("both", fBase, T0), candidate("rec", onlyRecovery, T0 + 1)],
@@ -115,9 +115,16 @@ describe("one file", () => {
     expect(r.merged).toEqual(["rec", "both"]);
     expect(issuers(r.vault)).toEqual(["AWS", "GitHub"]);
     expect(r.password).toBeUndefined();
-    // the reset flow: the recovery wrap only, a new master password next
-    expect(r.needsPassword).toBe(true);
-    expect(r.keyring.wraps.map((w) => w.method)).toEqual(["recovery"]);
+    // the copy's master password goes on (the owner's report of 2026-11-18): its wrap is kept beside the recovery wrap
+    expect(r.needsPassword).toBe(false);
+    expect(r.keepsPassword).toBe(true);
+    expect(r.keyring.wraps.map((w) => w.method).sort()).toEqual(["password", "recovery"]);
+    expect(await keyOf(r.keyring, { password: PASSWORD })).toBe(a.vk.id);
+    // a copy with no password wrap at all: a new master password must be set
+    const r2 = (await restore([candidate("rec", onlyRecovery, T0 + 1)], { recoveryKey: a.recoveryCode }, OPTS))!;
+    expect(r2.needsPassword).toBe(true);
+    expect(r2.keepsPassword).toBe(false);
+    expect(r2.keyring.wraps.map((w) => w.method)).toEqual(["recovery"]);
   });
 
   it("a password does not open a recovery-only file alone: nothing opened is null", async () => {
@@ -287,7 +294,7 @@ describe("the restored keyring (CB-03)", () => {
     expect(await keyOf(r.keyring, { password: PASSWORD })).toBe(a.vk.id);
   });
 
-  it("a recovery-key restore keeps no password wrap at all: the old password changed away elsewhere opens nothing", async () => {
+  it("a recovery-key restore keeps the newest password wrap: the password changed elsewhere goes on, the old one opens nothing", async () => {
     const v = vaultOf(a.keyring.vaultId, [account("GitHub", "JBSWY3DPEHPK3PXP")]);
     const changed = await changePassword(a.keyring, a.vk, NEW_PASSWORD, {
       iterations: TEST_KDF_ITERATIONS,
@@ -300,9 +307,11 @@ describe("the restored keyring (CB-03)", () => {
       { recoveryKey: a.recoveryCode },
       OPTS,
     ))!;
-    expect(r.needsPassword).toBe(true);
-    expect(r.keyring.wraps.map((w) => w.method)).toEqual(["recovery"]);
-    expect(await keyOf(r.keyring, { password: PASSWORD })).toBe("no_such_method");
+    expect(r.needsPassword).toBe(false);
+    expect(r.keepsPassword).toBe(true);
+    expect(r.keyring.wraps.map((w) => w.method).sort()).toEqual(["password", "recovery"]);
+    expect(await keyOf(r.keyring, { password: PASSWORD })).toBe("unwrap_failed");
+    expect(await keyOf(r.keyring, { password: NEW_PASSWORD })).toBe(a.vk.id);
   });
 
   it("a password older than another computer's restores, says so, and the restored keyring keeps it (R2-04)", async () => {

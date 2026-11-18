@@ -4,7 +4,7 @@ import { Avatar, EmptyArt, Ring } from "../../ui/art";
 import { Icon } from "../../ui/icons";
 import { t } from "../../ui/i18n";
 import { canGenerate, remaining } from "../../ui/otp";
-import type { Section } from "./model";
+import { nameKey, type Row, type Section } from "./model";
 
 /** How long a press must last to count as "hold to show" rather than a click that copies. */
 const HOLD_MS = 450;
@@ -32,6 +32,14 @@ export function List(p: {
   /** Keep codes out of the page; only `shownId`'s code is shown, while it is revealed. */
   hide: boolean;
   shownId: string | null;
+  /** The accounts that share their name with another, with their number among them (model.ts sameNames). */
+  dups: Map<string, number>;
+  /**
+   * Another period's code (the owner's request of 2026-11-18): the account shown `n` periods before (< 0) or after the
+   * current one, and its code once worked out; the selected row offers the arrows, and the offset resets it.
+   */
+  shift: { id: string; n: number; code?: string } | null;
+  onShift: (id: string, by: -1 | 1 | 0) => void;
   onHover: (id: string) => void;
   onCopy: (e: Entry) => Promise<void>;
   onEdit: (id: string) => void;
@@ -137,116 +145,185 @@ export function List(p: {
               <span class="n">{s.rows.length}</span>
             </div>
           )}
-          {s.rows.map((r, ri) => {
-            const e = r.entry;
-            const name = e.issuer || e.label;
-            const gen = canGenerate(e);
-            const rem = gen ? remaining(e, p.now) : 0;
-            const isSel = p.selectedId === e.id;
-            const hidden = p.hide && p.shownId !== e.id;
-            const small = p.compact && s.key !== "site";
-            return (
-              <div
-                key={e.id}
-                data-id={e.id}
-                role="listitem"
-                style={`--n:${Math.min(n++, 12)}`}
-                class={`row${r.tier === "registered" ? " match" : ""}${isSel ? " sel" : ""}${rem <= 5 && gen ? " low" : ""}${p.flash === e.id ? " flash" : ""}${dropId === e.id && dragId !== e.id ? " drop" : ""}${dragId === e.id ? " dragging" : ""}`}
-                draggable={p.canDrag}
-                onDragStart={() => {
-                  endHold();
-                  setDragId(e.id);
-                }}
-                onDragOver={(ev) => {
-                  if (dragId) {
-                    ev.preventDefault();
-                    setDropId(e.id);
-                  }
-                }}
-                onDragEnd={() => {
-                  setDragId(null);
-                  setDropId(null);
-                }}
-                onDrop={(ev) => {
-                  ev.preventDefault();
-                  setDropId(null);
-                  void p.onMove(dragId, e.id);
-                  setDragId(null);
-                }}
-                onMouseMove={() => !isSel && p.onHover(e.id)}
-              >
-                <button
-                  type="button"
-                  class="copy"
-                  tabIndex={isSel ? 0 : -1}
-                  aria-disabled={gen ? undefined : "true"}
-                  title={gen && p.hide ? t("listRevealHint") : undefined}
-                  onPointerDown={(ev) => ev.button === 0 && startHold(e.id)}
-                  onPointerUp={() => {
-                    if (!hold.current?.fired) endHold();
-                  }}
-                  onPointerLeave={endHold}
-                  onPointerCancel={endHold}
-                  onClick={() => {
-                    const held = hold.current?.fired && hold.current.id === e.id;
+          {(() => {
+            // one row (its body as it was): `ri` is its place in the section, which the site's extras go by
+            const rowOf = (r: Row, ri: number) => {
+              const e = r.entry;
+              const name = e.issuer || e.label;
+              const gen = canGenerate(e);
+              const rem = gen ? remaining(e, p.now) : 0;
+              const isSel = p.selectedId === e.id;
+              const hidden = p.hide && p.shownId !== e.id;
+              const small = p.compact && s.key !== "site";
+              return (
+                <div
+                  key={e.id}
+                  data-id={e.id}
+                  role="listitem"
+                  style={`--n:${Math.min(n++, 12)}`}
+                  class={`row${r.tier === "registered" ? " match" : ""}${isSel ? " sel" : ""}${rem <= 5 && gen ? " low" : ""}${p.flash === e.id ? " flash" : ""}${dropId === e.id && dragId !== e.id ? " drop" : ""}${dragId === e.id ? " dragging" : ""}`}
+                  draggable={p.canDrag}
+                  onDragStart={() => {
                     endHold();
-                    if (!held) void p.onCopy(e);
+                    setDragId(e.id);
                   }}
+                  onDragOver={(ev) => {
+                    if (dragId) {
+                      ev.preventDefault();
+                      setDropId(e.id);
+                    }
+                  }}
+                  onDragEnd={() => {
+                    setDragId(null);
+                    setDropId(null);
+                  }}
+                  onDrop={(ev) => {
+                    ev.preventDefault();
+                    setDropId(null);
+                    void p.onMove(dragId, e.id);
+                    setDragId(null);
+                  }}
+                  onMouseMove={() => !isSel && p.onHover(e.id)}
                 >
-                  <Avatar name={name} size={small ? 22 : 30} />
-                  <span class="who">
-                    <b>{name}</b>
-                    <i>{e.issuer ? e.label : ""}</i>
-                    {r.note && <i>{r.note}</i>}
-                  </span>
-                  {gen ? (
-                    <span class="otp">
-                      {hidden ? <Mask digits={e.digits} /> : <Code code={p.codes.get(e.id)} />}
-                      <Ring rem={rem} period={e.period} />
-                      <span class="vh">
-                        {hidden ? `${t("listCodeHidden")}, ` : ""}
-                        {t("listSecondsLeft", Math.ceil(rem))}
-                      </span>
-                    </span>
-                  ) : (
-                    <span class="otp hotp" title={t("hotpTitle")}>
-                      {e.type === "hotp" ? (
-                        <>
-                          <Icon name="hash" size={13} />
-                          {t("hotpShort")}
-                        </>
-                      ) : (
-                        ""
-                      )}
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  class="more"
-                  tabIndex={isSel ? 0 : -1}
-                  aria-label={`${t("edit")} ${name}`}
-                  title={t("edit")}
-                  onClick={() => p.onEdit(e.id)}
-                >
-                  <Icon name="more" />
-                </button>
-                {s.key === "site" && p.rowExtra?.(e, ri)}
-                {(s.key === "related" || p.picking) && p.rememberHost && (
                   <button
                     type="button"
-                    class="remember"
+                    class="copy"
                     tabIndex={isSel ? 0 : -1}
-                    aria-label={`${t("siteRemember", p.rememberHost)} (${name})`}
-                    onClick={() => p.onRemember(e.id)}
+                    aria-disabled={gen ? undefined : "true"}
+                    title={gen && p.hide ? t("listRevealHint") : undefined}
+                    onPointerDown={(ev) => ev.button === 0 && startHold(e.id)}
+                    onPointerUp={() => {
+                      if (!hold.current?.fired) endHold();
+                    }}
+                    onPointerLeave={endHold}
+                    onPointerCancel={endHold}
+                    onClick={() => {
+                      const held = hold.current?.fired && hold.current.id === e.id;
+                      endHold();
+                      if (!held) void p.onCopy(e);
+                    }}
                   >
-                    <Icon name="plus" size={12} />
-                    <span>{t("siteRemember", p.rememberHost)}</span>
+                    <Avatar name={name} size={small ? 22 : 30} />
+                    <span class="who">
+                      <b>{name}</b>
+                      <i>
+                        {e.issuer ? e.label : ""}
+                        {e.note && <span class="memo">{e.note}</span>}
+                        {p.dups.has(e.id) && <em class="dup">{t("sameName", p.dups.get(e.id)!)}</em>}
+                      </i>
+                      {r.note && <i>{r.note}</i>}
+                    </span>
+                    {gen ? (
+                      <span class="otp">
+                        {(() => {
+                          // the arrows: on the selected row, or the one shown at another period; inside the copy button
+                          // as spans, so a click on them never copies (the keyboard copies, the arrows are the mouse's)
+                          const sh = p.shift?.id === e.id ? p.shift : null;
+                          if (hidden || e.type !== "totp" || !(isSel || sh)) return null;
+                          const go = (by: -1 | 1 | 0) => (ev: Event) => {
+                            ev.stopPropagation();
+                            ev.preventDefault();
+                            p.onShift(e.id, by);
+                          };
+                          const stop = (ev: Event) => ev.stopPropagation();
+                          return (
+                            <span class={`shift${sh ? " on" : ""}`} onPointerDown={stop}>
+                              <span
+                                role="button"
+                                class="sb"
+                                title={t("shiftBack")}
+                                aria-label={t("shiftBack")}
+                                onClick={go(-1)}
+                              >
+                                <Icon name="back" size={13} />
+                              </span>
+                              {sh && (
+                                <span role="button" class="sb n" title={t("shiftReset")} onClick={go(0)}>
+                                  {t("shiftBy", `${sh.n < 0 ? "−" : "+"}${Math.abs(sh.n) * e.period}`)}
+                                </span>
+                              )}
+                              <span
+                                role="button"
+                                class="sb"
+                                title={t("shiftNext")}
+                                aria-label={t("shiftNext")}
+                                onClick={go(1)}
+                              >
+                                <Icon name="next" size={13} />
+                              </span>
+                            </span>
+                          );
+                        })()}
+                        {hidden ? (
+                          <Mask digits={e.digits} />
+                        ) : (
+                          <Code code={p.shift?.id === e.id ? p.shift.code : p.codes.get(e.id)} />
+                        )}
+                        <Ring rem={rem} period={e.period} />
+                        <span class="vh">
+                          {hidden ? `${t("listCodeHidden")}, ` : ""}
+                          {t("listSecondsLeft", Math.ceil(rem))}
+                        </span>
+                      </span>
+                    ) : (
+                      <span class="otp hotp" title={t("hotpTitle")}>
+                        {e.type === "hotp" ? (
+                          <>
+                            <Icon name="hash" size={13} />
+                            {t("hotpShort")}
+                          </>
+                        ) : (
+                          ""
+                        )}
+                      </span>
+                    )}
                   </button>
-                )}
-              </div>
-            );
-          })}
+                  <button
+                    type="button"
+                    class="more"
+                    tabIndex={isSel ? 0 : -1}
+                    aria-label={`${t("edit")} ${name}`}
+                    title={t("edit")}
+                    onClick={() => p.onEdit(e.id)}
+                  >
+                    <Icon name="more" />
+                  </button>
+                  {s.key === "site" && p.rowExtra?.(e, ri)}
+                  {(s.key === "related" || p.picking) && p.rememberHost && (
+                    <button
+                      type="button"
+                      class="remember"
+                      tabIndex={isSel ? 0 : -1}
+                      aria-label={`${t("siteRemember", p.rememberHost)} (${name})`}
+                      onClick={() => p.onRemember(e.id)}
+                    >
+                      <Icon name="plus" size={12} />
+                      <span>{t("siteRemember", p.rememberHost)}</span>
+                    </button>
+                  )}
+                </div>
+              );
+            };
+            // the accounts of one name, side by side (Main: model.ts sameTogether), drawn in one frame
+            const out: preact.JSX.Element[] = [];
+            for (let i = 0; i < s.rows.length;) {
+              const k = p.dups.has(s.rows[i]!.entry.id) ? nameKey(s.rows[i]!.entry) : null;
+              let j = i + 1;
+              while (k !== null && j < s.rows.length && nameKey(s.rows[j]!.entry) === k) j++;
+              if (j - i > 1)
+                out.push(
+                  <div key={`same-${s.rows[i]!.entry.id}`} class="dupset" role="none">
+                    <span class="dupcap" aria-hidden="true">
+                      {t("sameNameSet", j - i)}
+                    </span>
+                    {s.rows.slice(i, j).map((r, x) => rowOf(r, i + x))}
+                  </div>,
+                );
+              else out.push(rowOf(s.rows[i]!, i));
+              i = j;
+            }
+            return out;
+          })()}
         </div>
       ))}
     </div>

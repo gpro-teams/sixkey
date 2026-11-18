@@ -12,6 +12,7 @@
 //
 // - scripts/build.mjs injects it into the prod build as __STORE_ID__, with __INSTALL_CHECK__ on. Dev and e2e builds get
 //   "" and the check off, so they never show the banner; test/e2e/install-source.spec.ts asserts it on the prod build.
+//   The test build (--test, loaded unpacked by hand) gets the ID with the check off, so it never shows the banner either.
 // - scripts/check-dist.mjs fails a prod build that does not contain it.
 // - scripts/package.mjs refuses the store package while it is empty or the developer build's ID
 //   (scripts/store-gates.mjs storeIdGate); test/unit/m5-build-guard.test.ts proves both refusals in copies of the tree.

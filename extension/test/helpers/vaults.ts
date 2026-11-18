@@ -15,6 +15,17 @@ import { serializeVault } from "../../src/core/vault/validate";
 
 export const STRONG = "tulip-orbit-lantern-84";
 
+/** A TOTP account to add (addEntry's input): `issuer`, label "a", the default parameters. */
+export const totpInput = (issuer: string, secret = "JBSWY3DPEHPK3PXP"): NewEntry => ({
+  type: "totp",
+  issuer,
+  label: "a",
+  secret,
+  algorithm: "SHA1",
+  digits: 6,
+  period: 30,
+});
+
 /** A new vault through the service, exactly as the first-run page makes one. Unlocked afterwards. */
 export async function createProtected(svc: VaultService, pw = STRONG): Promise<{ recoveryCode: string }> {
   const keys = await svc.prepareKeys(pw);
@@ -38,13 +49,14 @@ export async function codeOf(op: (deliver: CodeDelivery) => Promise<unknown>): P
 }
 
 /**
- * Forgot the password, as the settings page does it (A4R-1): prepareReset, then commitReset, which "Continue" after "I
- * have saved my recovery code" calls. Records recovery_used at the first step and password_reset at the second. The new code.
+ * Forgot the password, as the settings page does it (A4R-1): prepareReset, then commitReset at once. Records
+ * recovery_used at the first step and password_reset at the second. The recovery code that works afterwards: the same
+ * one, since a reset keeps the recovery key (the owner's report of 2026-11-18).
  */
 export async function resetWithCode(svc: VaultService, code: string, password: string): Promise<string> {
   const prepared = await svc.prepareReset(code, password);
   await svc.commitReset(prepared);
-  return prepared.recoveryCode;
+  return prepared.recoveryCode || code;
 }
 
 /** A device-key vault holding `entries`, sealed as Phase 0 sealed it. Test-only: shipped code can no longer make one. */

@@ -231,6 +231,43 @@ test("the toolbar icon opens the side panel: activeTab for the clicked tab, lock
   }
 });
 
+test("the owner's report of 2026-11-18: a panel opened from the popup makes the icon open the panel, never a popup over it; its button goes back to the popup", async () => {
+  test.setTimeout(120_000);
+  const p = await launchDriven(hosts());
+  let d: Driver | undefined;
+  try {
+    await startFresh(p);
+    await addByPaste(p, GITHUB_URI);
+    const POPUP = `chrome-extension://${p.id}/popup/index.html`;
+    expect(await popupOf(p)).toBe(POPUP); // the default
+    const site = await p.ctx.newPage();
+    await site.goto(`http://github.test:${port}/`);
+    d = await drive(p);
+    const pop = await d.popup("github.test");
+    await pop.until("document.querySelector('#open-panel')", "the popup's side panel button");
+    await pop.click("#open-panel");
+    await expect.poll(() => d!.panels()).toBe(1);
+    await expect.poll(() => popupOf(p), { message: "the icon opens the panel now" }).toBe("");
+    // the icon on that tab, with the panel open: no popup over it, the one panel, which lists the tab's site
+    await d.clickIconOn(site);
+    const panel = await d.panel();
+    await panel.until("document.querySelector('.sect.related .row')", "the clicked tab's site, in the panel");
+    expect(await d.popups()).toBe(0);
+    expect(await d.panels()).toBe(1);
+    // the panel's way back: the panel closes, and the icon opens the popup again
+    await panel.until("document.querySelector('#to-popup')", "the panel's button back to the popup");
+    expect(await panel.eval("document.querySelector('#to-popup').title")).toBe("Use the popup instead");
+    await panel.gesture("document.querySelector('#to-popup').click()");
+    await expect.poll(() => d!.panels()).toBe(0);
+    await expect.poll(() => popupOf(p)).toBe(POPUP);
+    const pop2 = await d.popup("github.test");
+    await pop2.until("document.querySelector('#q')", "the popup, from the icon");
+    await pop2.close();
+  } finally {
+    await closeDriven(p, d);
+  }
+});
+
 test("a second window has its own panel; Lock now locks both", async () => {
   test.setTimeout(90_000);
   const p = await launchDriven(hosts());

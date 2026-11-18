@@ -49,7 +49,7 @@ export function Welcome(_: { rt: PopupRuntime; reload: () => Promise<void> }) {
         {m && <m.CsbFound onFound={setFound} />}
         <button class={found ? "btn ghost" : "btn"} id="start-secure" onClick={() => openOptions("#setup")}>
           <Icon name="shieldCheck" />
-          {t("welcomeStartSecure")}
+          {t(found ? "welcomeStartAlone" : "welcomeStartSecure")}
         </button>
         <button class="btn ghost" id="start-restore" onClick={() => openOptions("#setup-restore")}>
           <Icon name="upload" />

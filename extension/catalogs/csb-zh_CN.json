@@ -250,5 +250,14 @@
   },
   "csDamaged": {
     "message": "$1 份备份已损坏或来自更新版本的 Sixkey，没有打开。"
+  },
+  "csKeepPasswordLine": {
+    "message": "已用恢复密钥打开。可以继续用和其他电脑一样的主密码；忘了主密码的话，再设一个新的。"
+  },
+  "csKeepPassword": {
+    "message": "继续用原来的主密码"
+  },
+  "csOrNewPassword": {
+    "message": "或者设置新的主密码"
   }
 }

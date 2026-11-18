@@ -506,15 +506,15 @@ describe("catalog-keys: the allowlist", () => {
   });
 });
 
-describe("catalog-keys: the release gate (rule 5)", () => {
+describe("catalog-keys: a release gate (rule 5, the in-page suggestion's)", () => {
   const files = {
     "main.tsx": `import { t } from "./i18n";
-declare const __SYNC_UI__: boolean;
-const SYNC_UI = typeof __SYNC_UI__ === "boolean" && __SYNC_UI__;
+declare const __SUGGEST_UI__: boolean;
+const SUGGEST_UI = typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__;
 const OTHER = Math.random() > 2;
 function Line({ say }: { say: string }) { return say; }
 export function view(n: number) {
-  return [t("kAlways"), SYNC_UI && Line({ say: t("kGated") }), SYNC_UI && "kGatedMention", OTHER && t("kOther"), n > 1 && t("kCond")];
+  return [t("kAlways"), SUGGEST_UI && Line({ say: t("kGated") }), SUGGEST_UI && "kGatedMention", OTHER && t("kOther"), n > 1 && t("kCond")];
 }`,
   };
   const keys = ["kAlways", "kGated", "kGatedMention", "kOther", "kCond"];
@@ -522,22 +522,22 @@ export function view(n: number) {
     const r = collect(files, keys);
     expect(sorted(r.keys)).toEqual(sorted(keys));
   });
-  it("the gate closed: what only `SYNC_UI && ...` holds is not, and nothing else changes", () => {
+  it("the gate closed: what only `SUGGEST_UI && ...` holds is not, and nothing else changes", () => {
     const r = collectKeys({
       root: project(files),
       entries: ["main.tsx"],
       keys,
       catalogModule: "i18n.ts",
       compilerOptions: OPTIONS,
-      syncUi: false,
+      suggestUi: false,
     });
     expect(sorted(r.keys)).toEqual(sorted(["kAlways", "kOther", "kCond"]));
   });
-  it("only a constant declared as the gate is read: another SYNC_UI skips nothing", () => {
+  it("only a constant declared as the gate is read: another SUGGEST_UI skips nothing", () => {
     const other = {
       "main.tsx": files["main.tsx"]!.replace(
-        'const SYNC_UI = typeof __SYNC_UI__ === "boolean" && __SYNC_UI__;',
-        "const SYNC_UI = Math.random() > 0.5;",
+        'const SUGGEST_UI = typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__;',
+        "const SUGGEST_UI = Math.random() > 0.5;",
       ),
     };
     const r = collectKeys({
@@ -546,7 +546,7 @@ export function view(n: number) {
       keys,
       catalogModule: "i18n.ts",
       compilerOptions: OPTIONS,
-      syncUi: false,
+      suggestUi: false,
     });
     expect(sorted(r.keys)).toEqual(sorted(keys));
   });

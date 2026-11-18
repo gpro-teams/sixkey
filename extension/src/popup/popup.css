@@ -163,6 +163,12 @@ body.popup {
   color: var(--warn);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 18%, transparent);
 }
+/* a page that looks like an account's site without being it (Main.tsx, core/lookalike.ts) */
+.note.bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 22%, transparent);
+}
 .note.good {
   background: var(--good-soft);
   color: var(--good);
@@ -475,10 +481,86 @@ body.popup {
 .who i:empty {
   display: none;
 }
+/* the accounts of one name, side by side in one frame (List.tsx, model.ts sameTogether) */
+.dupset {
+  margin: 4px 4px 6px;
+  padding: 0 0 2px;
+  border: 1px dashed var(--line-2);
+  border-radius: 14px;
+}
+.dupset .dupcap {
+  display: block;
+  padding: 5px 12px 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sect.site .dupset,
+.sect.related .dupset {
+  margin: 4px 6px 6px;
+}
+/* two accounts of one name (model.ts sameNames): their number, and the note that tells them apart */
+.who i .dup {
+  font-style: normal;
+  font-size: 10.5px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.who i .memo {
+  margin-left: 5px;
+  color: var(--ink);
+}
 .otp {
   display: flex;
   align-items: center;
   gap: 9px;
+}
+/* another period's code (List's arrows, Main.tsx shift): shown left of the code while the pointer is on the code, and
+   for as long as the row shows another period; the code stays where it is, the name makes room, and a click on the
+   rest of the row copies as before */
+.otp {
+  position: relative;
+}
+.shift {
+  position: absolute;
+  right: calc(100% + 2px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  visibility: hidden;
+}
+.otp:hover .shift,
+.shift.on {
+  visibility: visible;
+}
+.row:has(.otp:hover) .who {
+  margin-right: 52px;
+}
+.row:has(.shift.on) .who {
+  margin-right: 100px;
+}
+.shift .sb {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 3px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.shift .sb:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+.shift .sb.n {
+  color: var(--brass-ink);
 }
 .code {
   display: inline-flex;
@@ -744,6 +826,12 @@ body.popup {
 .btn.add {
   padding-left: 9px;
   padding-right: 13px;
+}
+/* grouping by name, beside Add (Main.tsx regroup): one line, so the count keeps its room */
+#auto-group,
+#auto-undo {
+  white-space: nowrap;
+  margin-right: 6px;
 }
 
 /* toast */

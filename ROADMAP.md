@@ -17,7 +17,7 @@ time) is kept for the record in [docs/history/PLAN-zh.md](docs/history/PLAN-zh.m
 | Plugin platform                            | Removed from the extension on 2026-11-12, after it was stopped on 2026-11-06: no other extension can add to Sixkey or message it, and the SDK and samples are gone. Autofill, which it made a built-in, keeps its own switch ([design](docs/design/proposals/MOD-PLATFORM.md), kept for the record)                                                                                                                                                     |
 | Backup in Chrome sync                      | In the build from 2026-11-08: an encrypted copy of the vault in the browser's own sync storage, written automatically after each change, with its status always shown; a new computer restores it with the master password or the recovery key ([notes](docs/design/notes/CSB-NOTES.md)). The encrypted backup file stays. The Google Drive backup through a separate plugin was withdrawn on 2026-11-06. Backing up to a folder you choose not started |
 | Side panel mode                            | Built (planned for after M8; the owner moved it ahead): Sixkey's list in the browser's side panel, optional ([notes](docs/design/notes/SIDEPANEL-NOTES.md))                                                                                                                                                                                                                                                                                             |
-| End-to-end encrypted sync (M0–M6)          | Built and tested, **switched off for releases** by a release gate until the hosted service runs                                                                                                                                                                                                                                                                                                                                                         |
+| End-to-end encrypted sync (M0–M6)          | Built and tested, **set aside** (OWNER-DECISIONS/25): since 2026-11-17 no build has a way to turn it on, its settings section gone from every build, and then the extension's whole client (DV-0b; in the history if ever needed); the server and the contract stay for a possible paid cloud                                                                                                                                                           |
 | Server-side key encryption (M7)            | Not started                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Hosted service and go-live (M8)            | Not started                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Self-hosting                               | Not possible yet ([docs/SELF-HOSTING.md](docs/SELF-HOSTING.md))                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -30,10 +30,11 @@ Nothing has been released. The extension's **store build** is the part meant to 
 no host permission at install, no way to turn sync on, and no network request of its own. Its automatic backup, in the
 build from 2026-11-08, is an encrypted copy kept in the browser's own sync storage, which Chrome's sync carries; the
 encrypted backup file stays. The Google Drive backup through a separate plugin was withdrawn on 2026-11-06.
-Everything listed under "Sync" below exists in the code and runs in development and test builds against a
-server on the developer's own machine, but a release gate (`extension/scripts/sync-ui.mjs`) keeps the Sync section and
-the enrolment code out of the store build, and `scripts/build.mjs` and `scripts/check-dist.mjs` fail a store build that
-contains them. The gate opens with M8.
+Of what is listed under "Sync" below, the server and the contract stay in the code; the extension's client (M1–M3, M5,
+M6) was removed on 2026-11-17 and can be found in the history: no build has the settings page's Sync section, the
+developer sync page, the engine, its worker, bridge and transport, or the API origin, and `scripts/build.mjs` and
+`scripts/check-dist.mjs` fail any build that contains them (OWNER-DECISIONS/25). Devices of one person are to sync
+through Chrome sync instead.
 
 ## The local authenticator (Phase 0 and its hardening)
 
@@ -125,34 +126,35 @@ The design is [docs/SYNC-DESIGN.md](docs/SYNC-DESIGN.md) (in Chinese; an English
 milestone was reviewed before it was merged ([docs/audit/](docs/audit/README.md)); the implementation notes are in
 [docs/design/notes/](docs/design/notes/).
 
-| Milestone | What                                                                                                                                        | State                                                 |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| M0        | The contract: `api/openapi.yaml`, shared known-answer vectors, a separately written Python reference, a checker against the design document | Done                                                  |
-| M1        | Sync cryptography (`extension/src/core/sync/crypto`): key bundles, device enrolment, request signatures, write proofs                       | Done                                                  |
-| M2        | Local sync state and the storage and service layers                                                                                         | Done                                                  |
-| M3        | The sync engine, with an in-memory test server                                                                                              | Done                                                  |
-| M4        | The sync API server (FastAPI, PostgreSQL), with a development-only sign-in provider                                                         | Done; runs in development and test mode only          |
-| M5        | Wiring in the extension: the service worker's API bridge, the optional host permission, alarms and back-off, the build checks               | Done                                                  |
-| M6        | The settings page's Sync section: turning sync on, joining, devices, approvals, key operations, revocation, repairs, recovery               | Done, behind the release gate                         |
-| M7        | Application-layer encryption of the server's key bundles and write keys with a key management service                                       | Not started                                           |
-| M8        | Go-live: the production sign-in provider, the hosted database, mail, the API domain and TLS, the final privacy and security documents       | Not started; needs the hosting resources listed below |
+| Milestone | What                                                                                                                                        | State                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| M0        | The contract: `api/openapi.yaml`, shared known-answer vectors, a separately written Python reference, a checker against the design document | Done                                                                  |
+| M1        | Sync cryptography (`extension/src/core/sync/crypto`): key bundles, device enrolment, request signatures, write proofs                       | Done; removed from the extension on 2026-11-17 (DV-0b)                |
+| M2        | Local sync state and the storage and service layers                                                                                         | Done; its sync parts removed from the extension on 2026-11-17 (DV-0b) |
+| M3        | The sync engine, with an in-memory test server                                                                                              | Done; removed from the extension on 2026-11-17 (DV-0b)                |
+| M4        | The sync API server (FastAPI, PostgreSQL), with a development-only sign-in provider                                                         | Done; runs in development and test mode only                          |
+| M5        | Wiring in the extension: the service worker's API bridge, the optional host permission, alarms and back-off, the build checks               | Done; removed from the extension on 2026-11-17 (DV-0b)                |
+| M6        | The settings page's Sync section: turning sync on, joining, devices, approvals, key operations, revocation, repairs, recovery               | Done; removed from every build on 2026-11-17 (OWNER-DECISIONS/25)     |
+| M7        | Application-layer encryption of the server's key bundles and write keys with a key management service                                       | Not started                                                           |
+| M8        | Go-live: the production sign-in provider, the hosted database, mail, the API domain and TLS, the final privacy and security documents       | Not started; needs the hosting resources listed below                 |
 
-Before the release gate opens (with M8):
+Before a hosted sync could ship (with M8; set aside, OWNER-DECISIONS/25):
 
 - the production sign-in provider (Supabase) and the go-live checklist of SYNC-DESIGN §9 M8, verified on the real
   hosted project, not locally;
 - the end-to-end tests on a staging service, and the sync subset on the oldest supported Chromium (140, the manifest's
   `minimum_chrome_version`);
-- the manual checks of the sync permission prompt and the Sync section on a real Chrome (`docs/OWNER-CHECKLIST.md` and
-  the M5/M6 notes): **not run yet**; they need the hosted service;
+- the extension's client back from the history (removed from every build, DV-0b), with a way to turn sync on in the
+  settings page, and the manual checks of it and of the sync permission prompt on a real Chrome (the M5/M6 notes):
+  **not run**; they need the hosted service;
 - the store's permission text and the listing's "no network" sentence changed in the same release: with sync, Sixkey
   uses the network once the user turns on end-to-end encrypted sync;
 - an external design and cryptography review of the sync protocol.
 
 The hosted service is to be operated by VIEW TECH LTD on its own server, with Supabase for sign-in and the database,
-mail sent from a `sixkey.app` address, and VIEW TECH LTD's security team on call. The extension's API origin is
-`https://api.sixkey.app` (built in once sync ships, and no other host; until then the store build names no server at
-all). A public address for the hosted service, tentatively `cloud.sixkey.app`, is still to be settled.
+mail sent from a `sixkey.app` address, and VIEW TECH LTD's security team on call. The extension's API origin would be
+`https://api.sixkey.app` (built in once sync ships, and no other host; no build names it, or any server, now). A
+public address for the hosted service, tentatively `cloud.sixkey.app`, is still to be settled.
 
 ## Self-hosting
 

@@ -51,9 +51,9 @@ rules (`BUNDLED_DATA`).
    Name the test after the behaviour it protects, and say in a comment what bug it would catch.
 2. **Pure logic lives in `extension/src/core`** with no `chrome.*` and no DOM; Chrome-specific code goes in
    `src/platform`. Logic is written and tested before the interface that uses it.
-3. **Storage writes go through the fault matrix.** A new write path in `src/core/storage` or `src/core/sync/local` must
-   be covered by the crash and fault-injection tests in `test/fault/` (a crash before, after, half-way and torn at
-   every write of the operation). Do not weaken an existing matrix to make a change pass.
+3. **Storage writes go through the fault matrix.** A new write path in `src/core/storage` must be covered by the crash
+   and fault-injection tests in `test/fault/` (a crash before, after, half-way and torn at every write of the
+   operation). Do not weaken an existing matrix to make a change pass.
 4. **Mutation testing is how tests are judged.** For a change to a security- or data-critical rule, write down the
    plausible bugs (mutants) your tests must catch and check that each one fails a test. The server has a harness for
    this (`make mutants` in `api/server`; mutants in `tests/mutation/mutants.py`, each an exact replacement that must

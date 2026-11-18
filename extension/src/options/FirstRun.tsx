@@ -46,7 +46,6 @@ export function FirstRun({
   rt,
   start,
   onSwitch,
-  onJoin,
   onExit,
   onDone,
   onRefresh,
@@ -56,8 +55,6 @@ export function FirstRun({
   start: SetupStart;
   /** Fresh install only: switch between starting empty and restoring. */
   onSwitch?: (s: SetupStart) => void;
-  /** Fresh install, in a build with the Sync section (SyncHost.tsx SYNC_UI): join a synced vault instead. */
-  onJoin?: () => void;
   /** Leave without writing anything (back to the page), or after another page got there first. */
   onExit: () => void;
   /** The vault exists and is unlocked in this page: show the page at "Add accounts". */
@@ -145,8 +142,36 @@ export function FirstRun({
   const csbOpened = (o: CsbOpened) =>
     void run(async () => {
       setOpened(o);
-      if (o.restore.needsPassword) return setStep("password");
+      // a recovery-key restore: the password step, where the copy's master password goes on (keepsPassword) or a new
+      // one is set (a forgotten password; and the only way when the copy had no password wrap, needsPassword)
+      if (o.restore.needsPassword || o.restore.keepsPassword) return setStep("password");
       setKeys(await rt.service.prepareRestoredKeys(o.restore.keyring, o.restore.vk, { typed: o.typed }));
+      setStep("risk");
+    });
+
+  /**
+   * Back to the master password (the owner's report of 2026-11-18: no way back once it was set). Nothing has been
+   * written yet: the keys made for that password are only in this page, and are dropped; the next one makes new keys,
+   * with a new recovery code.
+   */
+  const backToPassword = () => {
+    setKeys(null);
+    setError(null);
+    setStep("password");
+  };
+  /** The profile step's way back: to the recovery code of a new vault, or to a restore's password step; none else. */
+  const backFromRisk: (() => void) | null =
+    opened && (opened.restore.needsPassword || opened.restore.keepsPassword)
+      ? backToPassword
+      : !opened && keys !== null && keys.recoveryCode !== ""
+        ? () => setStep("code")
+        : null;
+
+  /** A recovery-key restore going on with the master password the copy already had: nothing to type, nothing new. */
+  const keepPassword = () =>
+    void run(async () => {
+      if (!opened) return;
+      setKeys(await rt.service.prepareRestoredKeys(opened.restore.keyring, opened.restore.vk, { keep: true }));
       setStep("risk");
     });
 
@@ -221,7 +246,7 @@ export function FirstRun({
     start.mode === "csb"
       ? [
           start.opened ? "frStepFile" : null,
-          ...(opened?.restore.needsPassword ? ["stepPassword"] : []),
+          ...(opened?.restore.needsPassword || opened?.restore.keepsPassword ? ["stepPassword"] : []),
           "frStepProfile",
           "frStepAccount",
         ]
@@ -302,11 +327,27 @@ export function FirstRun({
                   <span>{t("backupContains", live(backup.vault), formatDateTime(backup.created))}</span>
                 </p>
               )}
-              {opened && Csb && (
+              {opened && Csb && !opened.restore.keepsPassword && (
                 <p class="callout good" id="cs-need-password">
                   <Icon name="restore" size={16} />
                   <span>{cs("csNeedPassword")}</span>
                 </p>
+              )}
+              {opened && Csb && opened.restore.keepsPassword && (
+                <>
+                  <p class="callout good" id="cs-keep-line">
+                    <Icon name="restore" size={16} />
+                    <span>{cs("csKeepPasswordLine")}</span>
+                  </p>
+                  <div class="row2">
+                    <button type="button" class="btn" id="cs-keep-password" disabled={busy} onClick={keepPassword}>
+                      {cs("csKeepPassword")}
+                    </button>
+                  </div>
+                  <p class="muted" id="cs-or-new">
+                    {cs("csOrNewPassword")}
+                  </p>
+                </>
               )}
               <PasswordFields
                 idPrefix="fr"
@@ -356,6 +397,12 @@ export function FirstRun({
                 </p>
               )}
               <RecoveryCodeBox code={keys.recoveryCode} onDone={() => setStep("risk")} />
+              <div class="row2">
+                <button type="button" class="btn ghost" id="fr-back-password" disabled={busy} onClick={backToPassword}>
+                  <Icon name="back" size={15} />
+                  {t("back")}
+                </button>
+              </div>
             </>
           )}
 
@@ -394,6 +441,12 @@ export function FirstRun({
                 </div>
               )}
               <div class="row2">
+                {backFromRisk && (
+                  <button type="button" class="btn ghost" id="fr-back" disabled={busy} onClick={backFromRisk}>
+                    <Icon name="back" size={15} />
+                    {t("back")}
+                  </button>
+                )}
                 <button id="fr-finish" class="btn" disabled={busy} onClick={finish}>
                   <Icon name="check" size={15} />
                   {t("frFinish")}
@@ -423,12 +476,6 @@ export function FirstRun({
           {canSwitch && start.mode !== "create" && (
             <button class="btn sm ghost" id="fr-to-create" onClick={() => onSwitch!({ mode: "create" })}>
               {t("frCreateInstead")}
-            </button>
-          )}
-          {canSwitch && onJoin && (
-            <button class="btn sm ghost" id="fr-to-join" onClick={onJoin}>
-              <Icon name="sync" size={15} />
-              {t("frJoinSync")}
             </button>
           )}
           {canCancel && (

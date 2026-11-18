@@ -485,11 +485,7 @@ describe("the registration: exactly the sites that count, behind the gate asked 
 
   it("a host that may not be a site never gets a pattern", async () => {
     const r = registrar();
-    await applyRegistration(
-      ["localhost", "127.0.0.1", "co.uk", "api.sixkey.app", "ok.example.com"],
-      r.c,
-      async () => true,
-    );
+    await applyRegistration(["localhost", "127.0.0.1", "co.uk", "ok.example.com"], r.c, async () => true);
     expect(r.now.get(SCRIPT_ID)!.matches).toEqual(["https://ok.example.com/*"]);
   });
 });

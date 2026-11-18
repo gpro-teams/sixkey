@@ -111,7 +111,6 @@ const FULL_MEMBERS = [
   "clearSecurityLog",
   "read",
   "requirePolicy",
-  "noSync",
   "enableMasterPassword",
   "rotateKey",
   "capped",
@@ -180,7 +179,6 @@ describe("the service in two classes", () => {
       "PinUnlock",
       "QuickView",
       "ServiceDeps",
-      "SyncPort",
       "UnlockedView",
       "UnlockResult",
       "VkRecord",
@@ -217,7 +215,6 @@ describe("the service in two classes", () => {
         "diag",
         "security",
         "vkRecords",
-        "sync",
         "pins",
         "prfs", // the device unlock's record (QUICK-UNLOCK Stage 2): VaultService drops a stale one with a new vault
         "quickLock",
@@ -243,7 +240,7 @@ describe("the service in two classes", () => {
 
   it("ServiceCore is extended by VaultService only, and VaultService by nothing: no other class reaches the protected members", () => {
     // (the members made protected for VaultService include the session cache, which hands out the raw vault key; element
-    // access to the service's steps is allowed in sync-flows.ts and pin-admin.ts only, m2-source-rules.test.ts)
+    // access to the service's steps is allowed in the service's admins only, m2-source-rules.test.ts)
     const at = (re: RegExp) => files.filter((f) => re.test(code(f.text))).map((f) => f.path);
     expect(at(/\bextends\s+ServiceCore\b/)).toEqual(["core/service/service.ts"]);
     expect(at(/\bextends\s+VaultService\b/)).toEqual([]);
@@ -272,9 +269,8 @@ describe("the service in two classes", () => {
       "src/platform/runtime.ts",
       "src/core/crypto/password-policy.ts", // the master password's policy: VaultService.requirePolicy
       "src/core/service/presets.ts", // the first run's answer
-      "src/core/sync/crypto/cap-previous.ts", // the rotation's cap on previous keys
+      "src/core/crypto/cap-previous.ts", // the rotation's cap on previous keys
       "src/core/service/pin-admin.ts",
-      "src/core/service/sync-flows.ts",
       "src/options/MasterField.tsx", // the settings page's prompts (their hint reader): the popup draws the boxes alone
     ])
       expect(popup.modules, m).not.toContain(m);
@@ -350,7 +346,6 @@ describe("the settings page's text parts", () => {
       "fillTitleOld",
       "fillTitleSlow",
       "fillTitleUnsure",
-      "syncBadgeTitle",
     ]);
     const orphans = Object.keys(full.en).filter((k) => !partOf.has(k) && !popup.has(k) && !chrome.has(k));
     expect(orphans).toEqual([]);
@@ -391,8 +386,6 @@ describe("the settings page's text parts", () => {
       ...PARTS.map((p) => `settings-${p}`),
       "view",
       "plugins",
-      "sync",
-      "sync-manage",
       "autofill",
       "shares",
       "device",
@@ -444,9 +437,8 @@ describe("the settings page's text parts", () => {
     const distBudgets = Object.fromEntries([...block.matchAll(/([a-z]+): (\d+)/g)].map((m) => [m[1], +m[2]!]));
     expect(Object.keys(distBudgets)).toEqual(PARTS);
     for (const p of PARTS) expect(pyBudgets[`settings-${p}`], p).toBe(distBudgets[p]);
-    expect(pyBudgets.sync).toBe(12 * 1024);
-    expect(pyBudgets["sync-manage"]).toBe(12 * 1024);
-    expect(dist).toMatch(/^const SYNC_CATALOG_GZ = 12 \* 1024;$/m);
+    // (the Sync section's two catalogs went with the section, from every build: no budget, no limit)
+    expect(dist).not.toMatch(/SYNC_CATALOG_GZ/);
     // none above the 12 KB the full catalog had, none so tight that the next string fails (1.5 KB was the target)
     for (const [name, b] of Object.entries(pyBudgets)) expect(b, name).toBeLessThanOrEqual(12 * 1024);
     const parts = code(file("options/parts.tsx"));
@@ -485,7 +477,7 @@ describe("the settings page's text parts", () => {
         importedFrom.set(local!, `src/options/${m[2]}.tsx`);
       }
     const wrapped = [...parts.matchAll(/^export const (\w+) = gated\("([a-z]+)", (\w+)(?:, "([a-z-]+)")?\);$/gm)];
-    expect(wrapped.length).toBe(15); // AUTOFILL2 patch 2 added Autofill (misc); the Guide panel (general) went
+    expect(wrapped.length).toBe(16); // AUTOFILL2 patch 2 added Autofill (misc); the Guide panel (general) went; Groups (backup)
     for (const [, , part, local] of wrapped)
       expect(SETTINGS_PARTS[part!], `${local} in ${part}`).toContain(importedFrom.get(local!));
     expect(wrapped.map((w) => w[3]).sort()).toEqual([...importedFrom.keys()].sort());
@@ -583,13 +575,13 @@ describe("the settings page's text parts", () => {
       expect(at, name).toBeGreaterThan(0);
       return agg
         .slice(at, agg.indexOf("]", at))
-        .match(/"(settings-[a-z]+|sync(?:-manage)?)"/g)!
+        .match(/"(settings-[a-z]+)"/g)!
         .map((x) => x.slice(1, -1));
     };
     expect(pyList("settings page with no vault")).toEqual(distViews["with no vault"]!.map((p) => `settings-${p}`));
     expect(pyList("settings page with a vault")).toEqual(distViews["with a vault"]!.map((p) => `settings-${p}`));
     expect(agg).toMatch(/"settings page, every part": \["settings-" \+ p for p in SETTINGS_PARTS\],/);
-    expect(pyList("Sync section")).toEqual(["sync", "sync-manage"]);
+    expect(agg).not.toMatch(/Sync section/);
     expect(py).toMatch(/^VIEW_LIMIT = 12288$/m);
   });
 
@@ -658,16 +650,13 @@ describe("scripts/messages.py: the placement and the budgets", () => {
       `PARTS = {"nowhere": ["cancel"]}\n`,
       /PARTS names 'nowhere', which is not a part of the settings page/,
     ],
-    [
-      "a key that is the Sync section's",
-      `PARTS = {"core": ["syncPairTitle"]}\n`,
-      /PARTS places 'syncPairTitle', which is the Sync section's/,
-    ],
+    ["a key that was removed", `PARTS = {"core": ["syncLabel"]}\n`, /PARTS places 'syncLabel', which is removed/],
     ["a key that does not exist", `PARTS = {"core": ["noSuchKey"]}\n`, /PARTS places 'noSuchKey', which is not a key/],
     [
-      "a sync key in both of the section's catalogs",
-      `SYNC_MANAGE_EN = {"syncPairTitle": "x"}\nSYNC_MANAGE_ZH = {"syncPairTitle": "x"}\n`,
-      /sync key 'syncPairTitle' is also added by/,
+      // the Sync section's catalogs are gone from every build (OWNER-DECISIONS/25): a fragment cannot add to them
+      "a table of the removed Sync section's catalogs",
+      `SYNC_EN = {"syncZz": "x"}\nSYNC_ZH = {"syncZz": "x"}\n`,
+      /scripts\/i18n\/zz\.py: unexpected name\(s\) \['SYNC_EN', 'SYNC_ZH'\]/,
     ],
   ])("refuses %s", (_name, body, message) => {
     const r = run((d) => fragment(d, "zz.py", body));
@@ -702,15 +691,6 @@ describe("scripts/messages.py: the placement and the budgets", () => {
     expect(r.out).toMatch(/what the settings page with a vault loads together is \d+ B gzipped, over the 12288 B/);
     expect(r.out).toMatch(/nothing was written/);
     expect(readdirSync(r.dir)).not.toContain("catalogs"); // refused before it wrote anything
-  });
-
-  it("refuses the Sync section's two catalogs together over 12 KB, though each is within its own", () => {
-    const n = noise(500, 3);
-    const r = run((d) =>
-      fragment(d, "zz.py", `SYNC_MANAGE_EN = {"syncZzBig": "${n}"}\nSYNC_MANAGE_ZH = {"syncZzBig": "${n}"}\n`),
-    );
-    expect(r.ok).toBe(false);
-    expect(r.out).toMatch(/what the Sync section loads together is \d+ B gzipped, over the 12288 B/);
   });
 
   it("refuses a manifest name or a getMessage key with no text", () => {

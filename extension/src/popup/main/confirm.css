@@ -75,6 +75,14 @@
   gap: 4px;
   margin-top: 7px;
 }
+/* a ticked row of a list whose name is saved with another key: its own replace-or-keep answer (AddConfirm.tsx Many) */
+.cf-row-choice {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 2px 0 6px 34px;
+  font-size: 12px;
+}
 .cf-choice label,
 .cf-check {
   display: flex;
@@ -115,6 +123,9 @@
 .cf-next .ic {
   margin-top: 1px;
   flex: none;
+}
+.cf-line.warn {
+  color: var(--warn);
 }
 .cf-next {
   padding: 9px 11px;

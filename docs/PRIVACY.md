@@ -3,7 +3,7 @@
 **Short version: Sixkey does not collect anything, and sends nothing to its publisher. It makes no network request for
 its backup: with the backup in Chrome sync on (on by default for a new vault, shown at the end of first run, where you
 can clear it), Chrome's own sync carries your encrypted vault to Google, under the Google account Chrome is signed in
-to (below). Sixkey itself reaches the network only for what you turn on: in a later version, sync.**
+to (below). Sixkey itself reaches the network only for what you turn on, and this version has nothing that does.**
 
 From 2026-11-06 no build offers the Google Drive backup through a separate plugin any more; the backup in Chrome sync
 (below) takes its place, beside the encrypted backup file (Settings › Backup).
@@ -13,8 +13,9 @@ From 2026-11-06 no build offers the Google Drive backup through a separate plugi
 Everything is stored on your computer, in this browser profile, in the extension's own storage:
 
 - **your accounts**, encrypted: each account's name, account name, secret key and code settings, the group you put it in, the
-  sites you registered for it ("Remember this site", the Sites field, or "Show first on …" when adding), when it was
-  added, and stamps that order edits (with a random ID for this install). With them: the keys that open them, locked by
+  note you may write to tell it from an account of the same name, the sites you registered for it ("Remember this site",
+  the Sites field, or "Show first on …" when adding), the sites you turned on for code suggestions with it on any of your
+  computers (below), when it was added, and stamps that order edits (with a random ID for this install). With them: the keys that open them, locked by
   your master password and by your recovery key; up to 10 recent and 7 daily encrypted copies; and a second encrypted
   copy, with up to 7 daily ones, in this profile's IndexedDB;
 - **the settings you choose**, not encrypted because they are not secret: locking, how the popup list looks (density,
@@ -27,7 +28,8 @@ Everything is stored on your computer, in this browser profile, in the extension
     under Settings › Advanced and send it yourself;
   - the security record (below);
 - in the extension pages' own local storage, outside the vault and outside every backup: your language and theme choice,
-  and the answer of the last install-source check (store builds only);
+  the answer of the last install-source check (store builds only), and how many times each account's code was copied or
+  filled in this browser (account IDs and counts only, so that on a site the accounts you use most come first);
 - recovery key shares are never stored: Sixkey shows or prints each one, or saves it as a file only when you ask, and
   keeps no record of a share set, except that after you switch to shares, until they pass a check after the next
   browser restart (or the recovery key changes again, or you make a new vault), the security record holds a reminder
@@ -189,11 +191,11 @@ new computer, your master password (or your recovery key) brings it back.
 
 - No analytics, tracking, advertising, or crash reporting.
 - No network requests unless you turn something on. The backup in Chrome sync makes none of Sixkey's: Chrome's sync
-  carries it. This version cannot turn sync on: its worker has no sync engine or network transport and names no server,
-  its network policy allows no connection at all (`connect-src 'none'`, for its pages and its worker), and it has no
-  host permission for a server either. A version with sync adds its sync server (`api.sixkey.app`) to both, and only its
-  worker makes sync requests. A site permission for code suggestions gives access to that site's pages, not a new
-  network destination. Sixkey cannot check your clock or look anything up online.
+  carries it. No version has the sync through Sixkey's own server any more: its client was removed from the extension,
+  so no version's worker has a sync engine or a network transport or names a sync server. This version's network policy
+  allows no connection at all (`connect-src 'none'`, for its pages and its worker), and it has no host permission for a
+  server either. A site permission for code suggestions gives access to that site's pages, not a new network
+  destination. Sixkey cannot check your clock or look anything up online.
 - No code that runs in a page by itself, except on the sites you turn on for code suggestions (below). Sixkey runs a small
   script of its own (`inject/otp.js`, part of the extension; nothing is downloaded) in a page only because you asked, in the
   one tab you are on, and only if that page's address matches a site you registered for an account. The permission for
@@ -220,7 +222,7 @@ new computer, your master password (or your recovery key) brings it back.
   code on a secure (https) page, Sixkey offers to suggest codes on that site automatically. If you click "Turn on", Chrome
   asks you, in its own words, to let Sixkey "read and change your data on" that one site (that host over https, at any
   port). Once you have allowed it, Chrome remembers: after you remove the site in Sixkey, turning it on again does not ask
-  again. Sixkey asks for exactly that site: never for all sites, never for an http page, an IP address or the sync server.
+  again. Sixkey asks for exactly that site: never for all sites, never for an http page or an IP address.
   - On a site you turned on, a small script of Sixkey's own (`inject/otp.js` and `inject/suggest.js`, part of the
     extension; nothing is downloaded) runs in that site's pages, in a space of its own the page cannot see. It does nothing
     until you click or type in an input box yourself. Then it looks for the verification-code box, as the Fill button does
@@ -233,11 +235,15 @@ new computer, your master password (or your recovery key) brings it back.
     you did not turn on, and it stops at the next page load once Chrome no longer allows the site. In an incognito window
     it shows nothing.
   - Chrome keeps the sites you allow in its own settings, unencrypted, and Sixkey keeps the same list (`sk_af_sites`) in
-    this browser profile only; it is never synced, backed up or exported. Remove a site in Settings › Security › Autofill,
-    or in Chrome's own settings (`chrome://extensions`, Site access): either way it is off.
+    this browser profile; that list itself is never synced, backed up or exported. Each site you turn on is also noted
+    with its account inside your encrypted vault, so it goes wherever the vault goes, encrypted (the backup in Chrome
+    sync, backup files): your other computers then offer it under Settings › Security › Autofill, and turn it on there
+    only when you click, after Chrome asks. Remove a site in Settings › Security › Autofill to take it off this
+    computer's list and off the vault's notes (another computer keeps its own list until you remove it there), or in
+    Chrome's own settings (`chrome://extensions`, Site access): either way it is off on this computer.
   - Choosing "On all sites" in Chrome's extensions menu turns no site on: only the sites you turned on in Sixkey count.
-    It lets Sixkey reach no server either: this version has no sync, and its content security policy lets its pages and
-    its service worker connect nowhere.
+    It lets Sixkey reach no server either: no version has a sync server any more, and this version's content security
+    policy lets its pages and its service worker connect nowhere.
 - It takes no messages from web pages or from other extensions, and it does not talk to any other program on your
   computer: no web page can reach it, and it has no listener for another extension's messages, so one that tries gets
   the same error as for an extension that is not installed. Development versions

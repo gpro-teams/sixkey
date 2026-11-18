@@ -29,7 +29,7 @@ export const UNVERIFIED_KEY = "sk_plugins_unverified";
 export const PAUSES_KEY = "sk_plugin_pauses";
 /** The last epoch written or verified in this browser session (§6.6 item 5): an older record is a rollback. */
 export const EPOCH_KEY = "sk_plugins_epoch";
-/** The HKDF label of K_g. Local only: not a sync label (src/core/sync/crypto/labels.ts has those). */
+/** The HKDF label of K_g. Local only: not a label of the contract's (contract/vectors/sync-v1.json lists those). */
 export const GRANT_LABEL = "sixkey/v1/plugin-grants";
 
 export type GrantState = "approved" | "disabled" | "suspended";

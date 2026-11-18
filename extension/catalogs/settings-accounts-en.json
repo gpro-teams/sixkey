@@ -226,5 +226,8 @@
   },
   "delManual": {
     "message": "Delete it yourself: move it to the Trash or Recycle Bin, then empty it."
+  },
+  "delAuto": {
+    "message": "Adding also deletes $1, which holds your keys in plain text. Chrome asks you to allow it first."
   }
 }

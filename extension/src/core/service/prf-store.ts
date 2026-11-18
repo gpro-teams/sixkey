@@ -12,12 +12,12 @@
 //     kept, their MAC as it is: made under the old key, it no longer counts (prf-record.ts gateCreds), so the gate is
 //     paused until it is turned back on, as a PRF credential is. With no record it reads nothing more (the
 //     degraded-mirror unlock's read budget).
-// Not vault data (store.ts hasAnyData), never mirrored, synced, backed up or exported; turning sync off keeps it.
+// Not vault data (store.ts hasAnyData), never mirrored, synced, backed up or exported (core/storage/local-keys.ts).
 import { parsePrfRecord, type PrfCred, type PrfRecord } from "../crypto/prf-record";
 import type { Vk } from "../crypto/vk";
 import type { KV, Lock } from "../storage/kv";
-import { activeKeyring } from "../sync/local/records";
-import { LOCAL_ONLY_KEYS } from "../sync/local/keys";
+import { activeKeyring } from "../storage/active-keyring";
+import { LOCAL_ONLY_KEYS } from "../storage/local-keys";
 import type { VkRecord, VkRecordResult } from "./service-core";
 
 export const PRF_KEY = LOCAL_ONLY_KEYS.prf;

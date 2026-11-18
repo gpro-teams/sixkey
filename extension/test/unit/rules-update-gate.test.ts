@@ -172,7 +172,7 @@ describe("the site rules' updater's release gate", () => {
     expect(b).toMatch(/writeFileSync\(resolve\(dist, PACKAGED_BASELINE\), baseline\.text\);/);
     // and the CSP gains the rules origin's one path, with the gate open only
     expect(b).toMatch(
-      /if \(rulesUpdate\)\s*manifest\.content_security_policy = \{\s*\.\.\.manifest\.content_security_policy,\s*extension_pages: cspOf\(cspOrigin, \[rulesPathOf\(RULES_ORIGINS\[flavour\]\)\]\),/,
+      /if \(rulesUpdate\)\s*manifest\.content_security_policy = \{\s*\.\.\.manifest\.content_security_policy,\s*extension_pages: cspOf\(\[rulesPathOf\(RULES_ORIGINS\[flavour\]\)\]\),/,
     );
   });
 });

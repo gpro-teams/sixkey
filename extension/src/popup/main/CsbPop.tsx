@@ -2,7 +2,8 @@
 // (src/ui/csb-popup-text.ts), loaded by every build, with nothing of the settings page's modules. What it says agrees
 // with what Settings › Backup's card says (src/options/csb/model.ts cardView; csb-popup-dom.test.ts holds the two
 // together), from the worker's two records (src/platform/csb-config.ts):
-//   - the header pill: the popup's own "本机" while the backup is off; "Chrome 同步" with a check once it is on, its
+//   - the header pill: the popup's own "本机" while the backup is off; "Chrome 同步" once it is on, with a check once a
+//     copy of the vault as it is has been handed over (a clock before the first copy and while changes wait), its
 //     title "已交给 Chrome 同步 · 3 分钟前" (the act, never "backed up": Sixkey cannot see what Chrome uploads), or the
 //     backup's name until a copy has been handed over; "备份已停" (amber) when the card's line is a problem only the
 //     person can fix (stopped), changes have waited three days (stale), or this browser would not let the worker close
@@ -132,13 +133,16 @@ export function Pill(p: Open & { children: preact.ComponentChildren }) {
   const now = Date.now();
   const stop = stopped(r, now);
   const at = r.st.lastOk;
+  // the check only once this vault as it is now has been handed to Chrome Sync: never before the first copy, nor while
+  // changes wait (a clock then)
+  const handed = at !== null && r.st.pendingSince === null;
   return (
     <span
       class={stop ? "loc stop" : "loc"}
       id="csb-pill"
       title={stop ? cb("cbStopped") : at !== null ? cb("cbOk", ago(at, now, getLang())) : cb("cbTitle")}
     >
-      <Icon name={stop ? "alert" : "check"} size={12} />
+      <Icon name={stop ? "alert" : handed ? "check" : "clock"} size={12} />
       <span>{cb(stop ? "cbStopped" : "cbPill")}</span>
     </span>
   );

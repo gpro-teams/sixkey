@@ -62,11 +62,11 @@ const LAZY = {
 };
 
 describe("the PIN record's sources", () => {
-  it('"sk_pin_restart" is spelled in keys.ts (and restated in the lock screens\' steps); written only in the vault lock', () => {
+  it('"sk_pin_restart" is spelled in local-keys.ts (and restated in the lock screens\' steps); written only in the vault lock', () => {
     expect(where(/"sk_pin_restart"/).sort()).toEqual([
       "core/service/pin-restart-count.ts",
       "core/service/pin-restart-steps.ts",
-      "core/sync/local/keys.ts",
+      "core/storage/local-keys.ts",
     ]);
     for (const p of ["core/service/pin-restart-steps.ts", "core/service/pin-restart-count.ts"])
       expect(file(p).code, p).toMatch(/^const KEY = "sk_pin_restart";$/m);

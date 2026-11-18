@@ -305,6 +305,18 @@ describe("other states stay within the open budget", () => {
   }, 60_000);
 });
 
+describe("a local edit reads nothing of the server sync's (its client went: OWNER-DECISIONS/25, DV-0b)", () => {
+  it("no get of its records, also in a profile that still holds them (a developer's, before the worker's cleanup)", async () => {
+    const f = await fixture(10, 2);
+    for (const [k, v] of Object.entries({ sk_sync_cfg: { v: 1 }, sk_sync_state: { v: 1, lastSynced: null } }))
+      f.local.data.set(k, v);
+    const rt = f.popup();
+    await rt.service.mutate((v, cl) => addEntry(v, account(500), cl).vault);
+    expect(f.local.c.keys.flat().filter((k) => k.startsWith("sk_sync_") || k === "sk_prejoin")).toEqual([]);
+    report.push(`  one edit: ${f.local.c.gets} local reads (none of the server sync's records)`);
+  }, 60_000);
+});
+
 describe("the backup in Chrome sync's two records: read with the settings, so the popup's pill reads nothing of its own", () => {
   // as the worker writes them when the backup is on (platform/csb-config.ts): a link that remembers its 16 slot ids, and
   // a state with every field, the most these two records are

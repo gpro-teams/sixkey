@@ -18,16 +18,7 @@ import {
   type FillResult,
   type Frame,
 } from "../../platform/autofill";
-import {
-  answered,
-  API_HOST,
-  laterList,
-  notNow,
-  offHint,
-  readList,
-  requestSite,
-  setOffHint,
-} from "../../platform/autofill-sites";
+import { answered, laterList, notNow, offHint, readList, requestSite, setOffHint } from "../../platform/autofill-sites";
 import { gatedCode, touchSwitch } from "../../platform/plugins/autofill-gate";
 import { ruleForPage } from "../../platform/site-rule";
 import type { GrantKeys } from "../../core/plugins/store";
@@ -49,6 +40,7 @@ import { surface } from "../surface";
 import { ft } from "./fill-text";
 import * as pageFill from "./page-fill";
 import type { Row } from "./model";
+import { countUse } from "./uses";
 import "./fill.css";
 
 /**
@@ -97,9 +89,15 @@ const SUGGEST_UI = typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__;
 let seen: Seen = { k: "scanning" };
 /** The vault key of this surface, for the platform's gate (Main connects it when it loads this chunk). */
 let keysOf: () => Promise<GrantKeys | null> = async () => null;
-/** Main's one call: where the gate gets the vault key (the popup's or the side panel's service). */
-export function connect(keys: () => Promise<GrantKeys | null>): void {
+/** Where a site turned on for an account is marked in the vault (core/autofill-marks.ts; Main's mutate), or nowhere. */
+let markOf: (id: string, host: string) => void = () => undefined;
+/**
+ * Main's one call: where the gate gets the vault key (the popup's or the side panel's service), and where a site with
+ * code suggestions is marked on its account, for the other computers (the owner's request of 2026-11-18).
+ */
+export function connect(keys: () => Promise<GrantKeys | null>, mark?: (id: string, host: string) => void): void {
   keysOf = keys;
+  if (mark) markOf = mark;
 }
 /** Whether Sixkey holds `scripting`, as Chrome said at the last look (refreshed by every look and every grant). */
 let held = false;
@@ -369,6 +367,7 @@ async function pressRun(e: Entry, o: PressOptions, asked: Promise<"ok" | "grante
     });
     if (r.k === "cancelled") return (setPer(e.id, { k: "idle" }), false);
     if (r.k === "filled") {
+      countUse(e.id); // a fill is a use (./uses.ts)
       setPer(e.id, { k: "done" });
       setTimeout(() => per.get(e.id)?.k === "done" && setPer(e.id, { k: "idle" }), 9000);
       if (!o.noOffer) void offerAfter(e.id, at.url);
@@ -617,7 +616,7 @@ export function RowFill({ entry, first }: { entry: Entry; first: boolean }) {
 
 // ---- the offer to suggest codes on this site (AUTOFILL2 patch 2; platform/autofill-sites.ts) --------------------------
 // After a fill on an https page whose host may be turned on (core/autofill-sites.ts siteOfUrl: not http, not at another
-// port, not an IP address, a shared suffix or the sync API's host) and is not on the list, the card offers once to turn
+// port, not an IP address or a shared suffix) and is not on the list, the card offers once to turn
 // code suggestions on for exactly that host. "Turn on" asks Chrome for that one origin, as the first thing its click does;
 // granted, the site goes on the list (and if this popup closes meanwhile, the worker finishes it). "Not now", or a refusal
 // in Chrome's dialog: not offered again until the browser restarts. A page that changes takes the offer with it.
@@ -633,11 +632,14 @@ const setSiteAsk = (o: SiteAsk | null) => {
 const askIs = (o: SiteAsk) => siteAsk?.id === o.id && siteAsk.host === o.host;
 
 async function offerAfter(id: string, url: string): Promise<void> {
-  const host = siteOfUrl(url, API_HOST);
+  const host = siteOfUrl(url);
   if (host === null || siteAsk?.host === host) return;
   try {
     const [listed, later] = await Promise.all([readList(), laterList()]);
-    if (listed.includes(host) || later.includes(host) || listed.length >= MAX_SITES) return;
+    // on this computer's list already: marked on the account just filled, if it is not (a popup that Chrome's prompt
+    // closed left the list to the worker, which cannot reach the vault)
+    if (listed.includes(host)) return markOf(id, host);
+    if (later.includes(host) || listed.length >= MAX_SITES) return;
   } catch {
     return;
   }
@@ -652,7 +654,10 @@ function turnOn(o: SiteAsk): void {
     .catch(() => false)
     .then((granted) => answered(o.host, granted))
     .then(
-      (on) => askIs(o) && setSiteAsk(on ? { ...o, k: "on" } : null),
+      (on) => {
+        if (on) markOf(o.id, o.host); // for the other computers (core/autofill-marks.ts)
+        if (askIs(o)) setSiteAsk(on ? { ...o, k: "on" } : null);
+      },
       () => askIs(o) && setSiteAsk(null),
     );
 }

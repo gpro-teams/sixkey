@@ -128,7 +128,7 @@ describe("check-dist: the manifest", () => {
       /optional_host_permissions must be exactly/,
     ],
     [
-      // the store build with the sync user interface out names autofill's sites alone, not the sync API's origin
+      // the store build names autofill's sites alone, not the server sync's API origin (no build does since DV-0b)
       "the API origin back in the store build's optional hosts",
       (d) =>
         editJson(d, "manifest.json", (j) => {
@@ -173,7 +173,7 @@ describe("check-dist: the manifest", () => {
       /unexpected extension_pages CSP/,
     ],
     [
-      // the store build with the sync user interface out connects nowhere: its connect-src is 'none'
+      // the store build connects nowhere: its connect-src is 'none' (its site rules' updater's gate closed)
       "the API origin back in the store build's connect-src",
       (d) =>
         editJson(d, "manifest.json", (j) => {
@@ -293,12 +293,13 @@ describe("check-dist: the manifest", () => {
       /optional permission not allowed: nativeMessaging/,
     ],
     [
-      "a version below the server's minimum",
+      // (a version below the server sync's minimum client version failed here too, until its client went: DV-0b)
+      "a version that is not a Chrome version",
       (d) =>
         editJson(d, "manifest.json", (j) => {
-          j.version = "0.0.1";
+          j.version = "0.1.0-beta";
         }),
-      /below the sync API's minimum client version 0\.1\.0/,
+      /manifest version is not a Chrome version: 0\.1\.0-beta/,
     ],
     [
       "a classic background page",
@@ -385,11 +386,12 @@ describe("check-dist: the network in shipped scripts", () => {
       (d) => editText(d, popupChunk(d), (t) => `${t}\nfetch("https://api.sixkey.app/v1/keys");`),
       /popup-[\w-]+\.js: `fetch` appears 1 times/,
     ],
-    // the store build's worker has no sync transport (its release gate closed): no fetch at all
+    // the store build's worker has no site rules' updater (its release gate closed) and no sync transport (no build has
+    // since DV-0b): no fetch at all
     [
       "a fetch in the store build's worker",
       (d) => editText(d, "sw.js", (t) => `${t}\nglobalThis.x=()=>fetch("/");`),
-      /sw\.js: `fetch` appears 1 times; only sw\.js may use it, 0 times \(no sync transport/,
+      /sw\.js: `fetch` appears 1 times; only sw\.js may use it, 0 times \(no network in this build/,
     ],
     [
       "a WebSocket",
@@ -409,28 +411,28 @@ describe("check-dist: the network in shipped scripts", () => {
     [
       "a URL of another host",
       (d) => editText(d, popupChunk(d), (t) => `${t}\nconst u="https://evil.example/collect";`),
-      /URL in shipped code that is not the API origin: https:\/\/evil\.example\/collect/,
+      /URL in shipped code that is not one it may hold: https:\/\/evil\.example\/collect/,
     ],
     [
       "a URL that only starts like the API origin",
       (d) => editText(d, "sw.js", (t) => `${t}\nconst u="https://api.sixkey.app.evil.example/";`),
-      /not the API origin: https:\/\/api\.sixkey\.app\.evil\.example\//,
+      /not one it may hold: https:\/\/api\.sixkey\.app\.evil\.example\//,
     ],
     [
       "a ws URL of the API host",
       (d) => editText(d, "sw.js", (t) => `${t}\nconst u="wss://api.sixkey.app/";`),
-      /not the API origin: wss:\/\/api\.sixkey\.app\//,
+      /not one it may hold: wss:\/\/api\.sixkey\.app\//,
     ],
-    // nor the API origin, nor its host, in any shipped file
+    // nor the server sync's API origin, nor its host, in any shipped file (in no build since DV-0b)
     [
       "the API origin in the store build's worker",
       (d) => editText(d, "sw.js", (t) => `${t}\nconst o="https://api.sixkey.app";`),
-      /sw\.js: names the sync API's host api\.sixkey\.app in a build whose release gate keeps sync out/,
+      /sw\.js: names the server sync's API \(api\.sixkey\.app\), whose client no build has/,
     ],
     [
       "the API host alone in a page's chunk",
       (d) => editText(d, popupChunk(d), (t) => `${t}\nconst h="api.sixkey.app";`),
-      /popup-[\w-]+\.js: names the sync API's host api\.sixkey\.app/,
+      /popup-[\w-]+\.js: names the server sync's API \(api\.sixkey\.app\)/,
     ],
     [
       "the API host in the manifest",
@@ -438,7 +440,7 @@ describe("check-dist: the network in shipped scripts", () => {
         editText(d, "manifest.json", (t) =>
           t.replace('"description"', '"homepage_url": "https://api.sixkey.app/", "description"'),
         ),
-      /manifest\.json: names the sync API's host api\.sixkey\.app/,
+      /manifest\.json: names the server sync's API \(api\.sixkey\.app\)/,
     ],
     [
       "a remote script in a page",
@@ -509,13 +511,13 @@ describe("check-dist: the network in shipped scripts", () => {
       expect(r.out).toMatch(msg);
     });
   }
-  // a build with the sync user interface (the e2e build, whose API origin is the local test server's): its worker's one
-  // fetch, the sync transport's, and the API origin in it
-  const withSync: [string, (d: string) => void, RegExp][] = [
+  // the e2e build, whose worker has the site rules' updater (its gate open) and, since DV-0b, no sync transport: its one
+  // fetch is the updater's, and no API origin is in it (the server sync's local one, 127.0.0.1:8787, was until then)
+  const e2eWorker: [string, (d: string) => void, RegExp][] = [
     [
-      "a third fetch in the worker (the sync transport's and the site rules' updater's are its two)",
+      "a second fetch in the worker (the site rules' updater's is its one)",
       (d) => editText(d, "sw.js", (t) => `${t}\nglobalThis.x=()=>fetch("/");`),
-      /sw\.js: `fetch` appears 3 times; only sw\.js may use it, 2 times \(the sync transport, the site rules'/,
+      /sw\.js: `fetch` appears 2 times; only sw\.js may use it, 1 times \(the site rules' updater\)/,
     ],
     [
       "no fetch in the worker",
@@ -523,17 +525,17 @@ describe("check-dist: the network in shipped scripts", () => {
       /sw\.js: `fetch` appears 0 times/,
     ],
     [
-      "the worker without the API origin",
-      (d) => editText(d, "sw.js", (t) => t.split("http://127.0.0.1:8787").join("")),
-      /sw\.js does not carry the API origin http:\/\/127\.0\.0\.1:8787/,
+      "the server sync's local API origin back in the worker",
+      (d) => editText(d, "sw.js", (t) => `${t}\nconst o="http://127.0.0.1:8787";`),
+      /sw\.js: names the server sync's API \(127\.0\.0\.1:8787\), whose client no build has/,
     ],
     [
-      "the worker built for another origin",
-      (d) => editText(d, "sw.js", (t) => t.split("http://127.0.0.1:8787").join("http://127.0.0.1:8788")),
-      /not the API origin: http:\/\/127\.0\.0\.1:8788/,
+      "another loopback origin in the worker",
+      (d) => editText(d, "sw.js", (t) => `${t}\nconst o="http://127.0.0.1:8788";`),
+      /not one it may hold: http:\/\/127\.0\.0\.1:8788/,
     ],
   ];
-  for (const [what, alter, msg] of withSync) {
+  for (const [what, alter, msg] of e2eWorker) {
     it(`e2e: ${what}`, () => {
       const r = mutant("e2e", alter);
       expect(r.ok, r.out).toBe(false);
@@ -550,17 +552,37 @@ describe("check-dist: nothing in a prod build turns sync on (SYNC-DESIGN §9 M5/
         mkdirSync(join(d, "devsync"));
         writeFileSync(join(d, "devsync/index.html"), "<!doctype html><title>x</title>");
       },
-      /devsync\/ \(the developer sync page\) is in a prod build/,
+      /devsync\/ \(the developer sync page\) is in the prod build/,
     ],
     [
       "the developer page's marker in a chunk",
       (d) => editText(d, popupChunk(d), (t) => `${t}\nconst m="sixkey-dev-sync";`),
-      /dev marker in a prod build: sixkey-dev-sync/,
+      /popup-[\w-]+\.js: the developer sync page's marker in the prod build/,
     ],
     [
-      "enrolment code (the first upload's outcome)",
-      (d) => editText(d, "sw.js", (t) => `${t}\nconst k="keyring_changed";`),
-      /enrolment code in a prod build \(keyring_changed\)/,
+      "enrolment code (its domain tag)",
+      (d) => editText(d, "sw.js", (t) => `${t}\nconst k="sixkey-enroll|2|";`),
+      /enrolment code in the prod build \(sixkey-enroll\|2\|\)/,
+    ],
+    [
+      // the server sync's toolbar badge: its title's text, which the worker read with chrome.i18n (_locales is shipped)
+      "the sync badge's title back in _locales",
+      (d) =>
+        editJson(d, "_locales/en/messages.json", (j) => {
+          j.syncBadgeTitle = { message: "Sixkey · devices waiting for approval: $1" };
+        }),
+      /_locales\/en\/messages\.json: the server sync's toolbar badge \(syncBadgeTitle\) in the prod build/,
+    ],
+    [
+      // the removal of what the server sync's client left (src/platform/server-sync-leftovers.ts): dev and e2e builds only
+      "the server sync's records' removal in the store build's worker",
+      (d) =>
+        editText(
+          d,
+          "sw.js",
+          (t) => `${t}\nconst k=["sk_sync_cfg","sk_prejoin"],db="sixkey-identity",a="sk-sync-periodic";`,
+        ),
+      /sw\.js: names the server sync's records \(sk_sync_\) in the prod build, whose worker never removes them/,
     ],
     [
       "the loopback dev origin in a chunk",
@@ -585,16 +607,18 @@ describe("check-dist: nothing in a prod build turns sync on (SYNC-DESIGN §9 M5/
   }
 });
 
-describe("check-dist --e2e: the test build's own origin and its developer page", () => {
-  it("the prod origin in an e2e build fails; an e2e build without the developer page fails", () => {
+describe("check-dist --e2e: the test build's own hosts, and no developer page", () => {
+  it("the server sync's API origin in an e2e build fails; an e2e build with the developer page fails", () => {
     const a = mutant("e2e", (d) =>
       editJson(d, "manifest.json", (j) => {
         j.host_permissions = ["https://api.sixkey.app/*"];
       }),
     );
     expect(a.ok).toBe(false);
-    // the API origin first, then (AUTOFILL2 patch 2) the two fixture hosts the e2e build grants up front
-    expect(a.out).toMatch(/host_permissions must be exactly \["http:\/\/127\.0\.0\.1:8787\/\*","https:\/\/grantedtls/);
+    // (AUTOFILL2 patch 2) the two fixture hosts the e2e build grants up front, and nothing else (the API origin was first,
+    // until DV-0b)
+    expect(a.out).toMatch(/host_permissions must be exactly \["https:\/\/grantedtls\.fix\.test\/\*","http:\/\/granted/);
+    expect(a.out).toMatch(/manifest\.json: names the server sync's API \(api\.sixkey\.app\)/);
     // the e2e build's permission is required (its tests cannot answer Chrome's prompt), and only required
     const o = mutant("e2e", (d) =>
       editJson(d, "manifest.json", (j) => {
@@ -605,9 +629,12 @@ describe("check-dist --e2e: the test build's own origin and its developer page",
     expect(o.ok).toBe(false);
     expect(o.out).toMatch(/manifest key missing: host_permissions/);
     expect(o.out).toMatch(/the e2e build must not have optional_host_permissions/);
-    const b = mutant("e2e", (d) => rmSync(join(d, "devsync"), { recursive: true }));
+    const b = mutant("e2e", (d) => {
+      mkdirSync(join(d, "devsync"));
+      writeFileSync(join(d, "devsync/index.html"), "<!doctype html><title>x</title>");
+    });
     expect(b.ok).toBe(false);
-    expect(b.out).toMatch(/has no developer sync page/);
+    expect(b.out).toMatch(/devsync\/ \(the developer sync page\) is in the e2e build/);
     const c = mutant("e2e", (d) =>
       editJson(d, "manifest.json", (j) => {
         j.permissions = (j.permissions as string[]).filter((p) => p !== "clipboardRead");
@@ -629,12 +656,12 @@ describe("check-dist --e2e: the test build's own origin and its developer page",
     );
     expect(e.ok).toBe(false);
     expect(e.out).toMatch(/`fetch` appears 1 times/);
-    expect(e.out).toMatch(/not the API origin: https:\/\/evil\.example\//);
+    expect(e.out).toMatch(/not one it may hold: https:\/\/evil\.example\//);
   });
 });
 
-describe("check-dist --dev: the dev build's own origin, optional as in prod", () => {
-  it("a dev build with the permission required, or for another origin, fails", () => {
+describe("check-dist --dev: the dev build's hosts, optional as in prod", () => {
+  it("a dev build with the permission required, or with the server sync's API origin, fails", () => {
     const a = mutant("dev", (d) =>
       editJson(d, "manifest.json", (j) => {
         j.host_permissions = j.optional_host_permissions;
@@ -649,17 +676,8 @@ describe("check-dist --dev: the dev build's own origin, optional as in prod", ()
       }),
     );
     expect(b.ok).toBe(false);
-    // the dev origin first, then (AUTOFILL2 patch 2) https sites, one at a time
-    expect(b.out).toMatch(
-      /optional_host_permissions must be exactly \["http:\/\/127\.0\.0\.1:8787\/\*","https:\/\/\*\/\*"\]/,
-    );
-    const c = mutant("dev", (d) =>
-      editText(d, "devsync/index.html", (t) =>
-        t.replace(`<meta http-equiv="Content-Security-Policy" content="connect-src 'none'">`, ""),
-      ),
-    );
-    expect(c.ok).toBe(false);
-    expect(c.out).toMatch(/devsync\/index\.html: no page-level connect-src 'none'/);
+    // (AUTOFILL2 patch 2) https sites, one at a time, and nothing else (the dev origin was first, until DV-0b)
+    expect(b.out).toMatch(/optional_host_permissions must be exactly \["https:\/\/\*\/\*"\]/);
   });
 });
 

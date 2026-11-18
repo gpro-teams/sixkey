@@ -949,10 +949,9 @@ describe("decideSlot: each rule", () => {
     expect(d({}, {})).toEqual({ kind: "skip", why: "unchanged" });
   });
 
-  it("1: an empty vault with no slot of its vault writes nothing", () => {
-    expect(d({ empty: true }, null)).toEqual({ kind: "skip", why: "empty" });
-    expect(d({ empty: true, vaultId: "vault-two" }, {})).toEqual({ kind: "skip", why: "empty" });
-    // a slot of its vault exists: the rule goes on (here: nothing changed)
+  it("1 (gone): an empty vault is written like any other, so a second computer finds it at once", () => {
+    expect(d({ empty: true }, null)).toEqual(W("new", "first"));
+    expect(d({ empty: true, vaultId: "vault-two" }, {})).toEqual(W("new", "other_vault"));
     expect(d({ empty: true }, {})).toEqual({ kind: "skip", why: "unchanged" });
     expect(d({ empty: true, seq: 21 }, {})).toEqual(W("same", "changed"));
   });
@@ -1027,8 +1026,14 @@ describe("decideSlot: each rule", () => {
 
 describe("decideSlot: the order", () => {
   it.each<[string, Partial<SlotLocal>, Partial<SlotLink> | null, OwnSlot, SlotDecision]>([
-    ["1 before 2", { empty: true }, null, null, { kind: "skip", why: "empty" }],
-    ["1 before 3", { empty: true, vaultId: "vault-two" }, { held: true }, O0, { kind: "skip", why: "empty" }],
+    ["an empty vault: 2 as any other", { empty: true }, null, null, W("new", "first") as SlotDecision],
+    [
+      "an empty vault: 3 as any other",
+      { empty: true, vaultId: "vault-two" },
+      { held: true },
+      O0,
+      { kind: "hold", why: "held" },
+    ],
     ["2 before 4", {}, null, null, W("new", "first") as SlotDecision],
     ["3 before 4", {}, { held: true }, null, { kind: "hold", why: "held" }],
     ["3 before 5", {}, { held: true }, { g: "bbbbbbbbbbbbbbbb", intact: true }, { kind: "hold", why: "held" }],
@@ -1112,7 +1117,6 @@ describe("decideSlot: the order", () => {
                               (own.g === link.gen || own.g === link.pending);
                             const same = seq === 20 && vk === K0.vkId && opens === "both" && wraps === L0.wraps;
                             const rows: [boolean, SlotDecision][] = [
-                              [empty && (!link || link.vaultId !== vault), { kind: "skip", why: "empty" }],
                               [!link, W("new", "first") as SlotDecision],
                               [held, { kind: "hold", why: "held" }],
                               [own === null, W("same", "gone") as SlotDecision],
@@ -1132,7 +1136,7 @@ describe("decideSlot: the order", () => {
                           }
     expect(n).toBe(2 * 2 * 2 * 2 * 7 * 2 * 3 * 2 * 2 * 2 * 2 * 2);
     // every decision is reached
-    expect(seen.size).toBe(11);
+    expect(seen.size).toBe(10); // (the empty skip is gone since 2026-11-17)
   });
 });
 
@@ -1908,7 +1912,7 @@ async function history(acts: Act[]): Promise<SyncWorld> {
   }
   expect(wrote).toBe(false);
   for (const d of w.devs) {
-    if (!d.live || !d.gen || d.gen.content.tokens.length === 0) continue; // an empty vault is never written
+    if (!d.live || !d.gen) continue; // an empty vault is written like any other (since 2026-11-17)
     if (d.stopped !== null) {
       expect(["held", "no_room", "too_large"]).toContain(d.stopped);
       reach(`ends ${d.stopped}`);
@@ -1961,7 +1965,6 @@ describe("random device histories against a fake Chrome sync, with real files", 
 /** A seed whose 80 histories reach all of REACH_ALL (a change to the model may need another). */
 const SEED = 20261106;
 const REACH_ALL = [
-  "skip empty",
   "skip unchanged",
   "hold held",
   "hold older",

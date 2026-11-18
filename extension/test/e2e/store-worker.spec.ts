@@ -1,5 +1,5 @@
-// The store build's service worker (dist/, its sync release gate closed: scripts/sync-ui.mjs), which has no sync
-// worker, bridge or transport (src/background/sw.ts), in the real extension:
+// The store build's service worker (dist/), which has no sync worker, bridge or transport (no build has since the server
+// sync's client went: OWNER-DECISIONS/25, DV-0b; src/background/sw.ts), in the real extension:
 //   - its start leaves nothing in its console: no error, no warning, no uncaught exception or rejection. Read over the
 //     DevTools protocol from the worker's own target once it runs (the console keeps what was logged before anyone
 //     looked, and hands it over when Runtime is enabled); the control is a throw-away extension whose worker logs an
@@ -7,7 +7,7 @@
 //   - the pages' messages still reach its listeners: the popup's clipboard clean-up is answered, the settings page's
 //     backup in Chrome sync is answered, and neither page's message to the worker finds no receiver;
 //   - autofill: the popup's Fill types the code into a page's code box, as in the e2e build (autofill1.spec.ts), the
-//     store build's worker, content script and empty API origin included.
+//     store build's worker and content script included.
 // The backup in Chrome sync's card turning it on in this build is store-rail.spec.ts's; the popup's and the settings
 // page's first run and backup are store-backup.spec.ts's.
 import { chromium, expect, test, type BrowserContext } from "@playwright/test";

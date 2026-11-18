@@ -1,6 +1,7 @@
 // TOTP autofill Stage 2, patch 2: the sites, their grants and reconcile (docs/design/notes/AUTOFILL2-NOTES.md §7):
 //   - core/autofill-sites.ts: which hosts may be turned on (https only, no IP address, no loopback name, no shared suffix,
-//     not the API host, canonical only, at most 253 characters), the one pattern each asks for, a stored list read back;
+//     canonical only, at most 253 characters; the server sync's API host is an ordinary one since its client went,
+//     DV-0b), the one pattern each asks for, a stored list read back;
 //   - platform/autofill-sites.ts: the request (exactly one origin; the ask noted in the same synchronous run), the page's
 //     and the worker's end of an ask (review M7: exactly that pattern, within a minute), Remove (Chrome's grant given back
 //     only when Chrome lists exactly that pattern), the list's lock and its cap;
@@ -16,7 +17,6 @@ import {
   acceptPending,
   addSite,
   answered,
-  API_HOST,
   laterList,
   LATER_KEY,
   notNow,
@@ -31,6 +31,7 @@ import {
 } from "../../src/platform/autofill-sites";
 import { covers } from "../helpers/sw-world";
 
+/** The server sync's API host, which could be no site while its client was there (DV-0b). */
 const API = "api.sixkey.app";
 const pat = (h: string) => `https://${h}/*`;
 
@@ -61,10 +62,10 @@ function grants(initial: string[] = []) {
 }
 
 describe("core: which hosts may be turned on", () => {
-  it("an exact, canonical https host name: not an IP address, a loopback name, a shared suffix or the API host", () => {
-    expect(API_HOST).toBe(API); // the unbuilt code's origin: the store build's
+  it("an exact, canonical https host name: not an IP address, a loopback name or a shared suffix", () => {
+    expect(siteHostOk(API)).toBe(true); // the server sync's API host: an ordinary host since its client went (DV-0b)
     for (const h of ["github.com", "login.github.com", "alice.github.io", "xn--bcher-kva.example", "a_b.example.com"])
-      expect(siteHostOk(h, API), h).toBe(true);
+      expect(siteHostOk(h), h).toBe(true);
     for (const h of [
       "",
       "com",
@@ -76,7 +77,6 @@ describe("core: which hosts may be turned on", () => {
       "co.uk",
       "github.io",
       "amazonaws.com", // above a shared suffix (s3.amazonaws.com)
-      API,
       "GitHub.com",
       "github.com.",
       "github.com:8443",
@@ -87,22 +87,21 @@ describe("core: which hosts may be turned on", () => {
       "a b.com",
       `${"a".repeat(63)}.${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(61)}.com`, // 257 characters
     ])
-      expect(siteHostOk(h, API), h).toBe(false);
-    expect(siteHostOk(`${"a".repeat(63)}.${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(57)}.com`, API)).toBe(true); // 253, the most
-    for (const x of [undefined, null, 7, ["github.com"], { host: "github.com" }])
-      expect(siteHostOk(x, API)).toBe(false);
+      expect(siteHostOk(h), h).toBe(false);
+    expect(siteHostOk(`${"a".repeat(63)}.${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(57)}.com`)).toBe(true); // 253, the most
+    for (const x of [undefined, null, 7, ["github.com"], { host: "github.com" }]) expect(siteHostOk(x)).toBe(false);
   });
 
   it("the pattern is exactly https://<host>/* (no wildcard, no http, no port), and none for a host that may not be", () => {
-    expect(sitePattern("github.com", API)).toBe("https://github.com/*");
-    expect(sitePattern("login.github.com", API)).toBe("https://login.github.com/*");
-    for (const h of ["*", "*.github.com", "localhost", "127.0.0.1", "co.uk", API, "GITHUB.COM"])
-      expect(sitePattern(h, API), h).toBeNull();
+    expect(sitePattern("github.com")).toBe("https://github.com/*");
+    expect(sitePattern("login.github.com")).toBe("https://login.github.com/*");
+    for (const h of ["*", "*.github.com", "localhost", "127.0.0.1", "co.uk", "GITHUB.COM"])
+      expect(sitePattern(h), h).toBeNull();
   });
 
   it("a page offers its host only over https at the default port, without a user name", () => {
-    expect(siteOfUrl("https://github.com/login?x=1#y", API)).toBe("github.com");
-    expect(siteOfUrl("https://github.com:443/", API)).toBe("github.com"); // the parser drops the default port
+    expect(siteOfUrl("https://github.com/login?x=1#y")).toBe("github.com");
+    expect(siteOfUrl("https://github.com:443/")).toBe("github.com"); // the parser drops the default port
     for (const u of [
       "http://github.com/",
       "https://github.com:8443/",
@@ -111,7 +110,6 @@ describe("core: which hosts may be turned on", () => {
       "https://[::1]/",
       "https://localhost/",
       "https://github.io/",
-      `https://${API}/`,
       "ftp://github.com/",
       "chrome://extensions/",
       "file:///etc/passwd",
@@ -119,13 +117,13 @@ describe("core: which hosts may be turned on", () => {
       undefined,
       "not a url",
     ])
-      expect(siteOfUrl(u, API), String(u)).toBeNull();
+      expect(siteOfUrl(u), String(u)).toBeNull();
   });
 
   it("a stored list reads back as its valid hosts, once each, at most 32; anything else is none", () => {
     const hosts = Array.from({ length: 40 }, (_, i) => `s${i}.example.com`);
-    expect(readSites({ v: 1, hosts }, API)).toEqual(hosts.slice(0, MAX_SITES));
-    expect(readSites({ v: 1, hosts: ["a.com", "a.com", "http://b.com", API, "c.com", 7], extra: 1 }, API)).toEqual([
+    expect(readSites({ v: 1, hosts })).toEqual(hosts.slice(0, MAX_SITES));
+    expect(readSites({ v: 1, hosts: ["a.com", "a.com", "http://b.com", "localhost", "c.com", 7], extra: 1 })).toEqual([
       "a.com",
       "c.com",
     ]);
@@ -138,7 +136,7 @@ describe("core: which hosts may be turned on", () => {
       { v: 2, hosts: ["a.com"] },
       { v: 1, hosts: "a.com" },
     ])
-      expect(readSites(raw, API)).toEqual([]);
+      expect(readSites(raw)).toEqual([]);
   });
 });
 
@@ -160,7 +158,7 @@ describe("platform: asking Chrome for one site", () => {
   });
 
   it("never asks for a host that may not be turned on", async () => {
-    for (const h of ["localhost", "127.0.0.1", "co.uk", API, "*.github.com", "github.com:8443", "GitHub.com", ""]) {
+    for (const h of ["localhost", "127.0.0.1", "co.uk", "*.github.com", "github.com:8443", "GitHub.com", ""]) {
       const { p, log } = grants();
       const session = new MemoryKV();
       expect(await requestSite(h, p, session, 1000), h).toBe(false);
@@ -220,13 +218,18 @@ describe("platform: asking Chrome for one site", () => {
       ["a minute and a millisecond late", ask, ["https://github.com/*"], at + PENDING_MS + 1],
       ["a time before the ask", ask, ["https://github.com/*"], at - 1],
       ["On all sites, granted in Chrome's menu", ask, ["https://*/*"], at + 1],
-      ["the sync API's origin (sync turned on)", ask, [`https://${API}/*`], at + 1],
+      [
+        "another site's pattern (the server sync's API origin, as its turn-on granted it)",
+        ask,
+        [`https://${API}/*`],
+        at + 1,
+      ],
       ["another site", ask, ["https://gitlab.com/*"], at + 1],
       ["a subdomain of the asked site", ask, ["https://gist.github.com/*"], at + 1],
       ["the asked site over http", ask, ["http://github.com/*"], at + 1],
       ["no ask at all", undefined, ["https://github.com/*"], at + 1],
       ["an ask of another shape", { ...ask, extra: 1 }, ["https://github.com/*"], at + 1],
-      ["an ask for a host that may not be", { v: 1, host: API, at }, [`https://${API}/*`], at + 1],
+      ["an ask for a host that may not be", { v: 1, host: "localhost", at }, ["https://localhost/*"], at + 1],
     ];
     for (const [what, pending, origins, now] of no) {
       const { local, session } = await setup(pending);
@@ -243,7 +246,7 @@ describe("platform: asking Chrome for one site", () => {
     const local = new MemoryKV();
     expect(await addSite("github.com", local)).toBe(true);
     expect(await addSite("github.com", local)).toBe(true);
-    for (const h of ["localhost", "127.0.0.1", API, "co.uk"]) expect(await addSite(h, local), h).toBe(false);
+    for (const h of ["localhost", "127.0.0.1", "co.uk"]) expect(await addSite(h, local), h).toBe(false);
     const many = Array.from({ length: 40 }, (_, i) => `s${i}.example.com`);
     await Promise.all(many.map((h) => addSite(h, local)));
     const list = await readList(local);
@@ -254,7 +257,8 @@ describe("platform: asking Chrome for one site", () => {
   });
 
   it("Remove: off the list, and Chrome's grant given back only when Chrome lists exactly that site's pattern", async () => {
-    // exactly granted: removed, and only that pattern (never the API's)
+    // exactly granted: removed, and only that pattern (never another, such as the server sync's API origin a dev profile
+    // may still hold)
     let local = new MemoryKV();
     await local.set({ [SITES_KEY]: { v: 1, hosts: ["github.com", "gitlab.com"] } });
     let g = grants([pat("github.com"), pat("gitlab.com"), `https://${API}/*`]);

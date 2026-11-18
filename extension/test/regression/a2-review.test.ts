@@ -288,7 +288,7 @@ describe("P-1 (FIXb, FIXa2): a key change that fails at the commit stays failed,
   // both slots, so a lost pointer write rolls nothing back any more: strictly better. The cost itself is unchanged where
   // FIXa2 can still see a difference, a reset whose cleanup did not run, and the second test pins that (a same-key
   // case, so FIXa2 comparing key ids instead of keyrings, mutant X3, is still caught).
-  it("a password reset whose cleanup finished, then a lost pointer write: nothing is rolled back; the new password and code work, the old ones do not", async () => {
+  it("a password reset whose cleanup finished, then a lost pointer write: nothing is rolled back; the new password works, the old one does not, the recovery key goes on", async () => {
     const w = world();
     const { recoveryCode: r1 } = await createProtected(w.svc());
     for (const n of ["GitHub", "AWS"]) await w.add(w.svc(), n);
@@ -299,9 +299,9 @@ describe("P-1 (FIXb, FIXa2): a key change that fails at the commit stays failed,
     await w.store().selfCheck(); // the next browser start
     const k = (await active(w.kv)).keyring;
     await expect(unlockWithPassword(k, STRONG2)).resolves.toBeDefined(); // the new password
-    await expect(unlockWithRecoveryCode(k, r2)).resolves.toBeDefined(); // the code shown with it
+    expect(r2).toBe(r1); // the reset keeps the recovery key (the owner's report of 2026-11-18)
+    await expect(unlockWithRecoveryCode(k, r1)).resolves.toBeDefined(); // which still opens it
     await expect(unlockWithPassword(k, STRONG)).rejects.toThrow(); // the old password no longer works
-    await expect(unlockWithRecoveryCode(k, r1)).rejects.toThrow(); // nor the old code
     await w.svc().unlockWithPassword(STRONG2);
     expect(aliveEntries((await w.svc().read()).vault).map((e) => e.issuer)).toEqual(["GitHub", "AWS"]); // no account lost
   });
@@ -325,7 +325,7 @@ describe("P-1 (FIXb, FIXa2): a key change that fails at the commit stays failed,
     await expect(unlockWithPassword(k, STRONG)).resolves.toBeDefined(); // the old password
     await expect(unlockWithRecoveryCode(k, r1)).resolves.toBeDefined(); // the old recovery code
     await expect(unlockWithPassword(k, STRONG2)).rejects.toThrow(); // the new password no longer works
-    await expect(unlockWithRecoveryCode(k, r2)).rejects.toThrow(); // nor the code shown with it
+    expect(r2).toBe(r1); // (the reset kept the recovery key: the owner's report of 2026-11-18)
     await w.svc().lock();
     await w.svc().unlockWithPassword(STRONG);
     expect(aliveEntries((await w.svc().read()).vault).map((e) => e.issuer)).toEqual(["GitHub", "AWS"]); // no account lost

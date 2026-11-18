@@ -16,13 +16,11 @@ import {
 } from "../../src/core/storage/format";
 import { createMutex, MemoryKV, type KV } from "../../src/core/storage/kv";
 import { VaultStore, type StoreOptions } from "../../src/core/storage/store";
-import { SYNC_KEYS } from "../../src/core/sync/local/keys";
-import { SyncStateStore } from "../../src/core/sync/local/state";
 import { createClock } from "../../src/core/vault/hlc";
 import { emptyVault, type Vault } from "../../src/core/vault/model";
 import { addEntry } from "../../src/core/vault/ops";
 import { deserializeVault, serializeVault } from "../../src/core/vault/validate";
-import { input } from "../helpers/m2-world";
+import { totpInput as input } from "../helpers/vaults";
 
 const t = { now: 1_700_000_000_000 };
 const PW = "tulip-orbit-lantern-84";
@@ -315,56 +313,26 @@ describe("beforeRecoveryWrite: before every recovery write, inside the lock, and
     await expect(s.load()).rejects.toThrow("state unreadable");
     expect(JSON.stringify([...w.kv.inner.data])).toBe(before);
   });
-  it("wired to the sync state: lastSynced null and the outbox moved to the orphan list before the recovery writes anything (one write, D1 as revisions 19 and 20 have it)", async () => {
-    const w = world();
-    await seeded(w);
-    const st = new SyncStateStore(w.kv);
-    const synced = new VaultStore({
-      kv: w.kv,
-      mirror: w.mirror,
-      lock: w.lock,
-      now: () => t.now,
-      beforeRecoveryWrite: () => st.recoveryHook(),
-    });
-    w.kv.inner.data.set(SYNC_KEYS.state, { v: 1, lastSynced: { version: 5, head: "h", checksum: "c" }, failures: 0 });
-    w.kv.inner.data.set(SYNC_KEYS.outbox, { base: 5 });
-    w.kv.inner.data.set(KEYS.slot[ptrOf(w)], { torn: "x" });
-    w.kv.log = [];
-    await synced.load();
-    expect(w.kv.log[0]).toBe(`set:${[SYNC_KEYS.orphan, SYNC_KEYS.outbox, SYNC_KEYS.state].sort().join("+")}`);
-    expect(w.kv.inner.data.get(SYNC_KEYS.state)).toEqual({ v: 1, lastSynced: null, failures: 0 });
-    expect(w.kv.inner.data.get(SYNC_KEYS.outbox)).toBeNull();
-    expect(w.kv.inner.data.get(SYNC_KEYS.orphan)).toEqual({ v: 1, items: [{ base: 5 }] }); // kept, unchanged (M3RR-3), appended to the list (rev. 20)
-  });
-  it("a transact over lost data: the hook runs before the caller's function, so a flow that clears its own sync state there finds the outbox already kept (M3, rev. 19 §4.7)", async () => {
+  it("a transact over lost data: the hook runs before the caller's function, so the function finds what the hook did already done (M3, rev. 19 §4.7)", async () => {
     const v = world();
     await seeded(v);
     for (const k of [KEYS.slot.a, KEYS.slot.b, KEYS.keyringCopy]) v.kv.inner.data.set(k, { torn: "x" });
     v.mirror.inner.data.clear();
     for (const k of [...v.kv.inner.data.keys()].filter((x) => x.startsWith("sk_snap_"))) v.kv.inner.data.delete(k);
-    const st = new SyncStateStore(v.kv);
-    const synced = new VaultStore({
-      kv: v.kv,
-      mirror: v.mirror,
-      lock: v.lock,
-      now: () => t.now,
-      beforeRecoveryWrite: () => st.recoveryHook(),
-    });
-    v.kv.inner.data.set(SYNC_KEYS.state, { v: 1, lastSynced: { version: 5, head: "h", checksum: "c" }, failures: 0 });
-    v.kv.inner.data.set(SYNC_KEYS.outbox, { base: 5 });
-    expect((await synced.load()).status).toBe("lost");
+    const s2 = v.store();
+    expect((await s2.load()).status).toBe("lost");
+    v.hooks.length = 0;
     const fresh = await createKeyring();
-    const seen: unknown[] = [];
-    await synced.transact(
+    const seen: number[] = [];
+    await s2.transact(
       async () => {
-        seen.push(v.kv.inner.data.get(SYNC_KEYS.orphan) ?? null);
-        await st.clearLastSynced(); // the flow's own clear (the cloud restore's pins.begin): the live outbox only
+        seen.push(v.hooks.length); // the hook's calls so far, as the function sees them
         return { envelope: (await vaultOf([], fresh.keyring, fresh.vk, 0)).envelope, keyring: fresh.keyring };
       },
       { overwriteLost: true },
     );
-    expect(seen).toEqual([{ v: 1, items: [{ base: 5 }] }]);
-    expect(v.kv.inner.data.get(SYNC_KEYS.orphan)).toEqual({ v: 1, items: [{ base: 5 }] });
+    expect(seen).toEqual([1]);
+    expect(v.hooks).toHaveLength(1);
     // a function that throws over lost data: the hook has run (conservative: a full pull, the orphan kept), nothing written
     const w2 = world();
     await seeded(w2);

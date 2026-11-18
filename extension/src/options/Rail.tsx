@@ -10,7 +10,6 @@ import { getChoice, getLang, setLangChoice, t, type LangChoice } from "../ui/i18
 import { cardView, type CardView } from "./csb/model";
 import { Icon, type IconName } from "./icons";
 import { GROUPS } from "./route";
-import { SYNC_UI } from "./SyncHost";
 
 /** [group id, title key, icon]. App owns the list; the rail links to each group (route.ts) and marks the one shown. */
 export type RailSection = readonly [string, string, IconName];
@@ -30,8 +29,8 @@ function daysAgo(at: number | null): string {
 }
 
 /**
- * The rail's line for the backup in Chrome sync, in a build without the Sync section: the state of Settings › Backup's
- * card (csb/model.ts cardView) in a few of its words. Off; on with no account to hand over yet; a copy due (the
+ * The rail's line for the backup in Chrome sync: the state of Settings › Backup's card (csb/model.ts cardView) in a few
+ * of its words. Off; on with no account to hand over yet; a copy due (the
  * card's "正在交给…"); changes waiting; handed over, with when (the act, never "backed up": Sixkey cannot see what
  * Chrome uploads); a passing failure, retried (amber); and what only the person can fix, or changes waiting for three
  * days, or this browser's refusal to close the area to web pages (the popup's "备份已停", amber too, as the card and the
@@ -73,11 +72,6 @@ function apart(line: string) {
 /** The side rail: logo, the protection card, the section menu, and the language menu. */
 /** `current`: the group shown (App's). Its link is "true" when the group has leaves of its own, "page" when it is one page. */
 /** `langLocked`: the first-run wizard holds keys whose code is on screen; switching language reloads the page and drops them. */
-/**
- * `syncLine`: the Sync section's line once it has loaded (SyncHost.tsx): undefined is "off", null not known yet. Shown
- * only in a build with the Sync section (the release gate, scripts/sync-ui.mjs); a build without it shows the backup in
- * Chrome sync's line in its place (`csb`, csbLine above).
- */
 export function Rail({
   sections,
   current,
@@ -86,7 +80,6 @@ export function Rail({
   lastBackup,
   csb = null,
   langLocked = false,
-  syncLine,
 }: {
   sections: readonly RailSection[];
   current: string;
@@ -101,12 +94,11 @@ export function Rail({
    */
   csb?: RailCsb;
   langLocked?: boolean;
-  syncLine?: { text: string; tone: Tone } | null | undefined;
 }) {
   // the backup in Chrome sync's line says how long ago, and its state can turn with the time alone (stale after three
   // days): drawn again now and then while that backup is on
   const [, tick] = useState(0);
-  const ticking = !SYNC_UI && csb?.cfg.on === true;
+  const ticking = csb?.cfg.on === true;
   useEffect(() => {
     if (!ticking) return;
     const id = setInterval(() => tick((n) => n + 1), TICK_MS);
@@ -127,7 +119,7 @@ export function Rail({
   const age = lastBackup === null ? null : Math.max(0, (now - lastBackup) / DAY);
   const runs = csb !== null && backupRuns(csb.cfg, csb.st, now);
   const fresh = !count ? "none" : age !== null && age <= 7 ? "good" : runs ? "none" : age === null ? "bad" : "warn";
-  const backup = !SYNC_UI && csb !== null ? csbLine(cardView(csb.cfg, csb.st, now), now) : null;
+  const backup = csb !== null ? csbLine(cardView(csb.cfg, csb.st, now), now) : null;
 
   return (
     <aside class="rail">
@@ -176,23 +168,13 @@ export function Rail({
               <i style={`--p:${age === null ? 0 : Math.max(0.06, 1 - age / 30)}`} />
             </span>
           </div>
-          {SYNC_UI ? (
-            <div class={`sync${syncLine ? ` ${syncLine.tone}` : ""}`}>
-              <dt>
-                <Icon name="sync" size={14} />
-                {t("syncLabel")}
-              </dt>
-              <dd id="rail-sync">{syncLine === undefined ? t("syncOff") : syncLine === null ? "…" : syncLine.text}</dd>
-            </div>
-          ) : (
-            <div class={`csb ${backup?.tone ?? "none"}`}>
-              <dt>
-                <Icon name="sync" size={14} />
-                {branded(t("railCsb"), isChrome(), t("railCsbBrowser"))}
-              </dt>
-              <dd id="rail-csb">{backup ? apart(backup.text) : "…"}</dd>
-            </div>
-          )}
+          <div class={`csb ${backup?.tone ?? "none"}`}>
+            <dt>
+              <Icon name="sync" size={14} />
+              {branded(t("railCsb"), isChrome(), t("railCsbBrowser"))}
+            </dt>
+            <dd id="rail-csb">{backup ? apart(backup.text) : "…"}</dd>
+          </div>
         </dl>
       </section>
       <nav aria-label={t("navMenu")}>

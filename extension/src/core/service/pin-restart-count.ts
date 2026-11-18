@@ -11,7 +11,7 @@ import type { RestartRecord, RestartState } from "../crypto/pin-restart";
 import type { PinKit } from "./pin-kit";
 import type { QuickView, ServiceCore } from "./service-core";
 
-/** The key (pin-store.ts RESTART_KEY, core/sync/local/keys.ts LOCAL_ONLY_KEYS.restart), restated, not imported. */
+/** The key (pin-store.ts RESTART_KEY, core/storage/local-keys.ts LOCAL_ONLY_KEYS.restart), restated, not imported. */
 const KEY = "sk_pin_restart";
 /** The settings' key (types.ts SETTINGS_KEY), restated: openView reads it with the pointer. */
 const SETTINGS = "sk_settings";

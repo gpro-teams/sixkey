@@ -16,6 +16,7 @@ import csbZh from "../../catalogs/csb-zh_CN.json";
 import popEn from "../../catalogs/csb-popup-en.json";
 import popZh from "../../catalogs/csb-popup-zh_CN.json";
 import { STALE_AFTER_MS } from "../../src/core/cloud/status";
+import { Icon } from "../../src/ui/icons";
 import { MemoryKV } from "../../src/core/storage/kv";
 import { CSB_CFG_KEY, CSB_STATE_KEY, NEW_CSB_CONFIG, NEW_CSB_STATE } from "../../src/platform/csb-config";
 import type { CsbConfig, CsbState } from "../../src/platform/csb-config";
@@ -245,6 +246,28 @@ describe("the popup's pill and footer", () => {
       expect(plainFoot(), JSON.stringify(s)).toBe("3 accounts");
       expect(footLinks(), JSON.stringify(s)).toEqual([]); // no 立即备份, no one click, no problem line
       expect(byId("own-foot")).toBeNull();
+      act(() => render(null, root as unknown as Element));
+    }
+  });
+
+  it("the check only once the vault as it is has been handed over: a clock before the first copy and while changes wait", async () => {
+    const dOf = (el: MiniElement) => el.all((e) => e.localName === "path")[0]!.getAttribute("d");
+    const pathOf = (name: "check" | "clock") => {
+      const box = document.createElement("div") as unknown as MiniElement;
+      act(() => render(h(Icon, { name }), box as unknown as Element));
+      return dOf(box);
+    };
+    const pillPath = () => dOf(byId("csb-pill")!);
+    // the owner's report of 2026-11-17: on, nothing handed over yet, and the pill showed a check
+    for (const [s, want] of [
+      [st({}), "clock"],
+      [st({ lastRun: T0 }), "clock"],
+      [st({ pendingSince: T0 }), "clock"],
+      [st({ lastOk: T0 - 8 * DAY, pendingSince: T0 - MIN }), "clock"],
+      [st({ lastOk: T0 - 3 * MIN, lastRun: T0 }), "check"],
+    ] as const) {
+      await mount(ON, s);
+      expect(pillPath(), JSON.stringify(s)).toBe(pathOf(want));
       act(() => render(null, root as unknown as Element));
     }
   });

@@ -309,7 +309,9 @@ function One({
   const { c } = item;
   const [issuer, setIssuer] = useState(c.issuer);
   const [label, setLabel] = useState(c.label);
-  const [replace, setReplace] = useState(false);
+  // the same name with another key: replaced or kept beside it, as the user says; no answer until then (the owner's
+  // report of 2026-11-18: ask, every time), and nothing is added before one
+  const [replace, setReplace] = useState<boolean | null>(null);
   const [siteSet, setSiteSet] = useState<boolean | null>(null); // null: follows the name, until the box is clicked
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -328,6 +330,7 @@ function One({
     setError("");
     const id = crypto.randomUUID();
     const input = newEntry(c, issuer.trim(), label.trim(), site && choice ? [choice] : undefined);
+    if (v.k === "rebind" && replace === null) return; // not answered yet (the buttons wait for it)
     const swap = v.k === "rebind" && replace ? v.entry.id : undefined; // only ever on the user's explicit choice
     let there: Entry | undefined;
     try {
@@ -347,6 +350,7 @@ function One({
   }
 
   const other = v.k === "exists" || v.k === "same_key" || v.k === "rebind" ? nameOf(v.entry) : "";
+  const undecided = v.k === "rebind" && replace === null;
   return (
     <div class="cf">
       <div class="cf-body">
@@ -403,7 +407,7 @@ function One({
                     type="radio"
                     name="pa-rebind"
                     id="pa-keep"
-                    checked={!replace}
+                    checked={replace === false}
                     onChange={() => setReplace(false)}
                   />
                   {t("paKeepBoth")}
@@ -413,7 +417,7 @@ function One({
                     type="radio"
                     name="pa-rebind"
                     id="pa-replace"
-                    checked={replace}
+                    checked={replace === true}
                     onChange={() => setReplace(true)}
                   />
                   {t("paReplace")}
@@ -481,18 +485,30 @@ function One({
         ) : (
           <>
             {!hotp && (
-              <button class="btn sm ghost" id="pa-add" disabled={busy} onClick={() => void add(false)}>
+              <button class="btn sm ghost" id="pa-add" disabled={busy || undecided} onClick={() => void add(false)}>
                 {t("paAddOnly")}
               </button>
             )}
             <span class="sp" />
             {hotp ? (
-              <button class="btn sm" id="pa-add" ref={goRef} disabled={busy} onClick={() => void add(false)}>
+              <button
+                class="btn sm"
+                id="pa-add"
+                ref={goRef}
+                disabled={busy || undecided}
+                onClick={() => void add(false)}
+              >
                 <Icon name="plus" size={14} />
                 {t("add")}
               </button>
             ) : (
-              <button class="btn sm" id="pa-add-copy" ref={goRef} disabled={busy} onClick={() => void add(true)}>
+              <button
+                class="btn sm"
+                id="pa-add-copy"
+                ref={goRef}
+                disabled={busy || undecided}
+                onClick={() => void add(true)}
+              >
                 <Icon name="copy" size={14} />
                 {t("paAddCopy")}
               </button>
@@ -523,9 +539,12 @@ function Many({
   const keyOf = (x: Item) => `${keyBytes(x.c.secret)}\u0000${x.c.issuer}\u0000${x.c.label}`;
   const ticked = (x: Item) => x.v.k !== "exists" && (ticks.get(keyOf(x)) ?? x.v.k === "new");
   const chosen = items.filter(ticked);
+  // a ticked account whose name is saved with another key: replaced or kept beside it, as the user says, row by row
+  const [modes, setModes] = useState<Map<string, "keep" | "replace">>(() => new Map());
+  const undecided = chosen.some((x) => x.v.k === "rebind" && !modes.has(keyOf(x)));
 
   async function add() {
-    if (busy || !chosen.length) return;
+    if (busy || !chosen.length || undecided) return;
     setBusy(true);
     setError("");
     let added = 0;
@@ -534,8 +553,10 @@ function Many({
         let v = vault;
         added = 0;
         for (const x of chosen) {
-          if (verdictOf(x.c, aliveEntries(v)).k === "exists") continue; // saved meanwhile
-          v = addOrReplace(v, newEntry(x.c, x.c.issuer, x.c.label), clock, { id: crypto.randomUUID() });
+          const now = verdictOf(x.c, aliveEntries(v));
+          if (now.k === "exists") continue; // saved meanwhile
+          const swap = now.k === "rebind" && modes.get(keyOf(x)) === "replace" ? now.entry.id : undefined;
+          v = addOrReplace(v, newEntry(x.c, x.c.issuer, x.c.label), clock, { id: crypto.randomUUID(), replace: swap });
           added++;
         }
         return v;
@@ -578,10 +599,32 @@ function Many({
                   </span>
                   {tag(x) && <em>{tag(x)}</em>}
                 </label>
+                {x.v.k === "rebind" && ticked(x) && (
+                  <span class="cf-choice cf-row-choice">
+                    {(["replace", "keep"] as const).map((m) => (
+                      <label key={m}>
+                        <input
+                          type="radio"
+                          name={`pa-m-${k}`}
+                          class={`pa-m-${m}`}
+                          checked={modes.get(k) === m}
+                          onChange={() => setModes(new Map(modes).set(k, m))}
+                        />
+                        {t(m === "replace" ? "paReplace" : "paKeepBoth")}
+                      </label>
+                    ))}
+                  </span>
+                )}
               </li>
             );
           })}
         </ul>
+        {undecided && (
+          <p class="cf-line warn" id="pa-choose">
+            <Icon name="alert" size={15} />
+            {t("paChoose")}
+          </p>
+        )}
         {notes}
         {more && <More p={p} />}
         {items.some((x) => x.c.type === "hotp") && (
@@ -602,7 +645,7 @@ function Many({
           {t("cancel")}
         </button>
         <span class="sp" />
-        <button class="btn sm" id="pa-add" disabled={busy || !chosen.length} onClick={() => void add()}>
+        <button class="btn sm" id="pa-add" disabled={busy || !chosen.length || undecided} onClick={() => void add()}>
           <Icon name="plus" size={14} />
           {t("addN", chosen.length)}
         </button>

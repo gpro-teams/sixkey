@@ -1,11 +1,15 @@
 // Two Vite passes: (1) HTML pages, (2) the service worker as one self-contained ES file.
-// Then write dist/manifest.json (base + dev overlay when --dev, + e2e overlay when --e2e; an overlay's null removes the
-// base's key).
+// Then write dist/manifest.json (base + dev overlay when --dev, + e2e overlay when --e2e, + test overlay when --test; an
+// overlay's null removes the base's key).
 // Each flavour has its own output directory, so a dev or e2e build never sits where the store package is made from:
 // prod dist/, dev dist-dev/, e2e dist-e2e/ (scripts/package.mjs zips dist/ only after check-dist passed it).
 //   --out <dir>   write the build there instead (the check-dist tests build into a temporary directory)
 //   --id-draft    the prod build as the first store upload's ID draft (scripts/package.mjs --id-draft; the review's N-1):
 //                 into dist-id-draft/, named "Sixkey (ID draft, do not publish)"; otherwise the store build
+//   --test        the prod build for testing by hand (npm run build:test): into dist-test/, named "Sixkey (test)", with
+//                 manifest.test.json's key (a fixed ID of its own, neither the dev build's nor the store's) and the
+//                 install-source check off; otherwise the store build. Loaded unpacked only: scripts/package.mjs never
+//                 zips it, and check-dist (prod) refuses it.
 import { build } from "vite";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync, cpSync, realpathSync } from "node:fs";
 import { isAbsolute, resolve, dirname } from "node:path";
@@ -13,8 +17,7 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { ID_DRAFT_NAME } from "./store-gates.mjs";
 import { STORE_ID } from "./store-id.mjs";
-import { API_ORIGINS, cspOf, hostPermissionOf } from "./api-origin.mjs";
-import { syncUiIn } from "./sync-ui.mjs";
+import { cspOf } from "./csp.mjs";
 import { suggestUiIn } from "./suggest-ui.mjs";
 import { suggestGuard } from "./suggest-guard.mjs";
 import { RULES_ORIGINS, rulesPathOf, rulesUpdateIn, updaterProblems } from "./rules-update.mjs";
@@ -56,6 +59,12 @@ if (idDraft && (dev || e2e)) {
   console.error("build: --id-draft is the prod build's ID draft; it takes neither --dev nor --e2e");
   process.exit(2);
 }
+// The test build is a prod build too, and neither of the other kinds of prod build: never a dev, e2e or ID draft one.
+const testBuild = process.argv.includes("--test");
+if (testBuild && (dev || e2e || idDraft)) {
+  console.error("build: --test is the prod build for testing by hand; it takes neither --dev, --e2e nor --id-draft");
+  process.exit(2);
+}
 const outArg = process.argv.indexOf("--out");
 if (outArg !== -1 && !process.argv[outArg + 1]) {
   console.error("build: --out needs a directory");
@@ -66,17 +75,43 @@ const dist =
     ? isAbsolute(process.argv[outArg + 1])
       ? process.argv[outArg + 1]
       : resolve(process.cwd(), process.argv[outArg + 1])
-    : resolve(root, e2e ? "dist-e2e" : dev ? "dist-dev" : idDraft ? "dist-id-draft" : "dist");
+    : resolve(root, e2e ? "dist-e2e" : dev ? "dist-dev" : idDraft ? "dist-id-draft" : testBuild ? "dist-test" : "dist");
 
 // The install-source check (H4, src/platform/install-source.ts): on in the prod build only. Dev and e2e builds are
 // always loaded unpacked, so it would always fire there; the e2e suite asserts it against the prod build instead.
 const prod = !dev && !e2e;
+// The test build is the prod flavour in every respect (the same release gates, defines, API origin, CSP, permissions
+// and module-graph guards: `prod` and `flavour` are the store build's) but three: its manifest name, its manifest key
+// (manifest.test.json), and the install-source check, which is off. The check asks chrome.management.getSelf() how
+// this copy was installed and shows "Not installed from the Chrome Web Store" in the popup and on the settings page
+// when it was not installed the normal way (src/core/install-source.ts). A test build is always loaded unpacked
+// (installType "development"), so the check would always show that notice, which a user of the store build never
+// sees: the test build would then look different from the store build exactly where it should not.
+const installCheck = prod && !testBuild;
+// The test build's overlay (manifest.test.json) holds its name ("Sixkey (test)", a literal like the ID draft's, which
+// check-dist --test holds it to) and its key, and nothing else: whatever else it said would make the test build differ
+// from the store build, so the build stops, before anything is built. The key is a public key alone (its private half
+// was not kept: an unpacked copy needs none), whose ID check-dist pins (TEST_EXTENSION_ID): the copies on two computers
+// share that ID, and with it their data in Chrome sync, and the build sits in one profile beside the dev build without
+// being the store's item.
+let testOverlay = null;
+if (testBuild) {
+  try {
+    testOverlay = JSON.parse(readFileSync(resolve(root, "manifest.test.json"), "utf8"));
+  } catch (e) {
+    console.error(`build: manifest.test.json cannot be read: ${e.message}`);
+    process.exit(1);
+  }
+  if (
+    JSON.stringify(Object.keys(testOverlay ?? {}).sort()) !== '["key","name"]' ||
+    typeof testOverlay.name !== "string" ||
+    typeof testOverlay.key !== "string"
+  ) {
+    console.error("build: manifest.test.json must hold the test build's name and key, and nothing else");
+    process.exit(1);
+  }
+}
 const flavour = e2e ? "e2e" : dev ? "dev" : "prod";
-// The sync API origin (scripts/api-origin.mjs): the one host the extension may reach, built in.
-const apiOrigin = API_ORIGINS[flavour];
-// The sync user interface (scripts/sync-ui.mjs, the release gate): dev and e2e builds always, the store build only once
-// the gate is opened (M8).
-const syncUi = syncUiIn(flavour);
 // The in-page suggestion of TOTP autofill (scripts/suggest-ui.mjs, its release gate): dev and e2e builds always, the store
 // build only once the gate is opened.
 const suggestUi = suggestUiIn(flavour);
@@ -95,14 +130,11 @@ if (rulesUpdate) {
   }
 }
 // __I18N_GUARD__ (src/ui/i18n.ts): dev and e2e builds report a key that has no text on screen; prod builds have no such code.
-// __API_ORIGIN__ (src/platform/api-origin.ts): the sync API origin; empty in a build without the sync user interface (the
-// store build with the gate above closed), which talks to no API and names none. __SYNC_DEV__
-// (src/platform/bridge-worker.ts): dev and e2e builds also serve the developer sync page (src/devsync/), which prod builds
-// do not contain at all.
-// __SYNC_UI__ (src/options/SyncHost.tsx, src/options/FirstRun.tsx): the settings page's Sync section, from the release
-// gate above. Off, the section's lazy import is dead code, removed before the bundler loads the module, so neither its
-// code nor its catalogs are in the build (the graph guard below fails the build if they were). The worker reads it too
-// (src/background/sw.ts): off, it has no sync worker, bridge or transport, so none of the sync engine is in sw.js.
+// __SYNC_DEV__ (src/background/sw.ts): dev and e2e builds, with the end-to-end tests' hooks and the removal of what the
+// server sync's client left in a profile (src/platform/server-sync-leftovers.ts). (Its name is that sync's: its other
+// users went with its client. So did __API_ORIGIN__ and __SERVER_SYNC__, the API origin and the worker's sync, which only
+// the dev and e2e builds had: OWNER-DECISIONS/25, DV-0b. The graph guard below and check-dist hold every flavour to
+// none of that client.)
 // The site rules' baseline bundle (TOTP autofill Stage 3, AF3-3a; scripts/rules-package.mjs): every flavour carries the
 // repository's rules/build/baseline.json as rules/baseline.json, checked here, before anything is built, by the reader the
 // extension uses (src/core/rules/baseline.ts) and held to bundle.mjs's form; a build without a bundle it accepts stops.
@@ -123,12 +155,11 @@ try {
   process.exit(1);
 }
 const define = {
+  // (the test build keeps the store build's: with its check off, nothing compares it or shows it)
   __STORE_ID__: JSON.stringify(prod ? STORE_ID : ""),
-  __INSTALL_CHECK__: JSON.stringify(prod),
+  __INSTALL_CHECK__: JSON.stringify(installCheck), // off in the test build too (installCheck above)
   __I18N_GUARD__: JSON.stringify(!prod),
-  __API_ORIGIN__: JSON.stringify(syncUi ? apiOrigin : ""),
   __SYNC_DEV__: JSON.stringify(!prod),
-  __SYNC_UI__: JSON.stringify(syncUi),
   // AUTOFILL2 patch 4 (src/platform/sender-policy.ts, src/platform/content-channel.ts, src/background/sw.ts): the content
   // script's `open` and the answer to its `cand`, from the release gate above; false compiles both out (check-dist)
   __SUGGEST_UI__: JSON.stringify(suggestUi),
@@ -150,35 +181,36 @@ const define = {
   __SK_RULES_BASELINE__: JSON.stringify(rulesUpdate ? JSON.parse(baseline.text).version : 0),
 };
 
-// A prod build never contains the developer sync page (src/devsync/), and, while the release gate keeps the sync user
-// interface out of it (scripts/sync-ui.mjs), not the enrolment code either, nor the Sync section that drives it: nothing
-// a user of that build can reach turns sync on (SYNC-DESIGN §9 M5/M6). This plugin fails the build if any entry's
-// module graph (static imports and import()) holds one of these modules. check-dist checks the built files again, by
-// other means. Once the gate is open, the section and the enrolment code are part of the store build by design; the
-// developer page never is.
-const PROD_FORBIDDEN = [
+// No build contains the settings page's Sync section (src/options/sync/, its catalogs catalogs/sync-<lang>.json and
+// catalogs/sync-manage-<lang>.json), the developer sync page (src/devsync/), or the rest of the server sync's client
+// (DV-0b): its engine (src/core/sync/: the enrolment the section drove among it), the service's sync flows, the worker's
+// sync, the bridge for pages, the transport, the API origin and its host permission, and the pairing code of its
+// approval join (the toolbar badge's module, platform/badge.ts, is not refused: a later patch draws its own badge
+// there; check-dist refuses the sync badge's text). Nothing a user of any build can reach turns sync on, and no build
+// reaches its API (OWNER-DECISIONS/25). This plugin fails the build if any entry's module graph (static imports and import()) holds one
+// of these modules, in every flavour, should one come back from the history. check-dist checks the built files again, by
+// other means.
+const SYNC_SECTION_FORBIDDEN = [
   /[\\/]src[\\/]devsync[\\/]/,
-  ...(syncUi
-    ? []
-    : [
-        /[\\/]src[\\/]core[\\/]sync[\\/]engine[\\/]enroll\.ts$/,
-        /[\\/]src[\\/]core[\\/]sync[\\/]crypto[\\/]enroll-new-device\.ts$/,
-        /[\\/]src[\\/]options[\\/]sync[\\/]/,
-        /[\\/]catalogs[\\/]sync-(?:manage-)?[A-Za-z_]+\.json$/, // both of the section's catalogs
-      ]),
+  /[\\/]src[\\/]core[\\/]sync[\\/]/,
+  /[\\/]src[\\/]core[\\/]service[\\/]sync-flows\.ts$/,
+  /[\\/]src[\\/]core[\\/]crypto[\\/]pairing-code\.ts$/,
+  /[\\/]src[\\/]platform[\\/](?:sync-worker|sync-engine|bridge-page|bridge-worker|fetch-transport|api-permission|api-origin)\.ts$/,
+  /[\\/]src[\\/]options[\\/]sync[\\/]/,
+  /[\\/]src[\\/]options[\\/]SyncHost\.tsx$/,
+  /[\\/]catalogs[\\/]sync-(?:manage-)?[A-Za-z_]+\.json$/, // both of the section's catalogs
 ];
-function prodGraphGuard() {
+function syncSectionGuard() {
   return {
-    name: "sixkey-prod-graph-guard",
+    name: "sixkey-sync-section-guard",
     buildEnd(err) {
-      if (err || !prod) return;
+      if (err) return;
       const bad = [...this.getModuleIds()]
         .map((id) => id.replace(/\?.*$/, ""))
-        .filter((id) => PROD_FORBIDDEN.some((re) => re.test(id)));
-      // (with the gate closed, the sync user interface's modules are listed under the same words: they drive the enrolment code)
+        .filter((id) => SYNC_SECTION_FORBIDDEN.some((re) => re.test(id)));
       if (bad.length)
         this.error(
-          `a prod build must not contain the developer sync page${syncUi ? "" : " or the enrolment code"}: ${bad.map((f) => f.slice(root.length + 1)).join(", ")}`,
+          `no build may contain the Sync section, the developer sync page or the server sync's client: ${bad.map((f) => f.slice(root.length + 1)).join(", ")}`,
         );
     },
   };
@@ -252,7 +284,7 @@ function rulesDataGuard() {
 // Every flavour is a production-mode build, whatever the environment says: Vite follows NODE_ENV, and a build made with
 // NODE_ENV=development or =test (a developer's shell, a test runner) would use the JSX runtime's debug build, which
 // writes the builder's absolute file paths into the pages. dev builds differ only in what is listed above (no
-// minification, source maps, the local API origin, the developer page). check-dist refuses a development-mode build.
+// minification, source maps, the developer-build defines). check-dist refuses a development-mode build.
 process.env.NODE_ENV = "production";
 const shared = {
   configFile: false,
@@ -284,13 +316,7 @@ const buildCommon = { target: "chrome120", sourcemap: dev, minify: !dev, moduleP
 // The autofill switch's catalog (scripts/messages.py PLUGINS): the settings page's (catalogs/plugins-<lang>.json,
 // src/ui/plugins/text.ts) is assets/plugins-locale-<lang>-<hash>.js; check-dist holds the settings page to it and keeps
 // it from the popup's and the side panel's.
-// The Sync section's own catalogs (catalogs/sync-<lang>.json and the managing screens' catalogs/sync-manage-<lang>.json,
-// made by scripts/messages.py; loaded by the section only, src/options/sync/text.ts) are assets/sync-locale-<lang>-<hash>.js
-// and assets/sync-manage-locale-<lang>-<hash>.js, and the section's code is the chunk assets/sync-ui-<hash>.js: check-dist
-// finds them by these names, requires them where the gate lets the sync user interface in and refuses them elsewhere.
 const LOCALE_MODULE = /[\\/]_locales[\\/]([A-Za-z_]+)[\\/]messages\.json(?:\?.*)?$/;
-const SYNC_LOCALE_MODULE = /[\\/]catalogs[\\/]sync-([A-Za-z_]+)\.json(?:\?.*)?$/;
-const SYNC_MANAGE_LOCALE_MODULE = /[\\/]catalogs[\\/]sync-manage-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const AUTOFILL_LOCALE_MODULE = /[\\/]catalogs[\\/]autofill-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const SHARES_LOCALE_MODULE = /[\\/]catalogs[\\/]shares-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const DEVICE_LOCALE_MODULE = /[\\/]catalogs[\\/]device-([A-Za-z_]+)\.json(?:\?.*)?$/;
@@ -302,7 +328,6 @@ const CSB_LOCALE_MODULE = /[\\/]catalogs[\\/]csb-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const CSB_POPUP_LOCALE_MODULE = /[\\/]catalogs[\\/]csb-popup-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const PLUGINS_LOCALE_MODULE = /[\\/]catalogs[\\/]plugins-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const SETTINGS_LOCALE_MODULE = /[\\/]catalogs[\\/]settings-([a-z]+)-([A-Za-z_]+)\.json(?:\?.*)?$/;
-const SYNC_UI_ENTRY = /[\\/]src[\\/]options[\\/]sync[\\/]index\.tsx(?:\?.*)?$/;
 // The site rules' updater's text (AF3-U2; catalogs/rules-<lang>.json, src/options/RulesUpdate.tsx): assets/rules-update-
 // locale-<lang>-<hash>.js, in a build whose updater's gate is open only (check-dist).
 const RULES_LOCALE_MODULE = /[\\/]catalogs[\\/]rules-([A-Za-z_]+)\.json(?:\?.*)?$/;
@@ -311,10 +336,6 @@ const popupLangOf = (id) => (id?.startsWith(POPUP_CATALOG_ID) ? id.slice(POPUP_C
 const chunkFileNames = (chunk) => {
   const popupLang = popupLangOf(chunk.facadeModuleId);
   if (popupLang) return `assets/popup-locale-${popupLang}-[hash].js`;
-  const syncLang = SYNC_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
-  if (syncLang) return `assets/sync-locale-${syncLang}-[hash].js`;
-  const manageLang = SYNC_MANAGE_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
-  if (manageLang) return `assets/sync-manage-locale-${manageLang}-[hash].js`;
   const fillLang = AUTOFILL_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
   if (fillLang) return `assets/autofill-locale-${fillLang}-[hash].js`;
   const sharesLang = SHARES_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
@@ -333,7 +354,6 @@ const chunkFileNames = (chunk) => {
   if (viewLang) return `assets/view-locale-${viewLang}-[hash].js`;
   const settings = SETTINGS_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "");
   if (settings) return `assets/settings-locale-${settings[1]}-${settings[2]}-[hash].js`;
-  if (SYNC_UI_ENTRY.test(chunk.facadeModuleId ?? "")) return "assets/sync-ui-[hash].js";
   const rulesLang = RULES_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
   if (rulesLang) return `assets/rules-update-locale-${rulesLang}-[hash].js`;
   const lang = LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
@@ -358,7 +378,7 @@ function popupCatalog() {
   const allKeys = new Set(Object.keys(catalogs.en));
   let found;
   try {
-    found = popupKeys(root, catalogs, { syncUi, suggestUi }); // a release gate closed: what only it lets in is not the popup's
+    found = popupKeys(root, catalogs, { suggestUi }); // a release gate closed: what only it lets in is not the popup's
   } catch (e) {
     if (e instanceof CatalogKeysError) {
       console.error(`build: the popup's message keys cannot be worked out.\n${e.message}`);
@@ -367,7 +387,7 @@ function popupCatalog() {
     throw e;
   }
   // the View menu's keys (stopped out of the popup's walk): its module is read (below) and its chunk may name them
-  const view = viewKeys(root, catalogs, { syncUi, suggestUi });
+  const view = viewKeys(root, catalogs, { suggestUi });
   const keep = new Set(found.keys);
   // every key the menu can show has its text in the popup's catalog or the menu's own (a lacking one would show as its name)
   for (const lang of Object.keys(catalogs)) {
@@ -584,7 +604,13 @@ function settingsCatalogs() {
 await build({
   ...shared,
   define,
-  plugins: [popupCatalog(), settingsCatalogs(), prodGraphGuard(), rulesDataGuard(), rulesGuard(rulesUpdate, RULES_SRC)],
+  plugins: [
+    popupCatalog(),
+    settingsCatalogs(),
+    syncSectionGuard(),
+    rulesDataGuard(),
+    rulesGuard(rulesUpdate, RULES_SRC),
+  ],
   root: resolve(root, "src"),
   base: "./",
   publicDir: resolve(root, "public"),
@@ -600,7 +626,6 @@ await build({
         sidepanel: resolve(root, "src/sidepanel/index.html"),
         options: resolve(root, "src/options/index.html"),
         offscreen: resolve(root, "src/offscreen/index.html"),
-        ...(prod ? {} : { devsync: resolve(root, "src/devsync/index.html") }),
       },
       output: { chunkFileNames },
     },
@@ -610,7 +635,7 @@ await build({
 await build({
   ...shared,
   define,
-  plugins: [prodGraphGuard(), rulesDataGuard(), rulesGuard(rulesUpdate, RULES_SRC)],
+  plugins: [syncSectionGuard(), rulesDataGuard(), rulesGuard(rulesUpdate, RULES_SRC)],
   root,
   publicDir: false,
   build: {
@@ -682,58 +707,40 @@ await build({
 });
 
 const read = (f) => JSON.parse(readFileSync(resolve(root, f), "utf8"));
-// The overlays are merged shallowly, so manifest.dev.json and manifest.e2e.json each restate their host permission key
-// and the content_security_policy in full (SYNC-DESIGN §7). The API origin is an optional host permission in prod and
-// dev builds (granted when sync is turned on, removed when it is turned off: §3.1, §3.10, revision 21), and a required
-// one in the e2e build, whose automated tests cannot answer Chrome's prompt (its overlay removes the optional key with
-// null). Whatever the files say, the result must name exactly this build's API origin, first, in the one key this
-// flavour uses, and in the CSP: the build stops otherwise. TOTP autofill's per-site grants follow it in that key: in prod
-// and dev exactly the optional https://*/* (one site at a time, asked in a click: src/platform/autofill-sites.ts); in e2e
-// two fixture hosts granted up front (scripts/check-dist.mjs has their list).
+// The overlays are merged shallowly, so manifest.e2e.json restates its host permission key in full (its automated tests
+// cannot answer Chrome's prompt: the key is the required one, and the overlay removes the optional key with null).
+// Whatever the files say, the one key this flavour uses must hold TOTP autofill's per-site grants and nothing else, and
+// the CSP must let nothing connect: the build stops otherwise. In prod and dev the key is exactly the optional
+// https://*/* (one site at a time, asked in a click: src/platform/autofill-sites.ts); in e2e two fixture hosts granted
+// up front (scripts/check-dist.mjs has their list). (The dev and e2e builds' host permission and CSP source for the
+// server sync's API origin went with its client: OWNER-DECISIONS/25, DV-0b.)
 const manifest = {
   ...read("manifest.base.json"),
   ...(dev ? read("manifest.dev.json") : {}),
   ...(e2e ? read("manifest.e2e.json") : {}),
 };
 for (const [k, v] of Object.entries(manifest)) if (v === null) delete manifest[k];
-// the ID draft says what it is wherever the store or Chrome shows its name (check-dist holds both kinds of prod build to
-// their own name)
+// the ID draft says what it is wherever the store or Chrome shows its name (check-dist holds each kind of prod build to
+// its own name)
 if (idDraft) manifest.name = `Sixkey (${ID_DRAFT_NAME})`;
+// the test build's name and key (its overlay, read and checked before anything was built: testOverlay above)
+if (testOverlay) Object.assign(manifest, testOverlay);
 const [hostKey, otherKey] = e2e
   ? ["host_permissions", "optional_host_permissions"]
   : ["optional_host_permissions", "host_permissions"];
-// The sync API origin is in the manifest (sync's optional host permission, the CSP's connect-src) only in a build with
-// the sync user interface, or a developer or e2e build: the store build, with the release gate closed
-// (scripts/sync-ui.mjs), names no host but autofill's sites (manifest.base.json), and its CSP lets its pages and worker
-// connect nowhere. With the gate open, the build puts the origin back in both, as the developer manifest has them.
-const apiInManifest = !prod || syncUi;
-if (prod && syncUi) {
-  manifest.optional_host_permissions = [hostPermissionOf(apiOrigin), ...manifest.optional_host_permissions];
-  manifest.content_security_policy = { ...manifest.content_security_policy, extension_pages: cspOf(apiOrigin) };
-}
 const hosts = JSON.stringify(manifest[hostKey]);
-const wanted = e2e ? null : JSON.stringify([...(apiInManifest ? [hostPermissionOf(apiOrigin)] : []), "https://*/*"]);
-if (
-  (apiInManifest && manifest[hostKey]?.[0] !== hostPermissionOf(apiOrigin)) ||
-  (wanted !== null && hosts !== wanted)
-) {
-  console.error(
-    `build: the ${flavour} manifest's ${hostKey} are ${hosts}, not ${apiInManifest ? `the API origin ${apiOrigin} then ` : ""}autofill's sites`,
-  );
+if (!e2e && hosts !== JSON.stringify(["https://*/*"])) {
+  console.error(`build: the ${flavour} manifest's ${hostKey} are ${hosts}, not autofill's sites`);
   process.exit(1);
 }
 if (otherKey in manifest) {
   console.error(`build: the ${flavour} manifest must not have ${otherKey}`);
   process.exit(1);
 }
-// The CSP's connect-src names the sync API origin where the manifest has it, and nothing else ('none' in the store build
-// without the sync user interface; no build reaches Google: the backup in Chrome's sync storage makes no request, Chrome
-// syncs it); check-dist holds every build to the same.
-const cspOrigin = apiInManifest ? apiOrigin : null;
-if (manifest.content_security_policy?.extension_pages !== cspOf(cspOrigin)) {
-  console.error(
-    `build: the ${flavour} manifest's CSP does not allow exactly ${cspOrigin ? `the API origin ${cspOrigin}` : "nothing to connect to"}`,
-  );
+// The CSP's connect-src names nothing ('none'; no build reaches Google: the backup in Chrome's sync storage makes no
+// request, Chrome syncs it); check-dist holds every build to the same.
+if (manifest.content_security_policy?.extension_pages !== cspOf()) {
+  console.error(`build: the ${flavour} manifest's CSP does not allow exactly nothing to connect to`);
   process.exit(1);
 }
 // With the site rules' updater's gate open (AF3-U2), the CSP's connect-src also names the rules origin's one path, which the
@@ -741,7 +748,7 @@ if (manifest.content_security_policy?.extension_pages !== cspOf(cspOrigin)) {
 if (rulesUpdate)
   manifest.content_security_policy = {
     ...manifest.content_security_policy,
-    extension_pages: cspOf(cspOrigin, [rulesPathOf(RULES_ORIGINS[flavour])]),
+    extension_pages: cspOf([rulesPathOf(RULES_ORIGINS[flavour])]),
   };
 writeFileSync(resolve(dist, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 cpSync(resolve(root, "_locales"), resolve(dist, "_locales"), { recursive: true });
@@ -755,5 +762,5 @@ mkdirSync(resolve(dist, "rules"), { recursive: true });
 writeFileSync(resolve(dist, PACKAGED_BASELINE), baseline.text);
 writeFileSync(resolve(dist, PACKAGED_LICENCE), licences.rules);
 console.log(
-  `built ${flavour} (API origin ${apiOrigin}; sync user interface ${syncUi ? "in" : "out"}) -> ${outArg !== -1 ? dist : e2e ? "dist-e2e/" : dev ? "dist-dev/" : "dist/"}`,
+  `built ${flavour}${testBuild ? " (the test build)" : ""} -> ${outArg !== -1 ? dist : e2e ? "dist-e2e/" : dev ? "dist-dev/" : idDraft ? "dist-id-draft/" : testBuild ? "dist-test/" : "dist/"}`,
 );

@@ -14,7 +14,6 @@
 // Chrome never injects it where the grant is missing [probed, Chromium 156], so a site withdrawn in Chrome's own UI stops
 // getting it at its next load even before reconcile removes it from `matches`.
 import { sitePattern } from "../core/autofill-sites";
-import { API_HOST } from "./autofill-sites";
 import { storageClosed } from "./storage-access";
 
 /** The registration's ID. */
@@ -70,7 +69,7 @@ async function applyNow(
   gate: () => Promise<boolean>,
 ): Promise<void> {
   if (!c?.getRegisteredContentScripts) return; // no `scripting` (W1b): nothing can be, or is, registered
-  const patterns = hosts.map((h) => sitePattern(h, API_HOST)).filter((p): p is string => p !== null);
+  const patterns = hosts.map((h) => sitePattern(h)).filter((p): p is string => p !== null);
   const want = patterns.length > 0 && (await gate()) ? patterns : [];
   const [have] = await c.getRegisteredContentScripts({ ids: [SCRIPT_ID] });
   if (want.length === 0) {

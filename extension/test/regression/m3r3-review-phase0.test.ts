@@ -1,7 +1,8 @@
-// The third M3 review, departure 3: store.ts runs the recovery hook over lost data BEFORE the caller's function. With sync
-// never turned on, every recovery path must leave storage exactly as main's store does (test/helpers/store-main.ts is a
-// verbatim copy of main's store.ts, imports re-rooted). With sync records present, the only difference allowed is
-// the outbox moved to sk_sync_orphan instead of deleted (revision 19; revision 20: appended to its list).
+// M3-R3's departure 3: store.ts runs the recovery hook over lost data BEFORE the caller's function. Every
+// recovery path must leave storage exactly as main's store does (test/helpers/store-main.ts is a verbatim copy of main's
+// store.ts, imports re-rooted), with a recovery hook that writes nothing. (The case with the server sync's records, where
+// its hook kept the outbox as sk_sync_orphan, went with that sync's client, OWNER-DECISIONS/25, DV-0b; so did its state
+// store, whose two hooks these stores had.)
 import { describe, expect, it } from "vitest";
 import { KEYS, type Generation } from "../../src/core/storage/format";
 import { createMutex, MemoryKV } from "../../src/core/storage/kv";
@@ -9,10 +10,8 @@ import { VaultStore } from "../../src/core/storage/store";
 import { VaultStore as MainStore } from "../helpers/store-main";
 import { VaultService } from "../../src/core/service/service";
 import { KvSettingsStore, MemorySession } from "../../src/core/service/types";
-import { SYNC_KEYS } from "../../src/core/sync/local/keys";
-import { SyncStateStore } from "../../src/core/sync/local/state";
 import { tear } from "../helpers/faulty-kv";
-import { createProtected, STRONG } from "../helpers/vaults";
+import { createProtected, STRONG, totpInput } from "../helpers/vaults";
 
 const T = 1_792_051_200_000;
 const clone = (m: MemoryKV) => {
@@ -38,8 +37,7 @@ async function seed(
   const gen0 = (await svc.currentGeneration())!;
   await svc.mutate((v) => ({ ...v })); // an unchanged write: nothing; then a real one below
   const { addEntry } = await import("../../src/core/vault/ops");
-  const { input } = await import("../helpers/m2-world");
-  await svc.mutate((v, c) => addEntry(v, input("X"), c).vault);
+  await svc.mutate((v, c) => addEntry(v, totpInput("X"), c).vault);
   const gen1 = (await svc.currentGeneration())!;
   // FIXa2's case: a key change (a Phase 0 password change: another keyring) committed into the other slot; the prep
   // then points back at gen1's slot, so the newer slot with another keyring is "never committed" and rolled back
@@ -61,38 +59,20 @@ async function seed(
   return { kv, mirror, gen0, gen1 };
 }
 
-type Kind = "phase0" | "sync";
 async function both(
-  kind: Kind,
   prep: (kv: MemoryKV, mirror: MemoryKV) => void,
   op: (s: VaultStore | MainStore, gen0: Generation) => Promise<unknown>,
   keyChange = false,
 ) {
   const s = await seed(keyChange);
-  if (kind === "sync") {
-    s.kv.data.set(SYNC_KEYS.cfg, { v: 1 });
-    s.kv.data.set(SYNC_KEYS.state, {
-      v: 1,
-      lastSynced: { version: 3, head: "h", checksum: s.gen1.envelope.checksum },
-      serverOffsetMs: 5,
-    });
-    s.kv.data.set(SYNC_KEYS.outbox, {
-      v: 1,
-      base: 3,
-      head: "h",
-      from: { version: 3, head: "h", checksum: "c" },
-      checksum: s.gen1.envelope.checksum,
-      envelope: "{}",
-      proof: "p",
-    });
-  }
   prep(s.kv, s.mirror);
   const out: Record<string, { kv: string; mirror: string; err: string | null; diag: string[] }> = {};
   for (const which of ["main", "rev3"] as const) {
     const kv = clone(s.kv);
     const mirror = clone(s.mirror);
-    const state = new SyncStateStore(kv);
     const diag: string[] = [];
+    // a hook that writes nothing, as the server sync's state store's did with none of its records there
+    const hook = async () => undefined;
     const store =
       which === "main"
         ? new MainStore({
@@ -100,7 +80,7 @@ async function both(
             mirror,
             lock: createMutex(),
             now: () => T + 1,
-            beforeRecoveryWrite: () => state.clearLastSynced(),
+            beforeRecoveryWrite: hook,
             onDiag: (m) => diag.push(m),
           })
         : new VaultStore({
@@ -108,7 +88,7 @@ async function both(
             mirror,
             lock: createMutex(),
             now: () => T + 1,
-            beforeRecoveryWrite: () => state.recoveryHook(),
+            beforeRecoveryWrite: hook,
             onDiag: (m) => diag.push(m),
           });
     let err: string | null = null;
@@ -188,8 +168,8 @@ describe("M3-R3 review: departure 3, Phase 0 storage unchanged", () => {
     ],
   ];
   for (const [name, prep, op] of cases) {
-    it(`sync never on: ${name}`, async () => {
-      const r = await both("phase0", prep, (s, g0) => op(s, () => g0));
+    it(name, async () => {
+      const r = await both(prep, (s, g0) => op(s, () => g0));
       expect(r.rev3.err).toBe(r.main.err);
       if (name.endsWith("(overwriteLost)")) expect(r.rev3.err).toBeNull(); // it really wrote
       if (name.includes("throws")) expect(r.rev3.err).toContain("refused");
@@ -202,7 +182,7 @@ describe("M3-R3 review: departure 3, Phase 0 storage unchanged", () => {
       expect(r.rev3.mirror).toBe(r.main.mirror);
     });
   }
-  it("sync never on: FIXa2, a newer slot with another keyring that the pointer does not name, rolled back (selfCheck and load)", async () => {
+  it("FIXa2, a newer slot with another keyring that the pointer does not name, rolled back (selfCheck and load)", async () => {
     const back = () => undefined; // seed(true) leaves the pointer on gen1's slot, the newer slot holding another keyring
     for (const op of [
       (s: VaultStore | MainStore) => s.selfCheck(),
@@ -210,7 +190,6 @@ describe("M3-R3 review: departure 3, Phase 0 storage unchanged", () => {
     ]) {
       let rolledBack = false;
       const r = await both(
-        "phase0",
         back,
         async (s) => {
           const l = await op(s);
@@ -229,27 +208,5 @@ describe("M3-R3 review: departure 3, Phase 0 storage unchanged", () => {
       expect(r.rev3.kv).toBe(r.main.kv);
       expect(r.rev3.mirror).toBe(r.main.mirror);
     }
-  });
-  // gen0 for the overwrite: the seed's own first generation (valid envelope + keyring)
-  it("sync on: the only difference is the outbox kept as sk_sync_orphan (a lost vault, the function throws)", async () => {
-    const r = await both("sync", loseAll, (s) =>
-      s.transact(
-        async () => {
-          throw new Error("refused");
-        },
-        { overwriteLost: true },
-      ),
-    );
-    const main = new Map(JSON.parse(r.main.kv) as [string, unknown][]);
-    const rev3 = new Map(JSON.parse(r.rev3.kv) as [string, unknown][]);
-    // main: the hook never ran (it ran after the function, which threw): lastSynced and the outbox as they were
-    expect((main.get(SYNC_KEYS.state) as { lastSynced: unknown }).lastSynced).not.toBeNull();
-    // rev. 3: the hook ran first: lastSynced null, the outbox moved
-    expect((rev3.get(SYNC_KEYS.state) as { lastSynced: unknown }).lastSynced).toBeNull();
-    expect(rev3.get(SYNC_KEYS.outbox) ?? null).toBeNull();
-    expect(rev3.get(SYNC_KEYS.orphan)).toEqual({ v: 1, items: [main.get(SYNC_KEYS.outbox)] }); // revision 20: a list
-    for (const k of new Set([...main.keys(), ...rev3.keys()]))
-      if (![SYNC_KEYS.state, SYNC_KEYS.outbox, SYNC_KEYS.orphan].includes(k as never))
-        expect(JSON.stringify(rev3.get(k)), k).toBe(JSON.stringify(main.get(k)));
   });
 });

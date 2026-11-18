@@ -7,16 +7,13 @@
 // second.
 import { storageAccess, syncAccess } from "./storage-access-first";
 import { action } from "./action-first";
-import { beyondApi, concernsApi } from "../platform/api-permission";
 import { followSwitch, workerReconciler } from "../platform/autofill-reconcile";
 import { workerChannel } from "../platform/content-channel";
 import { acceptPending, watchList } from "../platform/autofill-sites";
 import { aliveEntries } from "../core/vault/model";
 import { createDiagOnce } from "../platform/diag";
 import { closedBy } from "../platform/storage-access";
-import { BRIDGE_MESSAGE, SYNC_CHANGED_MESSAGE } from "../platform/bridge-page";
-import { serveBridge } from "../platform/bridge-worker";
-import { createRuntime, SYNC_SOON_MESSAGE } from "../platform/runtime";
+import { createRuntime } from "../platform/runtime";
 import {
   acceptedType,
   contentSender,
@@ -26,7 +23,7 @@ import {
   type CsbMessage,
   type MessageFor,
 } from "../platform/sender-policy";
-import { createWorkerSync } from "../platform/sync-worker";
+import { dropServerSyncLeftovers } from "../platform/server-sync-leftovers";
 import { gatedCode } from "../platform/plugins/autofill-gate";
 import { giveBackSites, switchedOff, watchSwitch } from "../platform/plugins/autofill-switch";
 import { runShortcut, type FillChrome, type Tab } from "./fill-command";
@@ -37,7 +34,7 @@ import { ChromeLocalKV } from "../platform/chrome-kv";
 import { createCsbWorker, CSB_RETRY_ALARM, CSB_SOON_ALARM, watchVault } from "../platform/csb-worker";
 import { webLock } from "../platform/locks";
 
-const rt = createRuntime({ worker: true });
+const rt = createRuntime();
 
 // The backup in Chrome's sync storage (CSB-3; platform/csb-worker.ts): while it is on, every change of the vault is
 // written after the debounce, with the generation as the store reads it with no key, into this device's slot of
@@ -59,14 +56,8 @@ const csb = createCsbWorker({
 });
 // A commit moves the store's pointer, from whichever context made it: the debounce starts again (csb-worker.ts).
 watchVault(chrome.storage.local, () => csb.changed());
-// Sync (SYNC-DESIGN §4.8, §4.9): the engine for this worker, its timers and alarms, the badge, and the only network
-// transport, which pages use through the bridge below. With sync off it reads its state once per start and sends nothing.
-// Only in a build with the sync user interface (the release gate, scripts/sync-ui.mjs; the build's define): with the
-// gate closed (the store build) there is no sync worker, no bridge and no transport, so the bundler leaves the engine,
-// the fetch and the API origin out of this file; the handlers below that would tell it something do nothing then.
-declare const __SYNC_UI__: boolean;
-const SYNC_UI = typeof __SYNC_UI__ === "boolean" && __SYNC_UI__;
-const sync = SYNC_UI ? createWorkerSync(rt) : null;
+// (The server sync's worker, its bridge for pages, its transport and the toolbar badge it drew were here, in the dev and
+// e2e builds only; they went with that sync's client, OWNER-DECISIONS/25, DV-0b.)
 
 // The diagnostics log's lines from the worker, one after another: createDiagOnce reads and then writes, unlocked, so two
 // lines written in one tick would lose one. Each is written only once while it stays in the log (every start would
@@ -162,33 +153,40 @@ async function rescheduleQuickExpiry(): Promise<void> {
 // A start of the browser, or of Sixkey (an update, a load from the command line, which is how the browser tests start
 // it), makes a pending shares reminder due: the popup shows it after every unlock until the shares pass a check
 // (docs/design/notes/SHAMIR-NOTES.md §4; it reads the security record it reads anyway).
+// The dev and e2e builds' worker also removes, at an install or an update, what the server sync's client left in a
+// profile that once had it on, its records, its identity's database and its alarms (platform/server-sync-leftovers.ts;
+// the build's define __SYNC_DEV__, below): the store and test builds never had a way to turn it on, and compile this
+// out. A line in the diagnostics log says what went.
 chrome.runtime.onInstalled.addListener(() => {
   void routine(true);
   void rt.service.browserStarted().catch(() => undefined);
+  if (typeof __SYNC_DEV__ === "boolean" && __SYNC_DEV__)
+    void dropServerSyncLeftovers(rt.local, globalThis.indexedDB, chrome.alarms).then(
+      (gone) => {
+        const all = [...gone.keys, ...gone.alarms];
+        if (all.length) note(`the server sync's leftovers removed: ${all.join(", ")}`);
+      },
+      () => undefined,
+    );
 });
 chrome.runtime.onStartup.addListener(() => {
   void routine(true);
   void rt.service.browserStarted().catch(() => undefined);
-  void sync?.browserStarted().catch(() => undefined); // an API permission left without a sync configuration is removed
 });
 
-// The API host permission is the network switch (§4.9, revision 21): withdrawn, sync pauses at once; granted, a round.
-// Both handlers ask Chrome again (concernsApi), so an event about an autofill site changes nothing of sync's. And every
-// event that may be about a site (beyondApi: any host but the API's) reconciles autofill's sites: a site withdrawn in
+// Every event that may be about a site (any event that names a host) reconciles autofill's sites: a site withdrawn in
 // Chrome's own UI stops counting at once. An added origin that is exactly the pattern of Sixkey's own ask for a site,
 // under a minute old, puts that site on the list first (the page that asked may have closed when Chrome's dialog took the
 // focus: platform/autofill-sites.ts acceptPending). A change of the list reconciles too (watchList). So does every event
 // that names `scripting` (optional since wave 1b: MOD-PLATFORM §7.2 Option I item 3), granted or given back: without it
-// nothing can be registered, and with it again the sites that count are registered. With the sync release gate closed
-// there is no API permission: every event that names a host may be about a site.
+// nothing can be registered, and with it again the sites that count are registered. Events about API permissions alone
+// (the clipboard pair) are not a site's.
 const namesScripting = (p: { permissions?: string[] }) => (p.permissions ?? []).includes("scripting");
-const mayBeSite = SYNC_UI ? beyondApi : concernsApi;
+const mayBeSite = (p: { origins?: string[] }) => (p.origins?.length ?? 0) > 0;
 chrome.permissions.onRemoved.addListener((p) => {
-  if (concernsApi(p)) void sync?.permissionRemoved().catch(() => undefined);
   if (mayBeSite(p) || namesScripting(p)) void reconcileSites();
 });
 chrome.permissions.onAdded.addListener((p) => {
-  if (concernsApi(p)) void sync?.permissionAdded().catch(() => undefined);
   if (mayBeSite(p) || namesScripting(p))
     void acceptPending(p)
       .catch(() => false)
@@ -205,7 +203,6 @@ const switched = () =>
 watchSwitch(chrome.storage.local, switched);
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  void sync?.alarm(alarm.name).catch(() => undefined); // sync's own alarms (sk-sync-*); false for every other
   if (alarm.name === ALARM_DAILY) void routine(false);
   // the site rules' updater's daily check (AF3-U2, below), with its release gate open only; a failed check changes nothing
   if (typeof __RULES_UPDATE__ === "boolean" && __RULES_UPDATE__ && alarm.name === ALARM_DAILY)
@@ -290,20 +287,10 @@ async function ensureOffscreen(): Promise<void> {
 // without a handler, or a handler without a row, fails `npm run typecheck`.
 type Msg = { hash?: unknown; delayMs?: unknown };
 const HANDLERS: {
-  [K in Exclude<MessageFor<"worker">, typeof BRIDGE_MESSAGE | CsbMessage>]: (
-    m: Msg,
-    reply: (r: unknown) => void,
-  ) => void;
+  [K in Exclude<MessageFor<"worker">, CsbMessage>]: (m: Msg, reply: (r: unknown) => void) => void;
 } = {
-  // Pages ask for the idle alarm to be re-armed after unlocking or using the vault. The same moment (a page showing the
-  // unlocked vault) is when sync runs a round in the background if the last success is over 30 s old (§4.8).
-  "sk-reschedule-autolock": () => {
-    void rescheduleAutoLock();
-    void sync?.shown().catch(() => undefined);
-  },
-  // After a commit with sync on (runtime.ts): a round soon (§4.8).
-  "sk-sync-soon": () => void sync?.soon().catch(() => undefined),
-  "sk-sync-changed": () => void sync?.changed().catch(() => undefined),
+  // Pages ask for the idle alarm to be re-armed after unlocking or using the vault.
+  "sk-reschedule-autolock": () => void rescheduleAutoLock(),
   // The popup asks for the clipboard clean-up. Only a hash of the code is passed along. The answer says the request was
   // taken (platform/clipboard.ts reports success only on it); a refused sender gets no answer at all.
   "sk-clip-arm": (m, reply) => {
@@ -322,25 +309,10 @@ const isCsb = (t: string): t is CsbMessage => (CSB_MESSAGES as readonly string[]
 
 chrome.runtime.onMessage.addListener((msg: unknown, sender, sendResponse) => {
   const type = acceptedType(msg, sender, chrome.runtime.id, "worker");
-  // the bridge's message and the backup in Chrome sync's are answered by the listeners below
-  if (type === null || type === BRIDGE_MESSAGE || isCsb(type)) return;
+  // the backup in Chrome sync's are answered by the listener below
+  if (type === null || isCsb(type)) return;
   HANDLERS[type](msg as Msg, sendResponse); // answered at once or not at all: this listener never keeps the channel open
 });
-
-// The bridge (bridge-worker.ts): a sync page's finished, signed request, sent with the worker's transport. Answered
-// asynchronously (return true keeps the channel open); any other message gets no answer from this listener. Not there
-// with the sync release gate closed: no page of that build sends one, and there is no transport to send it with.
-function bridgeListener(msg: unknown, sender: chrome.runtime.MessageSender, sendResponse: (r: unknown) => void) {
-  if (acceptedType(msg, sender, chrome.runtime.id, "worker") !== BRIDGE_MESSAGE || !sync) return;
-  void serveBridge(msg, sender, { transport: sync.transport, selfId: chrome.runtime.id }).then(
-    (reply) => {
-      if (reply) sendResponse(reply);
-    },
-    () => undefined,
-  );
-  return true;
-}
-if (SYNC_UI) chrome.runtime.onMessage.addListener(bridgeListener);
 
 // The backup in Chrome sync's messages (CSB-3; platform/csb-worker.ts), from the settings page alone: answered after the
 // work (return true keeps the channel open). Each handler checks the message's fields itself; turning on or off needs no
@@ -414,7 +386,6 @@ if (typeof __RULES_UPDATE__ === "boolean" && __RULES_UPDATE__ && typeof __SYNC_D
     rulesUpdater().then((u) => u.check(force));
 
 void routine(false);
-void sync?.start().catch(() => undefined);
 // (it waits for this start's access-level answer before it reads anything: the built worker's first calls stay those two).
 // Not followSwitch: a start may be woken by an On click's grant, before that click's switch is written (PLUGINS-W1B-NOTES.md)
 void reconcileSites();

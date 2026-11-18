@@ -1,10 +1,10 @@
-// The settings page is five groups, and shows one leaf of a group at a time (SHORT-SETTINGS-NOTES.md): the rail is the
+// The settings page is four groups, and shows one leaf of a group at a time (SHORT-SETTINGS-NOTES.md): the rail is the
 // navigation of the groups, the row under the title that of the leaves, the address bar's hash is the choice, Back and
 // Forward move between leaves, the heading takes the focus on a switch, every hash other pages open still lands where it
 // did, and what was typed in a leaf does not outlive it. What the page holds above its leaves (a new recovery code, the
 // outcome of an operation, the questions about deleting an imported file) survives them. The hash mapping itself is
-// short-settings-route.test.ts's; the forms' wiping, short-settings-dom.test.ts's. The sync section's own deep links
-// (#sync, #sync/join) are the sync specs'.
+// short-settings-route.test.ts's; the forms' wiping, short-settings-dom.test.ts's. The Sync section is gone from every
+// build (OWNER-DECISIONS/25): its links (#sync, #sync/join) name no leaf.
 import { expect, test, type Page } from "@playwright/test";
 import {
   close,
@@ -29,7 +29,7 @@ test.afterEach(async () => {
   await close(p);
 });
 
-/** The panels drawn and visible right now (the sync section is mounted but hidden unless shown). */
+/** The panels drawn and visible right now. */
 const shown = (page: Page) => page.locator("main section.panel:visible").evaluateAll((els) => els.map((e) => e.id));
 const group = (page: Page) => page.locator(".rail nav a[aria-current]");
 const leaf = (page: Page) => page.locator('.subnav a[aria-current="page"]');
@@ -92,12 +92,12 @@ async function openHeld(hash: string) {
   };
 }
 
-test("opens on Security › Locking: five groups in the rail, the group marked, the leaves of a group under the title", async () => {
+test("opens on Security › Locking: four groups in the rail, the group marked, the leaves of a group under the title", async () => {
   const opt = await openOptions(p);
   await expect(opt.locator("#security")).toBeVisible();
   expect(await shown(opt)).toEqual(["security"]);
   await expect(opt.getByRole("navigation", { name: /Sections|分区/ })).toBeVisible();
-  await expect(opt.locator(".rail nav a")).toHaveCount(5); // the e2e build has Sync; the plugin platform's group went
+  await expect(opt.locator(".rail nav a")).toHaveCount(4); // the plugin platform's group went, and the Sync section's
   await expect(group(opt)).toHaveCount(1);
   await expect(group(opt)).toHaveAttribute("href", "#security");
   await expect(group(opt)).toHaveAttribute("aria-current", "true"); // a group with leaves of its own
@@ -212,10 +212,10 @@ test("Back to an address that names no leaf shows the default leaf, as the addre
   await expect(group(opt)).toHaveAttribute("href", "#security");
 });
 
-test("a hash written in the page switches to its leaf (the sync section's actions, the rail's link, #security-log)", async () => {
+test("a hash written in the page switches to its leaf (a page's own write, the rail's link, #security-log)", async () => {
   const opt = await openOptions(p, "#add");
   await expect(opt.locator("#add")).toBeVisible();
-  await opt.evaluate(() => (location.hash = "#advanced")); // as the sync section's actions do
+  await opt.evaluate(() => (location.hash = "#advanced")); // as a part of the page writes it
   await expect(opt.locator("#advanced")).toBeVisible();
   expect(await shown(opt)).toEqual(["advanced"]);
   await opt.evaluate(() => (location.hash = "#security-log"));
@@ -245,47 +245,34 @@ test("320 px: the groups wrap and the leaves wrap: nothing scrolls sideways, eve
 });
 
 test("a short window: the rail scrolls by itself, so the language menu stays reachable", async () => {
+  // short enough that the rail does not fit (with four groups it fits in 420 px: the Sync group went, OWNER-DECISIONS/25)
+  const H = 360;
   const opt = await openOptions(p);
-  await opt.setViewportSize({ width: 1400, height: 420 });
+  await opt.setViewportSize({ width: 1400, height: H });
   await expect(opt.locator("#security")).toBeVisible();
   const rail = await opt
     .locator(".rail")
     .evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, y: getComputedStyle(el).overflowY }));
   expect(rail.y).toBe("auto");
-  expect(rail.client).toBeLessThanOrEqual(420);
+  expect(rail.client).toBeLessThanOrEqual(H);
   expect(rail.scroll).toBeGreaterThan(rail.client); // it does not fit: it scrolls
   await opt.locator("#lang-select").scrollIntoViewIfNeeded();
   const box = (await opt.locator("#lang-select").boundingBox())!;
-  expect(box.y + box.height).toBeLessThanOrEqual(420);
+  expect(box.y + box.height).toBeLessThanOrEqual(H);
   await expect(opt.locator("#lang-select")).toBeVisible();
 });
 
-test("the sync leaf takes the focus on its heading (the late arrival of its code is short-settings-sync-host.test.ts's)", async () => {
-  const opt = await openOptions(p);
-  await expect(opt.locator("#security")).toBeVisible();
-  await opt.locator('.rail nav a[href="#sync"]').click();
-  await expect(opt.locator("#sync .panel-body > *").first()).toBeVisible({ timeout: 20_000 }); // the section has loaded
-  await expect(opt.locator("#sync h2")).toBeFocused();
-});
-
-test("#sync opens the sync section (this build has it); leaving it hides it but keeps it running", async () => {
-  const opt = await openOptions(p, "#sync");
-  await expect(opt.locator("#sync")).toBeVisible();
-  expect(await shown(opt)).toEqual(["sync"]);
-  await expect(group(opt)).toHaveAttribute("href", "#sync");
-  await showSection(opt, "security");
-  await expect(opt.locator("#sync")).toBeHidden();
-  await expect(opt.locator("#sync")).toHaveCount(1); // still mounted: the rail's sync line and its rounds need it
-  await expect(opt.locator("#rail-sync")).toBeVisible();
-});
-
-test("what was typed in the sync section does not wait there while another leaf is shown", async () => {
-  const opt = await openOptions(p, "#sync");
-  await opt.locator("#sync-turn-on").click();
-  await opt.locator("#sync-pw").fill(STRONG);
-  await showSection(opt, "trash");
-  await showSection(opt, "sync");
-  await expect(opt.locator("#sync-pw")).toHaveValue("");
+test("#sync and #sync/join name no leaf: the default leaf shows, and the page has no Sync section or its rail line", async () => {
+  for (const hash of ["#sync", "#sync/join"]) {
+    const opt = await openOptions(p, hash);
+    await expect(opt.locator("#security")).toBeVisible();
+    expect(await shown(opt), hash).toEqual(["security"]);
+    await expect(opt.locator("#sync"), hash).toHaveCount(0);
+    await expect(opt.locator('.rail nav a[href="#sync"]'), hash).toHaveCount(0);
+    await expect(opt.locator("#rail-sync"), hash).toHaveCount(0);
+    await expect(opt.locator("#rail-csb"), hash).toBeVisible(); // the backup in Chrome sync's line, as in the store build
+    await opt.close();
+  }
 });
 
 test("a file under Backup that is not a Sixkey backup is handed over by following the message's link, and only then", async () => {
@@ -538,7 +525,7 @@ test("F1: a new recovery code is shown above whatever the person goes to, the ra
   await opt.locator("#recovery-saved").check();
   await opt.locator("#recovery-done").click();
   await expect(opt.locator("#recovery-code")).toHaveCount(0);
-  await expect(opt.locator(".rail nav a")).toHaveCount(5); // the five groups
+  await expect(opt.locator(".rail nav a")).toHaveCount(4); // the four groups
 });
 
 test("F1: a key replaced: the code survives Back and Forward", async () => {

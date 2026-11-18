@@ -163,7 +163,7 @@ describe("Settings › Security › Autofill", () => {
     await settle();
     expect(row("a.example.com")).toBeUndefined();
     expect(w.log).toEqual(["remove https://a.example.com/*"]);
-    expect([...w.set]).toEqual(["https://api.sixkey.app/*"]); // sync's grant untouched
+    expect([...w.set]).toEqual(["https://api.sixkey.app/*"]); // another grant (the old API origin's) untouched
     w.click(button("b.example.com", "afs-remove")!);
     await settle();
     expect(w.log).toEqual(["remove https://a.example.com/*"]); // nothing granted for it: nothing to give back

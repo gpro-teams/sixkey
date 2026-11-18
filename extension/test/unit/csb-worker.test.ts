@@ -648,15 +648,15 @@ describe("what a run writes", () => {
     expect((await x.state()).used).toBe(x.area.inUse());
   });
 
-  it("an empty vault with no slot of it yet writes nothing (rule 1); its first account is written", async () => {
+  it("an empty vault is handed over at once, so a second computer finds it; its first account is written too", async () => {
     const x = world();
     await x.start(await seal(keys, emptyVault(keys.keyring.vaultId), 1));
-    expect(x.area.calls.filter((c) => c.op === "set")).toEqual([]);
-    expect((await x.cfg()).link).toBeNull();
-    expect(await x.state()).toMatchObject({ err: null, lastOk: null, pendingSince: null });
+    expect(x.sets()).toBe(1);
+    expect((await x.cfg()).link).not.toBeNull();
+    expect(await x.state()).toMatchObject({ err: null, lastOk: T0, pendingSince: null });
     await x.put(g2);
     await x.run();
-    expect(x.sets()).toBe(1);
+    expect(x.sets()).toBe(2);
   });
 
   it("nothing changed and the slot whole: no write; the state says nothing waits, and keeps the last write's time", async () => {
@@ -785,9 +785,9 @@ describe("what a run writes", () => {
     const old = await x.link();
     const before = x.area.snapshot();
     await markCsbHeld(x.kv, x.lock);
-    await x.put(await seal(otherKeys, emptyVault(otherKeys.keyring.vaultId), 1)); // nothing in it yet: nothing written
+    await x.put(await seal(otherKeys, emptyVault(otherKeys.keyring.vaultId), 1)); // nothing in it yet: a new slot
     await x.run();
-    expect(x.sets()).toBe(1);
+    expect(x.sets()).toBe(2);
     expect(await x.state()).toMatchObject({ err: null });
     await x.put(await seal(otherKeys, vaultOf(otherKeys.keyring.vaultId, [account("Other", SECRET)]), 2));
     await x.run();
@@ -861,7 +861,7 @@ describe("what a run writes", () => {
     expect(x.area.callsOf("remove")).toHaveLength(1); // none left: no call
   });
 
-  it("an empty vault's skip (rule 1) touches no slot: not even chunks past a count beside the slot the link names", async () => {
+  it("an empty new vault over this device's slot gets a new slot, and the old slot's chunks past its count stay", async () => {
     const x = world();
     await x.start();
     const slot = (await x.link()).slot;
@@ -869,7 +869,7 @@ describe("what a run writes", () => {
     await x.put(await seal(otherKeys, emptyVault(otherKeys.keyring.vaultId), 1)); // start over, nothing in it yet
     await x.run();
     expect(x.area.callsOf("remove")).toEqual([]);
-    expect(x.sets()).toBe(1);
+    expect(x.sets()).toBe(2);
     expect(x.area.items.get(chunkKey(slot, 3))).toBe("past its count");
   });
 

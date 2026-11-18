@@ -8,9 +8,15 @@ import { LIMITS } from "../../src/core/vault/validate";
 import {
   appendDomain,
   askHost,
+  autoGroups,
   buildSections,
+  byUse,
+  sameNames,
+  sameTogether,
   filterRows,
+  namesUser,
   normalizeQuery,
+  userFirst,
   type Section,
 } from "../../src/popup/main/model";
 
@@ -170,5 +176,143 @@ describe("which account is this page: when the list asks", () => {
       "",
     ])
       expect(ask([entry("ws"), entry("Zoom")], url), url).toBeNull();
+  });
+});
+
+describe("the account the page's user name names comes first (owner, 2026-11-18)", () => {
+  const named = (label: string, domains?: string[]) => ({ ...entry("CSLink", domains), label });
+  it("names: the label itself, or the part before an @, case and spaces aside", () => {
+    expect(namesUser({ label: "admin2" }, "admin2")).toBe(true);
+    expect(namesUser({ label: "Admin2 " }, " ADMIN2")).toBe(true);
+    expect(namesUser({ label: "admin2@cslink.vip" }, "admin2")).toBe(true);
+    expect(namesUser({ label: "admin2" }, "admin2@cslink.vip")).toBe(true);
+    expect(namesUser({ label: "admin" }, "admin2")).toBe(false);
+    expect(namesUser({ label: "admin2" }, "")).toBe(false);
+    expect(namesUser({ label: "admin2" }, null)).toBe(false);
+  });
+  it("the site's rows: the named account first, the others in their order; no user name, no change", () => {
+    const list = [named("N000021"), named("N269225"), named("admin"), named("admin2"), named("CN67474")];
+    const rows = filterRows(list, "", "admin.cslink.vip");
+    expect(userFirst(rows, "admin2").map((r) => r.entry.label)).toEqual([
+      "admin2",
+      "N000021",
+      "N269225",
+      "admin",
+      "CN67474",
+    ]);
+    expect(userFirst(rows, null)).toBe(rows);
+    expect(userFirst(rows, "nobody")).toBe(rows);
+  });
+  it("only accounts of the site move: an unrelated account with that name stays where it is", () => {
+    const other = { ...entry("GitHub"), label: "admin2" };
+    const rows = filterRows([named("N000021"), other], "", "admin.cslink.vip");
+    expect(userFirst(rows, "admin2").map((r) => r.entry.issuer)).toEqual(["CSLink", "GitHub"]);
+  });
+});
+
+describe("grouping by name in one click (the owner's report of 2026-11-18)", () => {
+  const named = (es: Entry[], plan: Map<string, string>) => es.map((e) => [e.issuer, plan.get(e.id) ?? null]);
+  it("the owner's accounts: one service's accounts together, by the first word of the name; a service with one account stays", () => {
+    const es = [
+      entry("Sharelife"),
+      entry("Sharelife"),
+      entry("Sharelife"),
+      entry("CSLink"),
+      entry("DynastyX"),
+      entry("DynastyX-Admin"),
+      entry("乐支付"),
+      entry("cslink"),
+      entry("MomoPay"),
+      entry("Amazon Web Services"),
+      entry("MomoPay"),
+      entry("Amazon Web Services"),
+      entry("KuCoin"),
+      entry(""),
+      entry(""),
+    ];
+    expect(named(es, autoGroups(es))).toEqual([
+      ["Sharelife", "Sharelife"],
+      ["Sharelife", "Sharelife"],
+      ["Sharelife", "Sharelife"],
+      ["CSLink", "CSLink"], // the same name, case aside: the first account's spelling
+      ["DynastyX", "DynastyX"], // not all the same issuer: the word they share
+      ["DynastyX-Admin", "DynastyX"],
+      ["乐支付", null],
+      ["cslink", "CSLink"],
+      ["MomoPay", "MomoPay"],
+      ["Amazon Web Services", "Amazon Web Services"], // all the same issuer: the issuer, whole
+      ["MomoPay", "MomoPay"],
+      ["Amazon Web Services", "Amazon Web Services"],
+      ["KuCoin", null],
+      ["", null], // no name: nothing to go by
+      ["", null],
+    ]);
+  });
+  it("accounts already in a group stay where they are; one alone joins a group of its name, whatever its case", () => {
+    const es = [
+      entry("GitHub", undefined, "Work"),
+      entry("GitHub"),
+      entry("Sharelife", undefined, "sharelife"),
+      entry("Sharelife"),
+      entry("Binance", undefined, "Binance"),
+    ];
+    expect(named(es, autoGroups(es))).toEqual([
+      ["GitHub", null], // in Work: never moved
+      ["GitHub", null], // alone among the accounts in no group
+      ["Sharelife", null],
+      ["Sharelife", "sharelife"],
+      ["Binance", null],
+    ]);
+  });
+  it("a name longer than a group may be is cut to the limit", () => {
+    const long = "X".repeat(LIMITS.group + 10);
+    const es = [entry(long), entry(long)];
+    expect([...autoGroups(es).values()]).toEqual(["X".repeat(LIMITS.group), "X".repeat(LIMITS.group)]);
+  });
+});
+
+describe("on a site, the accounts used more often first (the owner's question of 2026-11-18)", () => {
+  it("more uses first; the same number keeps the list's order; an unreadable count is none", () => {
+    const es = [entry("A"), entry("B"), entry("C"), entry("D")];
+    const rows = es.map((entry) => ({ entry, tier: "related" as const }));
+    const uses = { [es[2]!.id]: 3, [es[3]!.id]: 1, [es[1]!.id]: Number.NaN } as Record<string, number>;
+    expect(byUse(rows, uses).map((r) => r.entry.issuer)).toEqual(["C", "D", "A", "B"]);
+    expect(byUse(rows, {}).map((r) => r.entry.issuer)).toEqual(["A", "B", "C", "D"]);
+    // the page's user name still comes before any count
+    const u = rows.map((r, i) => ({ ...r, entry: { ...r.entry, label: ["x", "admin2", "y", "z"][i]! } }));
+    expect(userFirst(byUse(u, uses), "admin2").map((r) => r.entry.issuer)).toEqual(["B", "C", "D", "A"]);
+  });
+});
+
+describe("accounts of the same name (the owner's report of 2026-11-18)", () => {
+  it("numbered among themselves in the list's order, case and spaces aside; others not at all; a note is searched", () => {
+    const es = [entry("NbdPay OTC"), entry("NbdPay OTC"), entry("nbdpay otc "), entry("Other")];
+    es[0]!.label = "admin";
+    es[1]!.label = "M10001";
+    es[2]!.label = "Admin";
+    es[3]!.label = "admin";
+    const d = sameNames(es);
+    expect([...d.entries()]).toEqual([
+      [es[0]!.id, 1],
+      [es[2]!.id, 2],
+    ]);
+    es[2]!.note = "Shop B";
+    expect(filterRows(es, normalizeQuery("shop b"), null).map((r) => r.entry.id)).toEqual([es[2]!.id]);
+  });
+});
+
+describe("the accounts of one name side by side (the owner's report of 2026-11-18)", () => {
+  it("each moves up to the first of its name; everything else keeps its order", () => {
+    const es = [entry("CSLink"), entry("CSLink"), entry("CSLink"), entry("CSLink"), entry("CSLink")];
+    ["CS001226", "N000021", "N242048", "N000021", "cs001226 "].forEach((l, i) => (es[i]!.label = l));
+    const rows = es.map((entry) => ({ entry, tier: null }));
+    expect(sameTogether(rows).map((r) => r.entry.label)).toEqual([
+      "CS001226",
+      "cs001226 ",
+      "N000021",
+      "N000021",
+      "N242048",
+    ]);
+    expect(sameTogether([])).toEqual([]);
   });
 });

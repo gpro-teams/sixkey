@@ -1,6 +1,6 @@
-// scripts/build.mjs's prod graph guard and define, its pinned build mode and per-flavour directories, the store package
-// and the ID draft (scripts/package.mjs), and a few check-dist rules (a catalog that names backups.transport among them),
-// on real builds. The builds run in a private copy of the extension's
+// scripts/build.mjs's graph guard (every flavour's; tried here on prod builds) and define, its pinned build mode and
+// per-flavour directories, the store package and the ID draft (scripts/package.mjs), and a few check-dist rules (a
+// catalog that names backups.transport among them), on real builds. The builds run in a private copy of the extension's
 // sources (node_modules linked), with NODE_ENV removed as in a developer's shell (vitest sets NODE_ENV=test;
 // scripts/build.mjs pins production mode either way, which one test checks with NODE_ENV=test on purpose).
 import { spawnSync } from "node:child_process";
@@ -19,6 +19,9 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+/** The version the package is named after (manifest.base.json, as scripts/package.mjs reads it). */
+const VERSION = (JSON.parse(readFileSync(join(__dirname, "../../manifest.base.json"), "utf8")) as { version: string })
+  .version;
 
 const EXT = resolve(__dirname, "../..");
 const work = mkdtempSync(join(tmpdir(), "sixkey-build-guard-"));
@@ -67,8 +70,8 @@ const env = () => {
 
 function copyExt(name: string, top = work): string {
   const dir = join(top, name);
-  // (catalogs/: the Sync section's generated catalogs, which dev and e2e builds carry; like _locales. The lockfile: the
-  // build writes the third-party notices of the packages it lists, scripts/notices.mjs)
+  // (catalogs/: the page catalogs scripts/messages.py generates, like _locales. The lockfile: the build writes the
+  // third-party notices of the packages it lists, scripts/notices.mjs)
   for (const n of [
     "scripts",
     "src",
@@ -131,31 +134,64 @@ beforeAll(() => {
 }, 240_000);
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 
-describe("scripts/build.mjs refuses a prod build whose module graph reaches the enrolment code or the developer page", () => {
-  const cases: [string, string, string][] = [
+describe("scripts/build.mjs refuses a prod build whose module graph reaches the server sync's client or the developer page", () => {
+  // [what, the file the import goes into, the import, a file the copy gets first (each is gone from the tree, DV-0b: as if
+  // it came back from the history)]
+  const use = (from: string, name: string) =>
+    `import { ${name} as __p } from "${from}";\n(globalThis as Record<string, unknown>).__p = __p;\n`;
+  const cases: [string, string, string, [string, string]?][] = [
     [
-      "enroll.ts",
+      "the enrolment (enroll.ts), in the worker",
       "src/background/sw.ts",
-      'import { firstUpload as __p } from "../core/sync/engine/enroll";\n(globalThis as Record<string, unknown>).__p = __p;\n',
+      use("../core/sync/engine/enroll", "firstUpload"),
+      ["src/core/sync/engine/enroll.ts", "export const firstUpload = 1;\n"],
     ],
     [
-      "the new-device state machine",
-      "src/background/sw.ts",
-      'import { EnrollError as __p } from "../core/sync/crypto/enroll-new-device";\n(globalThis as Record<string, unknown>).__p = __p;\n',
+      "any module of the engine, from a page",
+      "src/options/main.tsx",
+      use("../core/sync/local/keys", "SYNC_KEYS"),
+      ["src/core/sync/local/keys.ts", "export const SYNC_KEYS = 1;\n"],
     ],
-    ["the developer page, from a page", "src/options/main.tsx", 'import "../devsync/main";\n'],
+    [
+      "the worker's sync",
+      "src/background/sw.ts",
+      use("../platform/sync-worker", "createWorkerSync"),
+      ["src/platform/sync-worker.ts", "export const createWorkerSync = 1;\n"],
+    ],
+    [
+      "the transport",
+      "src/background/sw.ts",
+      use("../platform/fetch-transport", "FetchTransport"),
+      ["src/platform/fetch-transport.ts", "export const FetchTransport = 1;\n"],
+    ],
+    [
+      "the service's sync flows, from the popup",
+      "src/popup/main.tsx",
+      use("../core/service/sync-flows", "SyncFlows"),
+      ["src/core/service/sync-flows.ts", "export const SyncFlows = 1;\n"],
+    ],
+    [
+      "the developer page, from a page",
+      "src/options/main.tsx",
+      'import "../devsync/main";\n',
+      ["src/devsync/main.ts", "export {};\n"],
+    ],
   ];
-  for (const [what, file, inject] of cases) {
+  for (const [what, file, inject, extra] of cases) {
     it(
       what,
       () => {
         const dir = copyExt(`inj-${what.replace(/\W+/g, "-")}`);
+        if (extra) {
+          mkdirSync(join(dir, extra[0], ".."), { recursive: true });
+          writeFileSync(join(dir, extra[0]), extra[1]);
+        }
         const p = join(dir, file);
         writeFileSync(p, inject + readFileSync(p, "utf8"));
         const r = build(dir, ["--out", join(dir, "out")]);
         expect(r.status, `${r.stdout}\n${r.stderr}`).not.toBe(0);
         expect(`${r.stdout}${r.stderr}`).toMatch(
-          /a prod build must not contain the developer sync page or the enrolment code/,
+          /no build may contain the Sync section, the developer sync page or the server sync's client/,
         );
       },
       120_000,
@@ -309,7 +345,7 @@ describe("a file of rules/ by address (new URL(…, import.meta.url)), which rea
 });
 
 describe("the prod build's own contents", () => {
-  it("the worker carries no developer page path (the bridge's page list is the settings page alone)", () => {
+  it("the worker carries no developer page path (the sender policy's page list holds the settings page, not that one)", () => {
     const sw = readFileSync(join(clean, "out/sw.js"), "utf8");
     expect(sw).not.toMatch(/devsync/);
     expect(sw).toContain('"/options/index.html"');
@@ -361,7 +397,7 @@ describe("check-dist: the developer origin and the URL template", () => {
     for (const u of ["`http://${h}/collect?d=${x}`", "`https://${h}/`"]) {
       const r = mutant((d) => edit(d, popupChunk(d), (t) => `${t}\nconst u=${u};`));
       expect(r.ok, u).toBe(false);
-      expect(r.out, u).toMatch(/URL in shipped code that is not the API origin/);
+      expect(r.out, u).toMatch(/URL in shipped code that is not one it may hold/);
     }
   });
 });
@@ -508,14 +544,14 @@ describe("scripts/package.mjs (npm run package)", () => {
     const r = pack(dir, ["--id-draft"]);
     expect(r.status, `${r.stdout}\n${r.stderr}`).toBe(0);
     expect(r.stdout).toContain("check-dist (ID draft) OK");
-    expect(readdirSync(join(dir, "release"))).toEqual(["sixkey-0.1.0-id-draft-do-not-publish.zip"]);
+    expect(readdirSync(join(dir, "release"))).toEqual([`sixkey-${VERSION}-id-draft-do-not-publish.zip`]);
     expect(r.stdout).toMatch(/never submit it for review/);
     const m = JSON.parse(readFileSync(join(dir, "dist-id-draft/manifest.json"), "utf8"));
     expect(m.name).toBe("Sixkey (ID draft, do not publish)");
     expect(m).not.toHaveProperty("key");
     // no other extension can message it: no build has externally_connectable, nor a listener
     expect(m).not.toHaveProperty("externally_connectable");
-    expect(zipNames(readFileSync(join(dir, "release/sixkey-0.1.0-id-draft-do-not-publish.zip")))).toEqual(
+    expect(zipNames(readFileSync(join(dir, `release/sixkey-${VERSION}-id-draft-do-not-publish.zip`)))).toEqual(
       [...tree(join(dir, "dist-id-draft")).keys()].map((k) => k.split("\\").join("/")).sort(),
     );
     expect(existsSync(join(dir, "dist"))).toBe(false); // never where the store package is made from
@@ -536,7 +572,7 @@ describe("scripts/package.mjs (npm run package)", () => {
   it("the tree as it is today, STORE_ID pinned and the rules' source set: builds prod, checks it, carries the ID, and zips exactly dist/; the same sources give the same bytes", () => {
     expect(TREE_STORE_ID).toBeDefined();
     const dir = copyExt("package");
-    const zip = join(dir, "release/sixkey-0.1.0.zip");
+    const zip = join(dir, `release/sixkey-${VERSION}.zip`);
     const shas: string[] = [];
     for (let i = 0; i < 2; i++) {
       const r = pack(dir);
@@ -563,7 +599,7 @@ describe("scripts/package.mjs (npm run package)", () => {
     const r = pack(dir);
     expect(r.status).not.toBe(0);
     expect(`${r.stdout}${r.stderr}`).toMatch(
-      /URL in shipped code that is not the API origin: https:\/\/evil\.example\/collect/,
+      /URL in shipped code that is not one it may hold: https:\/\/evil\.example\/collect/,
     );
     expect(`${r.stdout}${r.stderr}`).toMatch(/no package written/);
     expect(existsSync(join(dir, "release"))).toBe(false);

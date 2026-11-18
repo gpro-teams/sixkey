@@ -29,7 +29,6 @@ import {
   type Profile,
 } from "./harness";
 
-const NEW_PASSWORD = "Basalt#Meadow4!Quill9$Fern";
 const area = (page: Page) => page.evaluate(() => chrome.storage.sync.get(null));
 /** Items put into a profile's storage.sync by its page: Chrome sync delivering another computer's. */
 const deliver = (page: Page, items: Record<string, unknown>) => page.evaluate((i) => chrome.storage.sync.set(i), items);
@@ -75,12 +74,19 @@ async function newVault(p: Profile): Promise<{ opt: Page; code: string }> {
   return { opt, code };
 }
 
-/** The restore step's field, and the profile question after it; a recovery key's restore asks a new password first. */
-async function restore(opt: Page, secret: string, o: { newPassword?: string } = {}) {
+/**
+ * The restore step's field, and the profile question after it. A recovery key's restore then offers to keep the same
+ * master password (`keep`) or to set a new one (`newPassword`).
+ */
+async function restore(opt: Page, secret: string, o: { newPassword?: string; keep?: boolean } = {}) {
   await opt.locator("#cs-restore-secret").fill(secret);
   await opt.locator("#cs-open").click();
+  if (o.keep) {
+    await expect(opt.locator("#cs-keep-password")).toBeVisible({ timeout: 30_000 });
+    await opt.locator("#cs-keep-password").click();
+  }
   if (o.newPassword) {
-    await expect(opt.locator("#cs-need-password")).toBeVisible({ timeout: 30_000 });
+    await expect(opt.locator("#fr-pw")).toBeVisible({ timeout: 30_000 });
     await opt.locator("#fr-pw").fill(o.newPassword);
     await opt.locator("#fr-pw2").fill(o.newPassword);
     await opt.locator("#fr-next").click();
@@ -96,14 +102,16 @@ test("first run with the box, an account, its copy; another computer finds it an
   const one = await profile();
   const { opt, code } = await newVault(one);
   await opt.close();
-  await addByPaste(one, GITHUB_URI);
+  // the owner's report of 2026-11-17: a master password set and no account yet, and the vault is handed over already,
+  // so a second computer finds it (it used to find nothing, and offered a second master password)
   const pop = await openPopup(one);
-  // the e2e build writes 5 s after the change (the store's 30 s): this computer's copy appears in the area
   await expect.poll(() => whole(pop), { timeout: 60_000 }).toHaveLength(1);
   const mine = (await linkOf(pop))!.slot;
-  expect(await whole(pop)).toEqual([mine]);
+  await addByPaste(one, GITHUB_URI);
+  // the e2e build writes 5 s after the change (the store's 30 s): the account's copy goes to the same slot
   const card = await openOptions(one, "#backup");
-  await expect(card.locator("#csb-card")).toHaveAttribute("data-state", "ok");
+  await expect(card.locator("#csb-card")).toHaveAttribute("data-state", "ok", { timeout: 60_000 });
+  expect(await whole(pop)).toEqual([mine]);
   await expect(card.locator("#cs-status")).toHaveText(
     /^(Handed to (Chrome|browser) sync|已交给(Chrome |浏览器)同步) · /i,
   );
@@ -135,11 +143,11 @@ test("first run with the box, an account, its copy; another computer finds it an
   await o3.locator("#cs-restore-secret").fill("not the password");
   await o3.locator("#cs-open").click();
   await expect(o3.locator("#cs-wrong")).toBeVisible({ timeout: 30_000 });
-  await restore(o3, code, { newPassword: NEW_PASSWORD });
+  // the owner's report of 2026-11-18: by the recovery key, the same master password as the other computers goes on
+  await restore(o3, code, { keep: true });
   await expect.poll(async () => (await linkOf(o3))?.slot, { timeout: 30_000 }).toBe(mine);
-  // the new master password opens the vault there
   const g3 = await onDisk(o3);
-  expect((await openWithPassword(g3.keyring, NEW_PASSWORD)).vk.id).toBe(g3.keyring.vkId);
+  expect((await openWithPassword(g3.keyring, STRONG)).vk.id).toBe(g3.keyring.vkId);
   const p3 = await openPopup(three);
   await expect(p3.locator(".row", { hasText: "GitHub" })).toHaveCount(1);
 });

@@ -6,8 +6,7 @@ import fc from "fast-check";
 import { readFileSync } from "node:fs";
 import { createHash, createHmac } from "node:crypto";
 import { CryptoError } from "../../src/core/crypto/bytes";
-import { formatPairingCode } from "../../src/core/crypto/pairing-code";
-import { formatRecoveryCode, parseRecoveryCode } from "../../src/core/crypto/recovery-code";
+import { formatCode, formatRecoveryCode, parseRecoveryCode } from "../../src/core/crypto/recovery-code";
 import {
   DIGEST_INDEX,
   SECRET_INDEX,
@@ -399,10 +398,12 @@ describe("Sixkey share v1: the text", () => {
     for (const tag of ["", "sixkey-pairing-code|1|", "sixkey-share|2|"])
       await expect(parseShare(forge(0x10, tag))).rejects.toMatchObject({ code: "share_checksum" });
   });
-  it("a recovery code or a pairing code is not a share, and a share is not a recovery code (lengths differ)", async () => {
+  it("a recovery code or a 28-symbol code of another tag (the removed pairing code's) is not a share, and a share is not a recovery code (lengths differ)", async () => {
     const secret = seeded("codes")(16);
     await expect(parseShare(await formatRecoveryCode(secret))).rejects.toMatchObject({ code: "share_length" });
-    await expect(parseShare(await formatPairingCode(secret))).rejects.toMatchObject({ code: "share_length" });
+    await expect(parseShare(await formatCode(secret, "sixkey-pairing-code|1|"))).rejects.toMatchObject({
+      code: "share_length",
+    });
     await expect(parseRecoveryCode(await formatShare(share()))).rejects.toMatchObject({ code: "recovery_length" });
     await expect(parseShare("U".repeat(36))).rejects.toMatchObject({ code: "share_char" });
     await expect(parseShare("")).rejects.toMatchObject({ code: "share_length" });

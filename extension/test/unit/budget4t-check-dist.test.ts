@@ -146,7 +146,12 @@ describe("the sources: each moved rule and icon in one place, drawn only where i
           ),
         )
         .map((f) => f.path);
-    expect(importing("options/icons").length).toBeGreaterThan(30);
+    // exactly the settings page's modules that draw one (not vacuous: there are many)
+    const drawers = files
+      .filter((f) => f.path.startsWith("options/") && f.path !== "options/icons.tsx" && /<Icon\b/.test(f.text))
+      .map((f) => f.path);
+    expect(drawers.length).toBeGreaterThan(15);
+    expect([...importing("options/icons")].sort()).toEqual([...drawers].sort());
     expect(importing("options/icons").filter((p) => !p.startsWith("options/"))).toEqual([]);
     expect(importing("ui/icons").filter((p) => p.startsWith("options/"))).toEqual(["options/icons.tsx"]);
     // a moved name in a module outside the settings page could only be another thing than an icon: none draws one

@@ -17,9 +17,6 @@ import { BoxTitle, Fold, Panel, PasswordFields, type Ctx } from "./shared";
 // here is what is typed: each form is a component of its own that holds its fields, so that closing it (its button,
 // Escape, another opening, a lock, a hidden tab, leaving the leaf) unmounts it, and the typed passwords go with it, as a
 // lock drops them everywhere on this page.
-// `syncOn` (the Sync section's rail line says sync is on): the key changes go through sync (Phase 0's are refused with
-// sync on, §0.0i item 18), so the three boxes give way to one that points to the Sync section, where they are. null:
-// not known yet (this profile has sync records and the section is still loading): neither is shown until it is.
 type Props = Ctx & { keys: KeyOps };
 
 /** A Phase 0 device-key vault: the box that turns a master password on. Its steps, and its fields, are its own. */
@@ -285,7 +282,7 @@ export function Security({ rt, status, vault, reload, keys }: Props) {
 const atShares = () => globalThis.location?.hash === "#shares";
 
 /** Settings › Security › Password and recovery: the master password, a new recovery code, a new key. */
-export function SecurityKeys({ rt, status, vault, reload, keys, syncOn = false }: Props & { syncOn?: boolean | null }) {
+export function SecurityKeys({ rt, status, vault, reload, keys }: Props) {
   const unlocked = status.state === "unlocked";
   const isProtected = status.state === "unlocked" && status.passwordProtected;
   // One form open at a time. Its fields are its own: closing it unmounts them.
@@ -339,18 +336,7 @@ export function SecurityKeys({ rt, status, vault, reload, keys, syncOn = false }
           {keys.code === null && <EnableBox vault={vault} keys={keys} />}
         </>
       )}
-      {isProtected && keys.code === null && syncOn === true && (
-        <div class="box" id="sec-keys-in-sync">
-          <BoxTitle icon="key">{t("secKeysInSyncTitle")}</BoxTitle>
-          <p class="muted">{t("secKeysInSyncBody")}</p>
-          <div class="row2">
-            <a class="btn ghost" href="#sync" id="sec-keys-in-sync-open">
-              {t("secKeysInSyncOpen")}
-            </a>
-          </div>
-        </div>
-      )}
-      {isProtected && keys.code === null && syncOn === false && (
+      {isProtected && keys.code === null && (
         <>
           {/* the last operation's refusal stays here, whatever fold is open or closed, until the next attempt (or a fold opens) */}
           <Refusal error={keys.error} />

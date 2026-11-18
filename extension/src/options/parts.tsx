@@ -21,6 +21,7 @@ import { getLang, loadCatalog, type Catalog, type CatalogSource } from "../ui/i1
 import { AddAccounts as AddAccountsPart, PendingDeletes as PendingDeletesPart } from "./AddAccounts";
 import { Appearance as AppearancePart } from "./Appearance";
 import { Backup as BackupPart } from "./Backup";
+import { Groups as GroupsPart } from "./Groups";
 import { FirstRun as FirstRunPart, SetupReady as SetupReadyPart } from "./FirstRun";
 import {
   Advanced as AdvancedPart,
@@ -147,7 +148,7 @@ function usePart(p: Part): boolean {
 
 /**
  * A part's component, drawn once its part's text is in. Until then: nothing, or for a section of the page its empty
- * frame with the section's id (as SyncHost.tsx draws the Sync section's before its chunk is in).
+ * frame with the section's id.
  */
 function gated<P extends object>(part: Part, Component: ComponentType<P>, section?: string): FunctionComponent<P> {
   return function Gated(props: P) {
@@ -162,6 +163,8 @@ export const SecurityRecord = gated("security", SecurityRecordPart, "security-lo
 export const AddAccounts = gated("accounts", AddAccountsPart, "add");
 export const PendingDeletes = gated("accounts", PendingDeletesPart);
 export const Backup = gated("backup", BackupPart, "backup");
+// Settings › Groups: in the backup part, whose account picker (SubsetPicker.tsx) and its text it shares
+export const Groups = gated("backup", GroupsPart, "groups");
 export const Trash = gated("misc", TrashPart, "trash");
 export const Clipboard = gated("misc", ClipboardPart, "clipboard");
 export const Autofill = gated("misc", AutofillPart, "autofill");

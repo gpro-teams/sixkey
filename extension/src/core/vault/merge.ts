@@ -47,6 +47,8 @@ const contentOf = (e: Entry) => ({
   digits: e.digits,
   period: e.period,
   domains: e.domains,
+  note: e.note,
+  autofill: e.autofill,
 });
 const placementOf = (e: Entry) => ({ group: e.group, order: e.order });
 

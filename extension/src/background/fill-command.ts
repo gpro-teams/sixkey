@@ -159,9 +159,9 @@ async function openSurface(c: FillChrome, opens: "popup" | "panel" | undefined, 
 
 /**
  * Tell the user what happened: a badge and a tooltip on this tab's toolbar icon, restored after a few seconds to what the
- * icon showed before (the sync status uses the same badge), and the popup or the side panel opened for the outcomes that
- * need one (the side panel only when the icon opens it; the popup with `action.openPopup`, which every Chrome Sixkey runs
- * on has: 127+, and Sixkey needs 140; if the browser refuses, the tooltip says to open Sixkey). Never throws.
+ * icon showed before, and the popup or the side panel opened for the outcomes that need one (the side panel only when
+ * the icon opens it; the popup with `action.openPopup`, which every Chrome Sixkey runs on has: 127+, and Sixkey needs
+ * 140; if the browser refuses, the tooltip says to open Sixkey). Never throws.
  */
 export async function reportFill(
   outcome: Outcome,

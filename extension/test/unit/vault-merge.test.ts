@@ -150,6 +150,19 @@ describe("two devices", () => {
     expect(list[1]!.issuer).toBe("Renamed");
     expect(canon(mergeVaults(onB, onA))).toBe(canon(m));
   });
+  it("a note written on one device and a reorder on another both survive; the later of two notes wins", () => {
+    const { a, b, tick } = devices();
+    const base = addEntry(emptyVault(VID), input(), a, { id: "entry-0000001" }).vault;
+    tick();
+    const noted = editEntry(base, "entry-0000001", { note: "Shop A" }, a);
+    tick();
+    const moved = moveEntry(base, "entry-0000001", 0, b);
+    expect(mergeVaults(noted, moved).entries[0]!.note).toBe("Shop A");
+    tick();
+    const later = editEntry(base, "entry-0000001", { note: "Shop B" }, b);
+    expect(mergeVaults(noted, later).entries[0]!.note).toBe("Shop B");
+    expect(canon(mergeVaults(later, noted))).toBe(canon(mergeVaults(noted, later)));
+  });
   it("an edit made after a delete wins; an older edit leaves the entry in the trash with the edit kept", () => {
     const { a, b, tick } = devices();
     const base = addEntry(emptyVault(VID), input(), a, { id: "entry-0000001" }).vault;

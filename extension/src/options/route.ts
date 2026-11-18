@@ -1,20 +1,19 @@
-// Which part of the settings page is shown. The page is planned in five groups (the rail), and a group in pages, its
+// Which part of the settings page is shown. The page is planned in four groups (the rail), and a group in pages, its
 // leaves (the row of links under the page's title, only where a group has more than one). One leaf is on the page at a
 // time. The links are plain anchors, so the address bar's #hash is the choice, and the browser's Back and Forward move
 // between leaves. A hash names a leaf by itself (#security-log), by its group (#accounts, the group's first leaf), by an
 // older name that now lives inside a leaf (#clipboard) or by its first word (#add-scanned from the popup's Add
-// menu, #sync/join). Everything else (#setup, #setup-restore, #reset, #install, none) names none: the page shows the
-// default leaf. Nothing here rewrites the hash: parts of the page read it themselves (#add-scanned, #sync*, #reset,
-// #setup*, #install). No text, no browser calls: tests call it directly.
+// menu). Everything else (#setup, #setup-restore, #reset, #install, #sync, none) names none: the page shows the default
+// leaf. Nothing here rewrites the hash: parts of the page read it themselves (#add-scanned, #reset, #setup*, #install).
+// No text, no browser calls: tests call it directly.
 
 /** A group of the rail and the leaves (pages) it holds, the first being the one its own link opens. */
 export type Group = { id: string; leaves: readonly string[] };
 
 export const GROUPS: readonly Group[] = [
-  { id: "accounts", leaves: ["add", "backup", "trash"] },
+  { id: "accounts", leaves: ["add", "groups", "backup", "trash"] },
   { id: "security", leaves: ["security", "security-keys", "security-log", "autofill"] }, // autofill: its sites, AUTOFILL2
   { id: "appearance", leaves: ["appearance"] }, // with its Clipboard panel
-  { id: "sync", leaves: ["sync"] }, // only where the build has it
   { id: "advanced", leaves: ["advanced"] },
 ];
 
@@ -26,12 +25,8 @@ const MOVED: Readonly<Record<string, string>> = { clipboard: "appearance", share
 /** The leaf the page opens on when the hash names none. */
 export const DEFAULT_LEAF = "security";
 
-/** The leaves of this build (`sync`: whether it has the Sync section), in the rail's order. */
-export const leavesOf = (sync: boolean): string[] =>
-  GROUPS.flatMap((g) => g.leaves).filter((l) => sync || l !== "sync");
-
-/** The groups of this build. */
-export const groupsOf = (sync: boolean): Group[] => GROUPS.filter((g) => sync || g.id !== "sync");
+/** Every leaf, in the rail's order. */
+export const LEAVES: readonly string[] = GROUPS.flatMap((g) => g.leaves);
 
 /** The group a leaf is in. */
 export const groupOf = (leaf: string): Group | undefined => GROUPS.find((g) => g.leaves.includes(leaf));

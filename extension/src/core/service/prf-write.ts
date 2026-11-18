@@ -13,7 +13,7 @@ import type { PrfRecord } from "../crypto/prf-record";
 import type { KV, Lock } from "../storage/kv";
 import type { PrfStore } from "./prf-store";
 
-/** The key, as prf-store.ts PRF_KEY (core/sync/local/keys.ts LOCAL_ONLY_KEYS.prf): restated, not imported (see above). */
+/** The key, as prf-store.ts PRF_KEY (core/storage/local-keys.ts LOCAL_ONLY_KEYS.prf): restated, not imported (see above). */
 const KEY = "sk_prf";
 /** The master password's time is written at most this often (YR-14: a write of chrome.storage.local at most once a day). */
 export const PRF_NOTE_MS = 86_400_000;
