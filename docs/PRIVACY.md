@@ -285,6 +285,31 @@ new computer, your master password (or your recovery key) brings it back.
   storage, and with Chrome sync on, in your Google account's sync data; Sixkey's publisher has no copy of it either.
   "Turn off" in Settings › Backup removes this computer's copy there; Google's sync settings can clear it all.
 
+## Sixkey for Mac: backup to Google Drive (only if you install it)
+
+Sixkey for Mac, a separate app, offers a backup to Google Drive on its Plugins page. Nothing goes to Google until you
+install it and sign in to Google in the window Google shows; uninstalling it stops it.
+
+- **What Sixkey asks Google for:** one permission, `drive.file`: Sixkey can see and change only the files it created
+  itself in your Google Drive, nothing else there. It reads your Google account's address, to show which account the
+  backup goes to; no other Google data.
+- **What goes to Google:** the encrypted backup file (`Sixkey-<8 characters>.json`), in a folder named "Sixkey" in your
+  Google Drive, after each change to the vault and when you click "Back up now". It is the same encrypted file as the
+  extension's backup file: the vault encrypted, its key wrapped for your master password and for your recovery key.
+  Google, and whoever controls your Google account, cannot open it without one of them. Google Drive may keep earlier
+  versions of it under Google's terms.
+- **What stays on the Mac:** the sign-in token Google gives Sixkey, and your Google account's address, in Sixkey's own
+  data folder on this Mac. The token is used only to put that file in your Google Drive.
+- **What goes to Sixkey's publisher:** nothing. The app talks to Google directly (`accounts.google.com`,
+  `oauth2.googleapis.com`, `www.googleapis.com`), to no other server.
+- **Stopping:** "Uninstall" on the Plugins page asks Google to revoke Sixkey's access and deletes the token from the
+  Mac. The backups already in your Google Drive stay there; delete them in Google Drive if you want. You can also remove
+  Sixkey's access at any time in your Google account's settings (Security › Third-party apps and services).
+
+Sixkey's use of information received from Google APIs adheres to the
+[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including
+the Limited Use requirements.
+
 ## Contact
 
 Sixkey is published by VIEW TECH LTD, a company registered in London, United Kingdom. Questions about privacy go to
