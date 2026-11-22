@@ -209,7 +209,7 @@ describe("the boundary (§7.2 Option I item 1): autofill reaches a code through 
   it("every fill is given the gate: the popup's and the side panel's with their vault key, the shortcut's with the worker's", () => {
     expect(using(/[^n]gatedCode\(/)).toEqual(["background/sw.ts", "popup/main/Fill.tsx"]); // (not its definition)
     expect(file("background/sw.ts")).toMatch(
-      /deps:\{code:gatedCode\(\(\)=>rt\.service\.grantKeys\(\)\),off:switchedOff\},/,
+      /deps:\{code:gatedCode\(\(\)=>rt\.service\.grantKeys\(\)\),off:switchedOff,mac:fillFromMac\},/,
     );
     const fill = file("popup/main/Fill.tsx");
     expect(fill).toMatch(/constcode=\(e:Entry,at:number\)=>gatedCode\(keysOf\)\(e,at\);/);
@@ -222,8 +222,15 @@ describe("the boundary (§7.2 Option I item 1): autofill reaches a code through 
     expect(file("popup/main/Main.tsx")).toMatch(/m\.connect\(\(\)=>rt\.service\.grantKeys\(\),\(id,host\)=>\{/);
     // the shortcut's fillOnTab takes it from runShortcut's deps, which the worker gives (required, no default)
     const cmd = file("background/fill-command.ts");
-    expect(cmd).toMatch(/deps:FillDeps&\{code:GatedCode;off:\(\)=>Promise<boolean>\};/);
+    expect(cmd).toMatch(
+      /deps:FillDeps&\{code:GatedCode;off:\(\)=>Promise<boolean>;mac\?:\(host:string\)=>Promise<MacFill\|null>\};/,
+    );
     expect(cmd).not.toMatch(/codeAt|code:async|code:\(/);
+    // the one other code: while locked, Sixkey for Mac's, after its Touch ID (platform/mac-link.ts), never made here
+    expect(cmd).toMatch(
+      /constanswer=awaitmac\(host\);if\(!answer\)return"locked";const\{entry,code\}=macAccount\(answer\);/,
+    );
+    expect(cmd.match(/fillCand\(/g)).toHaveLength(2);
   });
 
   it("the gate: the verified record, the switch, the official ceiling, the log, and only then the code", () => {

@@ -52,6 +52,7 @@ const ALARM_NAMES = [
   "sk-sync-periodic",
   "sk-csb-soon", // the backup in Chrome sync's debounce (CSB-3, platform/csb-worker.ts)
   "sk-csb-retry", // and its retries
+  "sk-mac-pull", // the link with Sixkey for Mac: the Mac's copy, pulled once a minute while unlocked (platform/mac-link.ts)
 ];
 
 describe("every message type has a sender policy", () => {
@@ -119,9 +120,12 @@ describe("every message type has a sender policy", () => {
         else expect(rows, `${f.path}: ${m[1]}`).toContain(t);
       }
     // (the one call that passed a variable, the server sync's bridge, went with its client: DV-0b; every type is a literal)
-    expect(files.filter((f) => /\btabs\.sendMessage\(|\bsendNativeMessage\b|\bconnectNative\b/.test(f.code))).toEqual(
-      [],
-    );
+    expect(files.filter((f) => /\btabs\.sendMessage\(/.test(f.code))).toEqual([]);
+    // a native host only from the Mac link's one module, one message at a time (never a Port: connectNative)
+    expect(files.filter((f) => /\bsendNativeMessage\b/.test(f.code)).map((f) => f.path)).toEqual([
+      "platform/mac-link.ts",
+    ]);
+    expect(files.filter((f) => /\bconnectNative\b/.test(f.code))).toEqual([]);
   });
 });
 
@@ -192,10 +196,12 @@ describe("the listeners", () => {
       /onChanged\.addListener\(\(changes\) => \{\s*if \(VAULT_POINTER in changes\) void changed\(\)\.catch\(\(\) => undefined\);\s*\}\)/,
     );
     expect(csbWorker).not.toMatch(/newValue|oldValue/);
-    // and the worker's start watches the store's pointer once, for the backup in Chrome sync; nothing watches
-    // storage.sync in the worker (C17: its runs and its daily check suffice)
+    // and the worker's start watches the store's pointer once, for the backup in Chrome sync and the Mac link's send;
+    // nothing watches storage.sync in the worker (C17: its runs and its daily check suffice)
     expect(worker.match(/\bwatchVault\(/g)).toHaveLength(1);
-    expect(worker).toMatch(/^watchVault\(chrome\.storage\.local, \(\) => csb\.changed\(\)\);$/m);
+    expect(worker).toMatch(
+      /^watchVault\(chrome\.storage\.local, \(\) => \{\n {2}macLink\.changed\(\);\n {2}return csb\.changed\(\);\n\}\);$/m,
+    );
     // (the popup's and the side panel's watch on the plugin platform's proposals went with it: chrome.ts watches nothing)
     expect(file("platform/plugins/chrome.ts").code).not.toMatch(/onChanged/);
     // and the "same sign-in" chunk's (AF3-4, round 3): a lock (the epoch moved) empties what it keeps; it reads nothing

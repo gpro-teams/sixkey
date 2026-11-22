@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "description": "__MSG_appDesc__",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "default_locale": "en",
   "minimum_chrome_version": "140",
   "icons": {
@@ -48,5 +48,5 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; default-src 'self'; connect-src 'none'; img-src 'self' data:; font-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'"
   },
-  "optional_permissions": ["clipboardRead", "clipboardWrite", "scripting"]
+  "optional_permissions": ["clipboardRead", "clipboardWrite", "scripting", "nativeMessaging"]
 }

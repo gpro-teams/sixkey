@@ -21,6 +21,7 @@ import {
 } from "../platform/autofill";
 import { bounded } from "../platform/bounded";
 import { putRequest, type ReqArea } from "../platform/fill-request";
+import { macAccount, type MacFill } from "../platform/mac-fill";
 
 /**
  * `unsure`: the code may be in the box (a fill the page did not answer in time, or a box that kept the code and then went away);
@@ -52,12 +53,13 @@ export type Tab = { id?: number; url?: string; windowId?: number };
 export async function fillOnTab(
   tab: Tab | undefined,
   entries: () => Promise<readonly Entry[] | null>,
-  d: FillDeps & { code: GatedCode; off: () => Promise<boolean> },
+  d: FillDeps & { code: GatedCode; off: () => Promise<boolean>; mac?: (host: string) => Promise<MacFill | null> },
 ): Promise<Outcome> {
   const host = hostOf(tab?.url);
   if (tab?.id === undefined || host === null || schemeOf(tab.url) === "no") return "blocked";
   // locked first: the unlock comes before anything else, and after it the surface offers the Fill button (W1b review F-04)
   const all = await entries();
+  if (all === null && d.mac) return fillFromMacOnTab(tab.id, tab.url, host, d, d.mac);
   if (all === null) return "locked";
   const mine = all.filter((e) => canFill(e) && matchTier(e, host) === "registered");
   if (mine.length === 0) return "nosite";
@@ -89,6 +91,39 @@ export async function fillOnTab(
   if (r.r === "locked") return "locked"; // locked during the wait: the surface opens to unlock
   if (r.r === "off" || r.r === "ask") return "ask"; // switched off, or `scripting` given back: the surface says why
   return r.r === "slow" || r.r === "moved" ? "unsure" : "failed";
+}
+
+/**
+ * Locked, and linked with Sixkey for Mac (platform/mac-link.ts): the page is looked at first, then the app is asked
+ * (its Touch ID, every time), so nobody touches for a page with no box; the app's answer is filled as an account of
+ * this vault is (its sites checked against the page's frames, its digits against the box). Anything the app refuses
+ * leaves the shortcut as it was: the surface opens to unlock.
+ */
+async function fillFromMacOnTab(
+  tabId: number,
+  url: string | undefined,
+  host: string,
+  d: FillDeps & { off: () => Promise<boolean> },
+  mac: (host: string) => Promise<MacFill | null>,
+): Promise<Outcome> {
+  if (schemeOf(url) === "insecure") return "locked";
+  if (await d.off().catch(() => false)) return "ask";
+  if (!(await scriptingHeld())) return "ask";
+  const found = await scan(tabId);
+  if (found.k !== "ok") return found.k === "gated" ? "gated" : found.k === "slow" ? "slow" : "blocked";
+  if (!found.frames.some((f) => f.seen.c.length > 0)) return "nobox"; // no box anywhere: the app is not asked
+  const answer = await mac(host);
+  if (!answer) return "locked";
+  const { entry, code } = macAccount(answer);
+  const cands = candidatesFor(entry, url, found.frames);
+  const pick = choose(cands, entry.digits);
+  if (!pick) return cands.some((c) => fits(c, entry.digits) && !c.found.weak) ? "choose" : "nobox";
+  const r = await fillCand(tabId, entry, pick, { ...d, code, recheck: async () => entry });
+  if (r.k === "filled") return "filled";
+  if (r.k === "cancelled") return "locked";
+  if (r.r === "gated") return "gated";
+  if (r.r === "off" || r.r === "ask") return "ask";
+  return r.r === "locked" ? "locked" : r.r === "slow" || r.r === "moved" ? "unsure" : "failed";
 }
 
 /** The parts of chrome.* the report uses (each may be missing: another browser, a test). */
@@ -212,8 +247,11 @@ export async function runShortcut(
     session: ReqArea;
     chrome: FillChrome;
     opens: "popup" | "panel" | undefined;
-    /** The platform's gate for the code (platform/plugins/autofill-gate.ts gatedCode), the switch, and test seams. */
-    deps: FillDeps & { code: GatedCode; off: () => Promise<boolean> };
+    /**
+     * The platform's gate for the code (platform/plugins/autofill-gate.ts gatedCode), the switch, test seams, and while
+     * locked the app's code (platform/mac-link.ts fillFromMac).
+     */
+    deps: FillDeps & { code: GatedCode; off: () => Promise<boolean>; mac?: (host: string) => Promise<MacFill | null> };
     /** The report's few seconds (tests pass a quick one). */
     sleep?: (ms: number) => Promise<void>;
   },

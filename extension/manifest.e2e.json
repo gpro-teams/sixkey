@@ -13,5 +13,5 @@
   ],
   "host_permissions": ["https://grantedtls.fix.test/*", "http://granted.fix.test/*"],
   "optional_host_permissions": null,
-  "optional_permissions": ["clipboardRead", "clipboardWrite", "scripting"]
+  "optional_permissions": ["clipboardRead", "clipboardWrite", "scripting", "nativeMessaging"]
 }
