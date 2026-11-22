@@ -85,5 +85,35 @@
   },
   "afsOld": {
     "message": "Code suggestions need Chrome 140 or later."
+  },
+  "macLinkTitle": {
+    "message": "Sixkey for Mac"
+  },
+  "macLinkBody": {
+    "message": "Let the Sixkey app on this Mac keep the same vault. Sixkey sends it encrypted after each change; the app opens it with your master password."
+  },
+  "macLinkOn": {
+    "message": "Link with Sixkey for Mac"
+  },
+  "macLinkOff": {
+    "message": "Unlink"
+  },
+  "macLinkSendNow": {
+    "message": "Send now"
+  },
+  "macLinkFound": {
+    "message": "Linked with Sixkey for Mac $1."
+  },
+  "macLinkNoVault": {
+    "message": "Linked with Sixkey for Mac $1. It has no vault yet."
+  },
+  "macLinkNoApp": {
+    "message": "Sixkey for Mac does not answer on this computer."
+  },
+  "macLinkSent": {
+    "message": "Sent to Sixkey for Mac."
+  },
+  "macLinkNeedsPassword": {
+    "message": "Set a master password first: the app opens the vault only with it."
   }
 }

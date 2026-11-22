@@ -7,10 +7,13 @@ family, published and maintained by VIEW TECH LTD.
 
 [中文说明](README.zh-CN.md)
 
-> **Status (12 November 2026): pre-release. Nothing here has been published yet.**
+> **Status (22 November 2026): the extension is in the Chrome Web Store; the rest is unreleased.**
 >
-> - **The extension (`extension/`)** is the part meant to ship first, as a **local-only** authenticator. Its store
->   build makes no network requests and has no way to turn sync on. It is not in the Chrome Web Store yet.
+> - **The extension (`extension/`)** is in the
+>   [Chrome Web Store](https://chromewebstore.google.com/detail/bbfpkjnpfcddoagjiadebfafdfbckpho), as a **local-only**
+>   authenticator. Its store build makes no network requests and has no way to turn sync on. It can link with the Sixkey
+>   app on the same Mac (Settings › Advanced), through Chrome and on that computer only; Sixkey for Mac is not
+>   published yet.
 > - **The server sync is set aside.** The extension's sync client (its engine, its worker and transport, and the
 >   settings page's Sync section, sign-in by e-mail) is gone from every build, development builds included; it can be
 >   found in the history. The server and the API contract stay, tested, for a possible paid cloud. Devices of one person

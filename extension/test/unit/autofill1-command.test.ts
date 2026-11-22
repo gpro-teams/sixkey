@@ -115,6 +115,48 @@ describe("fillOnTab: what the shortcut does", () => {
     });
     return { out, calls: p.calls };
   };
+  it("locked and linked with Sixkey for Mac: the page looked at first, then the app's code filled; refused, the unlock", async () => {
+    const asked: string[] = [];
+    const answer = {
+      codes: [
+        { code: "654321", until: 60_000 },
+        { code: "111222", until: 90_000 },
+      ],
+      digits: 6 as const,
+      period: 30,
+      domains: ["example.com"],
+    };
+    const go = async (frames: unknown[], reply: typeof answer | null) => {
+      const p = page(frames);
+      vi.stubGlobal("chrome", {
+        windows: frontWindows,
+        tabs: { get: frontTab },
+        storage: openStorage(),
+        scripting: { executeScript: p.executeScript },
+        permissions: { contains: async () => true },
+      });
+      const out = await fillOnTab(TAB, async () => null, {
+        code: async () => ({ code: "000000" }), // the gate's: never asked while locked
+        now: () => 31_000,
+        off: NOT_OFF,
+        mac: async (host) => (asked.push(host), reply),
+      });
+      return { out, calls: p.calls };
+    };
+    const filled = await go(topFrame(), answer);
+    expect(filled.out).toBe("filled");
+    expect(asked).toEqual(["example.com"]);
+    expect(fillCalls(filled.calls)[0]!.args![0]).toBe("654321"); // the app's code for now, not the gate's
+    expect((await go(topFrame(), null)).out).toBe("locked"); // cancelled, Touch ID off, no app: as before
+    // no box on the page: the app is not asked (nobody touches for nothing)
+    asked.length = 0;
+    const none = [
+      { frameId: 0, documentId: "doc0", result: { o: "https://example.com", a: [], top: true, c: [], x: 0, z: 0 } },
+    ];
+    expect((await go(none, answer)).out).toBe("nobox");
+    expect(asked).toEqual([]);
+  });
+
   it("switched off: the page is not looked at; Sixkey opens at its Fill button (`ask`), which says so", async () => {
     const { out, calls } = await w1b({ entries: vault(entry()), off: true });
     expect(out).toBe("ask");

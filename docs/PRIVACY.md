@@ -187,6 +187,22 @@ new computer, your master password (or your recovery key) brings it back.
 - **On this computer:** `sk_csb_cfg` and `sk_csb_state` (above), in this browser profile only. None is part of a
   backup.
 
+## Sixkey for Mac (only if you turn the link on)
+
+Settings › Advanced › "Link with Sixkey for Mac" lets the Sixkey app on the same computer keep the same vault. Turning
+it on asks Chrome for the optional permission to communicate with a program on this computer ("native messaging"); it
+is off until you click, and "Unlink" removes it. While it is on, after each change the extension hands the app the vault
+as the backup in Chrome sync holds it: the encrypted accounts with the master-password and recovery-key wraps, never a
+device key and never earlier keys; the app opens it only with your master password or recovery key. The app answers
+with its own copy in the same form, and while Sixkey is unlocked the extension asks for it once a minute, to bring in
+what you changed on the Mac. While Sixkey is locked, its fill shortcut on a page asks the app for the code instead:
+the page's site name goes to the app, which asks for Touch ID and answers with the code of the one account registered
+for that site and the sites, digits and period the page's code box is checked against; never the account's name or
+key. If you set up a PIN, its record goes to the app too (the vault key under a key derived from your PIN, as this
+browser keeps it), so the same PIN opens the app, with its own five tries; when the PIN stops opening Sixkey here (turned
+off, five wrong tries, a key change), the app's copy is removed. All of it goes between this browser and the app through
+Chrome, on this computer only, and nothing goes over the network.
+
 ## What the extension does not do
 
 - No analytics, tracking, advertising, or crash reporting.

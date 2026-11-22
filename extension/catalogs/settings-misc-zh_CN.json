@@ -85,5 +85,35 @@
   },
   "afsOld": {
     "message": "验证码提示需要 Chrome 140 或更高版本。"
+  },
+  "macLinkTitle": {
+    "message": "Sixkey for Mac"
+  },
+  "macLinkBody": {
+    "message": "让这台 Mac 上的 Sixkey app 保持同一个保险库。每次改动后 Sixkey 会把加密的保险库发给 app，app 用你的主密码打开。"
+  },
+  "macLinkOn": {
+    "message": "与 Sixkey for Mac 联动"
+  },
+  "macLinkOff": {
+    "message": "取消联动"
+  },
+  "macLinkSendNow": {
+    "message": "立即发送"
+  },
+  "macLinkFound": {
+    "message": "已与 Sixkey for Mac $1 联动。"
+  },
+  "macLinkNoVault": {
+    "message": "已与 Sixkey for Mac $1 联动，它还没有保险库。"
+  },
+  "macLinkNoApp": {
+    "message": "这台电脑上的 Sixkey for Mac 没有响应。"
+  },
+  "macLinkSent": {
+    "message": "已发送给 Sixkey for Mac。"
+  },
+  "macLinkNeedsPassword": {
+    "message": "请先设置主密码：app 只能用主密码打开保险库。"
   }
 }

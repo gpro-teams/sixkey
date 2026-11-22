@@ -316,9 +316,10 @@ const PERMISSIONS = [
 // Optional permissions the user may grant later: its own allow-list, kept apart from the rules above (a later feature
 // that needs one, such as the YubiKey design's native messaging, adds it here deliberately).
 // `scripting`: autofill's, optional since wave 1b (above); every build must offer it, or autofill could never run.
+// `nativeMessaging`: the link with Sixkey for Mac (platform/mac-link.ts), asked only in the click that turns it on.
 // Never `identity` (no build signs in to Google or anything else; the identity rule below says so by name), and never
 // `management` since the plugin platform was removed (it was asked for plugins only; MANAGEMENT_CALLS above).
-const OPTIONAL_ALLOWED = ["clipboardRead", "clipboardWrite", "scripting"];
+const OPTIONAL_ALLOWED = ["clipboardRead", "clipboardWrite", "scripting", "nativeMessaging"];
 // The Google Drive backup through a separate plugin is gone (unwired in every build since CSB-3, its code removed since):
 // no build, the developer build included, names Google's API and OAuth endpoints or Drive (what that path called: Drive's
 // v3 API and its uploads, the token, its revocation and the scopes, all under googleapis.com; the sign-in window's

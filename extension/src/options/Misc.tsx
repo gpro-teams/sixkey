@@ -13,6 +13,15 @@ import {
   SITES_KEY,
 } from "../platform/autofill-sites";
 import { readDiag } from "../platform/diag";
+import {
+  askMacLink,
+  macHello,
+  macLinkOn,
+  mergeFromMac,
+  sendVaultToMac,
+  stopMacLink,
+  type MacSend,
+} from "../platform/mac-link";
 import { storageClosed } from "../platform/storage-access";
 import { formatDate, formatDateTime, t } from "../ui/i18n";
 import { Avatar } from "../ui/art";
@@ -380,6 +389,81 @@ export function Autofill(ctx: Ctx) {
   );
 }
 
+/**
+ * The link with Sixkey for Mac (platform/mac-link.ts): turned on by a click, which asks Chrome for the optional
+ * nativeMessaging permission first thing; then the vault is sent once, and whether the app answers is shown.
+ */
+function MacLink({ rt }: Pick<Ctx, "rt">) {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [line, setLine] = useState("");
+  const version = chrome.runtime.getManifest().version;
+  const said = (sent: MacSend): string =>
+    sent === "kept"
+      ? t("macLinkSent")
+      : sent === "not_sendable"
+        ? t("macLinkNeedsPassword")
+        : sent === "no_app"
+          ? t("macLinkNoApp")
+          : "";
+  const look = async () => {
+    const linked = await macLinkOn();
+    setOn(linked);
+    if (!linked) return setLine("");
+    const h = await macHello(version);
+    setLine(!h.found ? t("macLinkNoApp") : h.vault ? t("macLinkFound", h.app) : t("macLinkNoVault", h.app));
+  };
+  useEffect(() => void look(), []);
+  const send = async () => {
+    const { sent, mac } = await sendVaultToMac(() => rt.store.load(), `Sixkey ${version}`);
+    if (sent === "kept") {
+      await mergeFromMac(rt.service, mac); // the Mac's own changes come back with its answer
+      await look();
+    }
+    setLine(said(sent) || line);
+  };
+  const turnOn = () => {
+    const asked = askMacLink(); // first in the click: Chrome's prompt
+    void asked.then(async (granted) => {
+      if (!granted) return;
+      setOn(true);
+      await send();
+    });
+  };
+  return (
+    <div class="box" id="mac-link">
+      <BoxTitle icon="device">{t("macLinkTitle")}</BoxTitle>
+      <p class="muted">{t("macLinkBody")}</p>
+      {line && (
+        <p id="mac-link-line" role="status">
+          {line}
+        </p>
+      )}
+      <div class="row2">
+        {on ? (
+          <>
+            <button class="btn ghost" id="mac-link-send" onClick={() => void send()}>
+              {t("macLinkSendNow")}
+            </button>
+            <button
+              class="btn ghost"
+              id="mac-link-off"
+              onClick={() => void stopMacLink().then(() => (setOn(false), setLine("")))}
+            >
+              {t("macLinkOff")}
+            </button>
+          </>
+        ) : (
+          on === false && (
+            <button class="btn" id="mac-link-on" onClick={turnOn}>
+              {t("macLinkOn")}
+            </button>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** `onSetup`: starting over continues in the first-run wizard; nothing is erased until it finishes. */
 export function Advanced({ rt, status, onSetup }: Ctx & { onSetup: (s: SetupStart) => void }) {
   const [confirm, setConfirm] = useState("");
@@ -415,6 +499,7 @@ export function Advanced({ rt, status, onSetup }: Ctx & { onSetup: (s: SetupStar
             </button>
           </div>
         </div>
+        <MacLink rt={rt} />
       </div>
       {status.state === "lost" && (
         <div class="box danger">

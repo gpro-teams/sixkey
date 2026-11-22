@@ -214,7 +214,8 @@ describe("the platform module (src/platform/autofill.ts): three calls, one secre
     const callers = all.filter((f) => /import \{[^}]*\bscan\b[^}]*\} from "[./]+\/platform\/autofill"/.test(f.code));
     expect(callers.map((f) => f.path)).toEqual(["background/fill-command.ts", "popup/main/Fill.tsx"]);
     const [cmd, fill] = callers.map((f) => f.code);
-    expect([...cmd!.matchAll(/(?<![\w.])scan\(([^()]*)\)/g)].map((m) => m[1])).toEqual(["tab.id"]);
+    // its two looks (unlocked; locked, before asking Sixkey for Mac) both take the tab alone, no hint
+    expect([...cmd!.matchAll(/(?<![\w.])scan\(([^()]*)\)/g)].map((m) => m[1])).toEqual(["tab.id", "tabId"]);
     expect(cmd).not.toMatch(/site-rule|package-data|readRules/);
     // one look, the same function: its hint the page's rule, still being read
     expect(fill!.match(/(?<![\w.])scan\(/g)).toHaveLength(1);

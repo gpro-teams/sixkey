@@ -288,9 +288,9 @@ describe("check-dist: the manifest", () => {
       "an optional permission not on its own allow-list",
       (d) =>
         editJson(d, "manifest.json", (j) => {
-          (j.optional_permissions as string[]).push("nativeMessaging");
+          (j.optional_permissions as string[]).push("history");
         }),
-      /optional permission not allowed: nativeMessaging/,
+      /optional permission not allowed: history/,
     ],
     [
       // (a version below the server sync's minimum client version failed here too, until its client went: DV-0b)

@@ -33,6 +33,8 @@ import { workerPageChannel } from "../platform/content-page-worker";
 import { ChromeLocalKV } from "../platform/chrome-kv";
 import { createCsbWorker, CSB_RETRY_ALARM, CSB_SOON_ALARM, watchVault } from "../platform/csb-worker";
 import { webLock } from "../platform/locks";
+import { createMacLink, fillFromMac } from "../platform/mac-link";
+import { pinForMac } from "../platform/mac-pin";
 
 const rt = createRuntime();
 
@@ -54,8 +56,22 @@ const csb = createCsbWorker({
   note: (line) => note(line),
   ...(typeof __CSB_E2E__ === "boolean" && __CSB_E2E__ ? { soonMs: 5_000 } : {}),
 });
-// A commit moves the store's pointer, from whichever context made it: the debounce starts again (csb-worker.ts).
-watchVault(chrome.storage.local, () => csb.changed());
+// The link with Sixkey for Mac, when the person turned it on (platform/mac-link.ts): the vault sent a moment after a
+// commit, and the Mac's copy merged (what the host answers with, and a pull once a minute while unlocked).
+const macLink = createMacLink({
+  load: () => rt.store.load(),
+  app: `Sixkey ${chrome.runtime.getManifest().version}`,
+  service: rt.service,
+  alarms: chrome.alarms,
+  pin: () => pinForMac((also) => rt.store.loadView(also)),
+});
+void macLink.start();
+// A commit moves the store's pointer, from whichever context made it: the debounce starts again (csb-worker.ts), and
+// the Mac link's send.
+watchVault(chrome.storage.local, () => {
+  macLink.changed();
+  return csb.changed();
+});
 // (The server sync's worker, its bridge for pages, its transport and the toolbar badge it drew were here, in the dev and
 // e2e builds only; they went with that sync's client, OWNER-DECISIONS/25, DV-0b.)
 
@@ -216,6 +232,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     })();
   }
   if (alarm.name === ALARM_QUICK) void rescheduleQuickExpiry().catch(() => undefined);
+  macLink.alarm(alarm.name); // the Mac link's pull (sk-mac-pull); false for every other
   csb.alarm(alarm.name); // the backup in Chrome sync's debounce and retries (sk-csb-*); false for every other
 });
 
@@ -256,8 +273,9 @@ async function fillShortcut(given: Tab | undefined): Promise<void> {
     session: chrome.storage.session,
     chrome: chrome as unknown as FillChrome,
     opens: action.plan?.opens,
-    // the code only through the platform's gate, with the worker's vault key (MOD-PLATFORM §7.2 Option I item 1)
-    deps: { code: gatedCode(() => rt.service.grantKeys()), off: switchedOff },
+    // the code only through the platform's gate, with the worker's vault key (MOD-PLATFORM §7.2 Option I item 1); while
+    // locked, Sixkey for Mac's after its Touch ID, when linked (platform/mac-link.ts)
+    deps: { code: gatedCode(() => rt.service.grantKeys()), off: switchedOff, mac: fillFromMac },
   });
 }
 

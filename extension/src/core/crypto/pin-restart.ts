@@ -29,7 +29,9 @@
 //     the PIN alone in Settings › Security (pin-restart-admin.ts turnBackOn);
 //   - "pin": the PIN opens Sixkey with it, with QUICK_TRIES - fails tries left. No time limit (no 12 hours, no 14 days
 //     since 2026-10-30): the 5 tries are the PIN's one limit.
-// Not vault data (store.ts hasAnyData), never mirrored, synced, backed up or exported; turning sync off keeps it.
+// Not vault data (store.ts hasAnyData), never mirrored, synced, backed up or exported; turning sync off keeps it. While
+// the link with Sixkey for Mac is on, a copy goes to the app on this computer (platform/mac-pin.ts), so the same PIN opens
+// it, with its own 5 tries.
 import type { Keyring } from "./keyring";
 import { QUICK_TRIES, wrapsTag, type PinRecord } from "./pin";
 
