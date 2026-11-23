@@ -326,7 +326,7 @@ test("a backup holds what was added after the settings page opened", async () =>
   const { vault } = await openBackup(JSON.parse(readFileSync(await dl.path(), "utf8")), STRONG);
   expect(vault.entries.filter((e) => e.secret !== "")).toHaveLength(2);
 
-  await confirmExport(stale); // and again: every export asks
+  await confirmExport(stale, undefined, "#export-plain"); // and again: every export asks, each in its own form
   const [dl2] = await Promise.all([
     stale.waitForEvent("download"),
     (async () => {

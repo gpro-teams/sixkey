@@ -3,9 +3,17 @@ import { expect, type Download, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { openPopup, STRONG, type Profile } from "./harness";
 
-/** H3: type the master password again in Settings > Backup. The field is emptied after every export, so each one asks. */
-export async function confirmExport(opt: Page, password = STRONG): Promise<void> {
-  await opt.locator("#export-pw").fill(password);
+/** Each export's own master password field, in its form just above its button (by the button's selector). */
+export function fieldOf(button: string): string {
+  return { "#export-plain": "#export-pw-plain", "#export-subset": "#export-pw-subset" }[button] ?? "#export-pw";
+}
+
+/**
+ * H3: type the master password again in Settings > Backup, in the form of the export about to be saved (`button`: the
+ * Encrypted backup's by default). Each field is emptied after its export, so each one asks.
+ */
+export async function confirmExport(opt: Page, password = STRONG, button = "#export-encrypted"): Promise<void> {
+  await opt.locator(fieldOf(button)).fill(password);
 }
 
 /** The kinds in the local security log (sk_security_log, A3), oldest first. Read from any extension page. */

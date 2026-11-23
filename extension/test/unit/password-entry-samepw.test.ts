@@ -73,7 +73,7 @@ describe("sameMasterPassword: the subset file's password against the master pass
 
   it("the page uses it, not a bare NFKC comparison", () => {
     const s = readFileSync(join(__dirname, "../../src/options/Backup.tsx"), "utf8");
-    expect(s).toMatch(/const samePw = asks && subPw !== "" && sameMasterPassword\(subPw, exportPw\);/);
-    expect(s).not.toMatch(/subPw\.normalize\("NFKC"\) === exportPw\.normalize\("NFKC"\)/);
+    expect(s).toMatch(/const samePw = asks && subPw !== "" && sameMasterPassword\(subPw, masterPw\.subset\);/);
+    expect(s).not.toMatch(/subPw\.normalize\("NFKC"\) === masterPw\.subset\.normalize\("NFKC"\)/);
   });
 });

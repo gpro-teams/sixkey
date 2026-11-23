@@ -37,6 +37,8 @@ type Made = { name: string; text: string; type?: string; done: string };
 const CHANGED = new Error("changed");
 /** A typed master password is emptied after this long without typing (C6-REVIEW C6-6). */
 const EXPORT_PW_IDLE_MS = 60_000;
+/** Nothing typed in any export's master password field. */
+const NO_PW: Readonly<Record<ExportKind, string>> = { encrypted: "", plain: "", subset: "" };
 /** chrome.storage.session key that every lock bumps, from any page (src/platform/session.ts, RoutedSession.clear). */
 const LOCK_EPOCH_KEY = "sk_lock_epoch";
 
@@ -57,7 +59,12 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   const canRestore = status.state === "empty" || status.state === "lost";
   // H3: every export asks for the master password again. Only a Phase 0 device-key vault has none to ask for: it warns.
   const asks = !(status.state === "unlocked" && !status.passwordProtected);
-  const [exportPw, setExportPw] = useState("");
+  // H3 asks for the master password in each export's own form, just above its button (2026-11-23: one box above all
+  // three was missed by a user scrolled down to a form): what is typed in one is for that export only.
+  const [masterPw, setMasterPw] = useState<Readonly<Record<ExportKind, string>>>(NO_PW);
+  const typedFor = (kind: ExportKind) => (v: string) => setMasterPw((m) => ({ ...m, [kind]: v }));
+  /** One export's typed master password emptied, or (no kind) every one's. */
+  const dropMasterPw = (kind?: ExportKind) => setMasterPw((m) => (kind ? { ...m, [kind]: "" } : NO_PW));
   const [busy, setBusy] = useState(false);
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
@@ -81,12 +88,14 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   // it (its button, Escape) drops the file password typed or generated in it; the card's "另存加密备份" opens it
   const [encOpen, setEncOpen] = useState(false);
   const closeEncrypted = () => {
+    dropMasterPw("encrypted");
     setPw("");
     setPw2("");
     setStrength(null);
     setEncOpen(false);
   };
   const closeSubset = () => {
+    dropMasterPw("subset");
     setSubPw("");
     setSubPw2("");
     setSubStrength(null);
@@ -106,15 +115,19 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   const [openPw, setOpenPw] = useState("");
   const [opened, setOpened] = useState<{ vault: Vault; created: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const exportPwRef = useRef<HTMLInputElement>(null);
+  const pwRefs: Record<ExportKind, { current: HTMLInputElement | null }> = {
+    encrypted: useRef<HTMLInputElement>(null),
+    plain: useRef<HTMLInputElement>(null),
+    subset: useRef<HTMLInputElement>(null),
+  };
   const errorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView?.({ block: "nearest" });
   }, [error]);
-  // After a wrong master password, back to its field: once the field is enabled again (it is disabled while busy).
-  const [retype, setRetype] = useState(0);
+  // After a wrong master password, back to that export's field: once the field is enabled again (disabled while busy).
+  const [retype, setRetype] = useState<{ kind: ExportKind; n: number } | null>(null);
   useEffect(() => {
-    if (retype && !busy) exportPwRef.current?.focus();
+    if (retype && !busy) pwRefs[retype.kind].current?.focus();
   }, [retype, busy]);
   // One export at a time. A ref, set before the first await: clicks queued in the same task all see it (C6-4).
   const inFlight = useRef(false);
@@ -124,7 +137,7 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   // after a minute without typing.
   useEffect(() => {
     if (!unlocked) {
-      setExportPw("");
+      dropMasterPw();
       closeSubset();
     }
   }, [unlocked]);
@@ -137,18 +150,18 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
     setMsg((m) => (m === t("loadedIntoAdd") ? null : m));
   }, [open]);
   useEffect(() => {
-    if (!exportPw) return;
-    const idle = setTimeout(() => setExportPw(""), EXPORT_PW_IDLE_MS);
+    if (!Object.values(masterPw).some((v) => v !== "")) return;
+    const idle = setTimeout(() => dropMasterPw(), EXPORT_PW_IDLE_MS);
     return () => clearTimeout(idle);
-  }, [exportPw]);
+  }, [masterPw]);
   useEffect(() => {
     const hidden = () => {
       if (document.visibilityState !== "hidden") return;
-      setExportPw("");
+      dropMasterPw();
       closeSubset();
     };
     const locked = (changes: Record<string, chrome.storage.StorageChange>) => {
-      if (LOCK_EPOCH_KEY in changes) setExportPw("");
+      if (LOCK_EPOCH_KEY in changes) dropMasterPw();
     };
     const area = typeof chrome !== "undefined" ? chrome.storage?.session : undefined;
     document.addEventListener("visibilitychange", hidden);
@@ -176,11 +189,15 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   // The file and its password go to someone else: the master password must not be the one they learn. Compared as the
   // prompts take passwords (sameMasterPassword: NFKC, and a generated password's loose spellings), so neither a full-width
   // spelling from an IME nor the code without its hyphens gets through.
-  const samePw = asks && subPw !== "" && sameMasterPassword(subPw, exportPw);
-  const ready = unlocked && !busy && (!asks || exportPw !== "");
-  const canEncrypted = ready && strong(pw, pw2, strength);
-  const canPlain = ready && plainOk;
-  const canSubset = ready && count > 0 && strong(subPw, subPw2, subStrength) && !samePw;
+  const samePw = asks && subPw !== "" && sameMasterPassword(subPw, masterPw.subset);
+  const ready = (kind: ExportKind) => unlocked && !busy && (!asks || masterPw[kind] !== "");
+  const canEncrypted = ready("encrypted") && strong(pw, pw2, strength);
+  const canPlain = ready("plain") && plainOk;
+  const canSubset = ready("subset") && count > 0 && strong(subPw, subPw2, subStrength) && !samePw;
+  // What an export button waits for before its own fields, said beside it (ExportWhy): grey and silent, it stopped a
+  // user twice (2026-11-23), scrolled down past the lock.
+  const why = (kind: ExportKind) =>
+    status.state === "locked" ? "locked" : unlocked && asks && masterPw[kind] === "" ? "password" : null;
 
   /** Whether the export may go ahead: the master password typed for it, checked by the service, which records a wrong one. */
   async function confirmed(typed: string): Promise<boolean> {
@@ -207,17 +224,17 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
    *   5. the file saved;
    *   6. "Last backup" set, for the full exports only. The file is saved by then: a failure here is noted in the
    *      diagnostics log and does not turn the export into an error (C6-5).
-   * The field is emptied at the start, so the next export asks again. Resolves true once the file is saved.
+   * Its own field is emptied at the start, so the next export asks again. Resolves true once the file is saved.
    */
   async function exportWith(kind: ExportKind, make: (vault: Vault) => Promise<Made>): Promise<boolean> {
-    const typed = exportPw;
+    const typed = masterPw[kind];
     if (inFlight.current || !unlocked || (asks && typed === "")) return false; // nothing typed is no guess, and never a password
     inFlight.current = true;
     setBusy(true);
     setError(null);
     setMsg(null);
-    setExportPw("");
-    setRetype(0);
+    dropMasterPw(kind);
+    setRetype(null);
     try {
       if (!(await confirmed(typed))) return false;
       const out = await make((await rt.service.read()).vault);
@@ -233,7 +250,7 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
         setError(t("expSubChanged"));
         await reload();
       } else setError(errText(e));
-      if (e instanceof ServiceError && e.code === "wrong_secret") setRetype((n) => n + 1);
+      if (e instanceof ServiceError && e.code === "wrong_secret") setRetype((r) => ({ kind, n: (r?.n ?? 0) + 1 }));
       return false;
     } finally {
       inFlight.current = false;
@@ -413,28 +430,12 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
         />
       )}
 
-      {unlocked &&
-        (asks ? (
-          <div class="box exp-pw" id="export-confirm">
-            <BoxTitle icon="lock">{t("lockedTitle")}</BoxTitle>
-            <p class="muted">{t("expPwLead")}</p>
-            <MasterField
-              id="export-pw"
-              label={t("passwordLabel")}
-              value={exportPw}
-              onValue={setExportPw}
-              rt={rt}
-              autocomplete="off"
-              disabled={busy}
-              inputRef={exportPwRef}
-            />
-          </div>
-        ) : (
-          <div class="box warn" id="export-nopw">
-            <BoxTitle icon="shieldAlert">{t("deviceOnlyTitle")}</BoxTitle>
-            <p>{t("expNoPw")}</p>
-          </div>
-        ))}
+      {unlocked && !asks && (
+        <div class="box warn" id="export-nopw">
+          <BoxTitle icon="shieldAlert">{t("deviceOnlyTitle")}</BoxTitle>
+          <p>{t("expNoPw")}</p>
+        </div>
+      )}
 
       <Fold
         id="encrypted"
@@ -454,11 +455,26 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
             onConfirm={setPw2}
             onStrength={setStrength}
           />
+          {unlocked && asks && (
+            <div class="exp-mpw">
+              <MasterField
+                id="export-pw"
+                label={t("passwordLabel")}
+                value={masterPw.encrypted}
+                onValue={typedFor("encrypted")}
+                rt={rt}
+                autocomplete="off"
+                disabled={busy}
+                inputRef={pwRefs.encrypted}
+              />
+            </div>
+          )}
           <div class="row2">
             <button id="export-encrypted" class="btn" type="submit" disabled={!canEncrypted}>
               <Icon name="download" size={16} />
               {t("exportEncrypted")}
             </button>
+            <ExportWhy why={why("encrypted")} />
           </div>
         </form>
       </Fold>
@@ -486,6 +502,20 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
             onConfirm={setSubPw2}
             onStrength={setSubStrength}
           />
+          {unlocked && asks && (
+            <div class="exp-mpw">
+              <MasterField
+                id="export-pw-subset"
+                label={t("passwordLabel")}
+                value={masterPw.subset}
+                onValue={typedFor("subset")}
+                rt={rt}
+                autocomplete="off"
+                disabled={busy}
+                inputRef={pwRefs.subset}
+              />
+            </div>
+          )}
           {samePw && (
             <div class="err" id="subset-same">
               <Icon name="alert" size={15} />
@@ -497,6 +527,7 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
               <Icon name="download" size={16} />
               {t("expSubSave", count)}
             </button>
+            <ExportWhy why={why("subset")} />
           </div>
         </form>
       </Fold>
@@ -514,11 +545,26 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
             />{" "}
             {t("exportPlainCheck")}
           </label>
+          {unlocked && asks && (
+            <div class="exp-mpw">
+              <MasterField
+                id="export-pw-plain"
+                label={t("passwordLabel")}
+                value={masterPw.plain}
+                onValue={typedFor("plain")}
+                rt={rt}
+                autocomplete="off"
+                disabled={busy}
+                inputRef={pwRefs.plain}
+              />
+            </div>
+          )}
           <div class="row2">
             <button id="export-plain" class="btn ghost" disabled={!canPlain} onClick={exportPlain}>
               <Icon name="download" size={16} />
               {t("exportPlain")}
             </button>
+            <ExportWhy why={why("plain")} />
           </div>
         </div>
 
@@ -601,4 +647,19 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
 /** A file password the pages accept: typed twice the same, and strong by the page's estimate (the service has its floor). */
 function strong(pw: string, pw2: string, s: Strength | null): boolean {
   return pw.length > 0 && pw === pw2 && s?.ok === true;
+}
+
+/**
+ * Beside an export button: why it is grey before its own fields count. Locked (the page's top unlocks), or the master
+ * password every export asks for (H3) not typed in the field just above; nothing otherwise, as the form's own fields say
+ * what they lack.
+ */
+function ExportWhy({ why }: { why: "locked" | "password" | null }) {
+  if (!why) return null;
+  return (
+    <span class="muted exp-why">
+      <Icon name="lock" size={14} />
+      {t(why === "locked" ? "unlockToManage" : "expPwLead")}
+    </span>
+  );
 }

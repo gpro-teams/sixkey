@@ -589,7 +589,7 @@ describe("source rules: the hint decides nothing, and is kept in chrome.storage.
       ["options/PinBox.tsx", ["pin-pw"]],
       ["options/Misc.tsx", ["trash-pw"]],
       ["options/SecurityCard.tsx", ["sec-log-pw"]],
-      ["options/Backup.tsx", ["export-pw"]],
+      ["options/Backup.tsx", ["export-pw", "export-pw-subset", "export-pw-plain"]],
     ] as const) {
       const s = read(f);
       for (const id of ids) expect(s, `${f} ${id}`).toMatch(new RegExp(`<MasterField\\s+id="${id}"`));
