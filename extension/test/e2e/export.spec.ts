@@ -20,7 +20,15 @@ import {
   STRONG,
   writeTmp,
 } from "./harness";
-import { confirmExport, countDownloads, downloadText, editInPopup, securityKinds, vaultIdOf } from "./export-helpers";
+import {
+  confirmExport,
+  countDownloads,
+  downloadText,
+  editInPopup,
+  fieldOf,
+  securityKinds,
+  vaultIdOf,
+} from "./export-helpers";
 
 const DROPBOX_URI = "otpauth://totp/Dropbox:me@example.com?secret=MFRGGZDFMZTWQ2LK&issuer=Dropbox";
 const FILE_PW = "Lantern#Orbit7!Tulip2$Mesa"; // a file's own password, not the master password
@@ -60,7 +68,7 @@ test("every export asks for the master password: none without it, a wrong one is
 
   // unlocked, every other field filled: still no export until the master password is typed again
   await fillAllButTheMasterPassword(opt);
-  await expect(opt.locator("#export-pw")).toHaveValue("");
+  for (const b of BUTTONS) await expect(opt.locator(fieldOf(b)), b).toHaveValue(""); // each export's own field
   for (const b of BUTTONS) await expect(opt.locator(b), b).toBeDisabled();
   await opt.locator("#backup-pw2").press("Enter"); // nor by Enter in a form (a disabled submit button blocks it)
   await opt.locator("#subset-pw2").press("Enter");
@@ -71,14 +79,14 @@ test("every export asks for the master password: none without it, a wrong one is
   // a wrong one, on each of the three: refused, nothing saved, one more wrong password in the security log
   let failed = 0;
   for (const b of BUTTONS) {
-    await confirmExport(opt, "not my master password 42");
+    await confirmExport(opt, "not my master password 42", b);
     await expect(opt.locator(b), b).toBeEnabled();
     await opt.locator(b).click();
     await expect(opt.locator("#backup-error"), b).toContainText(/Wrong password|密码错误/);
     failed++;
     await expect.poll(() => failures(opt), { message: b }).toBe(failed);
-    await expect(opt.locator("#export-pw")).toHaveValue(""); // emptied: the next try is typed again
-    await expect(opt.locator("#export-pw")).toBeFocused();
+    await expect(opt.locator(fieldOf(b))).toHaveValue(""); // emptied: the next try is typed again
+    await expect(opt.locator(fieldOf(b))).toBeFocused(); // that export's field, not another's
     await expect(opt.locator(b)).toBeDisabled();
   }
   expect(downloads.n).toBe(0);
@@ -91,12 +99,12 @@ test("every export asks for the master password: none without it, a wrong one is
     ["#export-subset", "export_subset"],
   ] as const) {
     await fillAllButTheMasterPassword(opt);
-    await confirmExport(opt);
+    await confirmExport(opt, STRONG, b);
     const text = await downloadText(opt, () => opt.locator(b).click());
     expect(text.length, b).toBeGreaterThan(10);
     await expect(opt.locator("#backup-msg")).toBeVisible();
     await expect.poll(() => securityKinds(opt), { message: b }).toContain(kind);
-    await expect(opt.locator("#export-pw")).toHaveValue("");
+    if (b !== "#export-subset") await expect(opt.locator(fieldOf(b))).toHaveValue(""); // (the subset's box closed itself)
     for (const x of BUTTONS) {
       // the selected-accounts box closes itself after its own export (and drops its file password): opened again, its
       // button is disabled like the others
@@ -145,7 +153,7 @@ test("export selected accounts: by group or one by one, only those are in the fi
   await openFold(opt, "subset");
   await opt.locator("#subset-pw").fill(STRONG);
   await opt.locator("#subset-pw2").fill(STRONG);
-  await confirmExport(opt);
+  await confirmExport(opt, STRONG, "#export-subset");
   await expect(opt.locator("#subset-same")).toBeVisible();
   await expect(opt.locator("#export-subset")).toBeDisabled();
   await openFold(opt, "subset");
@@ -216,7 +224,7 @@ test("a vault without a master password (Phase 0) warns, then exports without as
   const opt = await openOptions(p, "#backup");
   await openFold(opt, "subset");
   await expect(opt.locator("#export-nopw")).toBeVisible();
-  await expect(opt.locator("#export-pw")).toHaveCount(0);
+  for (const b of BUTTONS) await expect(opt.locator(fieldOf(b)), b).toHaveCount(0);
   await opt.locator("#plain-ok").check();
   const text = await downloadText(opt, () => opt.locator("#export-plain").click());
   expect(text.split("\n").filter(Boolean)).toHaveLength(2);
@@ -248,7 +256,7 @@ test("a device-key page whose vault got a master password from another page mean
   // the stale page still shows no password field
   await stale.locator("#plain-ok").check();
   await stale.locator("#export-plain").click();
-  await expect(stale.locator("#export-pw")).toBeVisible(); // reloaded: it asks now
+  await expect(stale.locator(fieldOf("#export-plain"))).toBeVisible(); // reloaded: it asks now
   expect(downloads.n).toBe(0);
   expect((await securityKinds(stale)).filter((k) => k.startsWith("export_"))).toEqual([]);
   expect(await failures(stale)).toBe(0);
@@ -259,12 +267,12 @@ test("the master password, right or wrong, lands nowhere: storage, page storage,
   await addByPaste(p, GITHUB_URI);
   const opt = await openOptions(p, "#backup");
   await openFold(opt, "subset");
-  await confirmExport(opt, WRONG);
+  await confirmExport(opt, WRONG, "#export-plain");
   await opt.locator("#plain-ok").check();
   await opt.locator("#export-plain").click();
   await expect(opt.locator("#backup-error")).toBeVisible();
-  await confirmExport(opt);
-  expect(await opt.locator("#export-pw").getAttribute("value")).toBeNull(); // a property, never an attribute
+  await confirmExport(opt, STRONG, "#export-plain");
+  expect(await opt.locator(fieldOf("#export-plain")).getAttribute("value")).toBeNull(); // a property, never an attribute
   await downloadText(opt, () => opt.locator("#export-plain").click());
   const dump = await opt.evaluate(async () =>
     JSON.stringify({
@@ -299,19 +307,19 @@ test("one export at a time: clicks queued in one task run one check, one file, o
       b.click();
     });
   await opt.locator("#plain-ok").check();
-  await confirmExport(opt, WRONG);
+  await confirmExport(opt, WRONG, "#export-plain");
   await thrice();
   await expect(opt.locator("#backup-error")).toBeVisible();
   await opt.waitForTimeout(800);
   expect(await failures(opt)).toBe(1); // one wrong password, counted once
-  await confirmExport(opt);
+  await confirmExport(opt, STRONG, "#export-plain");
   await thrice();
   await expect(opt.locator("#backup-msg")).toBeVisible();
   await opt.waitForTimeout(800);
   expect(downloads.n).toBe(1);
   expect((await securityKinds(opt)).filter((k) => k === "export_plain")).toHaveLength(1);
   // a real double click: two tasks, the second lands on a disabled button
-  await confirmExport(opt);
+  await confirmExport(opt, STRONG, "#export-plain");
   await opt.locator("#plain-ok").check();
   await opt.locator("#export-plain").dblclick();
   await opt.waitForTimeout(800);
@@ -338,8 +346,8 @@ test("Enter cannot submit what the button refuses: the file password is the mast
   const submits = () => opt.evaluate(() => (window as unknown as { submits: number }).submits);
   await opt.locator(".sub-item", { hasText: "GitHub" }).locator("input").check();
   for (const same of [STRONG, fullWidth(STRONG)]) {
-    await confirmExport(opt);
     await openFold(opt, "subset");
+    await confirmExport(opt, STRONG, "#export-subset");
     await opt.locator("#subset-pw").fill(same);
     await opt.locator("#subset-pw2").fill(same);
     await expect(opt.locator("#subset-same")).toBeVisible(); // NFKC: the full-width spelling is the same password
@@ -347,6 +355,7 @@ test("Enter cannot submit what the button refuses: the file password is the mast
     await opt.locator("#subset-pw2").press("Enter");
   }
   await openFold(opt, "encrypted");
+  await confirmExport(opt); // its own form's master password: what keeps the button grey below is the two that differ
   await opt.locator("#backup-pw").fill(FILE_PW);
   await opt.locator("#backup-pw2").fill(`${FILE_PW}x`);
   await expect(opt.locator("#export-encrypted")).toBeDisabled();
@@ -370,35 +379,37 @@ test("a typed master password does not wait in the field: emptied after a minute
   const opt = await p.ctx.newPage();
   await opt.clock.install();
   await opt.goto(`chrome-extension://${p.id}/options/index.html#backup`);
+  // the plain list's own field: in view without opening anything (the others' are in their folds, and go the same way)
+  const PLAIN_PW = fieldOf("#export-plain");
   // a minute without typing; typing again starts the minute again (runFor: every timer in between fires in order)
-  await expect(opt.locator("#export-pw")).toBeVisible();
-  await confirmExport(opt);
+  await expect(opt.locator(PLAIN_PW)).toBeVisible();
+  await confirmExport(opt, STRONG, "#export-plain");
   await opt.clock.runFor(40_000);
-  await confirmExport(opt, `${STRONG}!`);
+  await confirmExport(opt, `${STRONG}!`, "#export-plain");
   await opt.clock.runFor(40_000);
-  await expect(opt.locator("#export-pw")).toHaveValue(`${STRONG}!`);
+  await expect(opt.locator(PLAIN_PW)).toHaveValue(`${STRONG}!`);
   await opt.clock.runFor(25_000);
-  await expect(opt.locator("#export-pw")).toHaveValue("");
+  await expect(opt.locator(PLAIN_PW)).toHaveValue("");
   // the tab is hidden
-  await confirmExport(opt);
+  await confirmExport(opt, STRONG, "#export-plain");
   await opt.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
     document.dispatchEvent(new Event("visibilitychange"));
     Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
   });
-  await expect(opt.locator("#export-pw")).toHaveValue("");
+  await expect(opt.locator(PLAIN_PW)).toHaveValue("");
   // Sixkey is locked from the popup (this page is not reloaded: it learns of the lock from session storage). The field
   // goes with the rest of the unlocked page, often before a test can read it (reading it then was a race); unlocked
   // again on this page, it is back and empty.
-  await confirmExport(opt);
+  await confirmExport(opt, STRONG, "#export-plain");
   const pop = await openPopup(p);
   await pop.getByRole("button", { name: /^(Lock|锁定)$/ }).click();
   await expect(opt.locator("#unlock-pw")).toBeVisible();
-  await expect(opt.locator("#export-pw")).toHaveCount(0);
+  await expect(opt.locator(PLAIN_PW)).toHaveCount(0);
   await opt.locator("#unlock-pw").fill(STRONG);
   await opt.locator("#unlock-btn").click();
-  await expect(opt.locator("#export-pw")).toBeVisible();
-  await expect(opt.locator("#export-pw")).toHaveValue("");
+  await expect(opt.locator(PLAIN_PW)).toBeVisible();
+  await expect(opt.locator(PLAIN_PW)).toHaveValue("");
 });
 
 // KNOWN OPEN: C6-REVIEW C6-1 (High), not C6's to fix. Settings › Security › "Create new recovery code" asks for no

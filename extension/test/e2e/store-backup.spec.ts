@@ -105,7 +105,7 @@ test("store build: no cloud backup anywhere; 立即备份 opens Settings › Bac
   const [opt] = await Promise.all([p.ctx.waitForEvent("page"), now.click()]);
   await opt.waitForLoadState();
   expect(new URL(opt.url()).hash).toBe("#backup");
-  await expect(opt.locator("#export-pw")).toBeVisible();
+  await expect(opt.locator("#export-pw-plain")).toBeVisible(); // unlocked: the plain list's form asks for the master password
   // the backup in Chrome sync's card in its place, off (first run's box was cleared), and none of Google Drive's
   await expect(opt.locator("#csb-card")).toHaveAttribute("data-state", "off");
   await expect(opt.locator("#csb-card")).not.toContainText(/Drive|云端硬盘/);

@@ -145,21 +145,45 @@ describe("Backup: Encrypted backup", () => {
     expect(byId("export-encrypted")).not.toBeNull();
   });
 
-  it("closing it drops the file password; so does Escape", () => {
+  it("closing it drops the file password and the master password typed in it; so does Escape", () => {
     put(unlocked);
     click("encrypted-toggle");
     typeInto("backup-pw", "file password typed here");
     typeInto("backup-pw2", "file password typed here");
+    typeInto("export-pw", "master password typed here");
     click("encrypted-toggle");
     expect(byId("backup-pw")).toBeNull();
     click("encrypted-toggle");
     expect(byId("backup-pw")!.value).toBe("");
     expect(byId("backup-pw2")!.value).toBe("");
+    expect(byId("export-pw")!.value).toBe("");
     typeInto("backup-pw", "file password typed again");
     escape("encrypted-body");
     expect(byId("backup-pw")).toBeNull();
     click("encrypted-toggle");
     expect(byId("backup-pw")!.value).toBe("");
+  });
+
+  // grey and silent, the export buttons stopped a user twice (2026-11-23): each export asks for the master password in
+  // its own form, just above its button, and beside the button says what it waits for: the lock, then that field
+  it("each export asks in its own form; a grey button says what it waits for: the lock, then the field above", () => {
+    const beside = (id: string) => byId(id)!.parentNode!.textContent;
+    const ASKS = "Every export asks for your master password again";
+    put(locked);
+    click("encrypted-toggle");
+    expect(byId("export-pw")).toBeNull();
+    expect(byId("export-pw-plain")).toBeNull();
+    for (const id of ["export-encrypted", "export-plain"]) expect(beside(id)).toContain("Unlock to manage this.");
+    put(unlocked);
+    expect(byId("export-confirm")).toBeNull(); // no box above the exports any more
+    for (const id of ["export-encrypted", "export-plain"]) {
+      expect(beside(id)).not.toContain("Unlock");
+      expect(beside(id)).toContain(ASKS);
+    }
+    typeInto("export-pw", "the master password"); // the encrypted backup's own field...
+    expect(beside("export-encrypted")).not.toContain(ASKS);
+    expect(byId("export-pw-plain")!.value).toBe(""); // ...is not the plain list's
+    expect(beside("export-plain")).toContain(ASKS);
   });
 });
 

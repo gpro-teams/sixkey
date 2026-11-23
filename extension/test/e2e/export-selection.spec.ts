@@ -38,8 +38,8 @@ async function tick(opt: Page, ...issuers: string[]) {
   for (const i of issuers) await opt.locator(".sub-item", { hasText: i }).locator("input").check();
 }
 async function readyToSave(opt: Page) {
-  await confirmExport(opt);
   await openFold(opt, "subset");
+  await confirmExport(opt, undefined, "#export-subset");
   await opt.locator("#subset-pw").fill(FILE_PW);
   await opt.locator("#subset-pw2").fill(FILE_PW);
 }

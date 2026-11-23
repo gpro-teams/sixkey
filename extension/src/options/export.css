@@ -1,10 +1,8 @@
-/* Settings page > Backup: the master password asked before every export, and the "Export selected accounts" picker
+/* Settings page > Backup: the master password asked in every export's form, and the "Export selected accounts" picker
    (Backup.tsx, SubsetPicker.tsx; PHASE0X-PLAN C6). Built on the options.css boxes and the styles.css tokens only, so
    it has no colours of its own and nothing to restate for dark mode. */
-.exp-pw {
-  border-color: var(--brass-line);
-}
-.exp-pw .field {
+/* the master password each export asks for, in its own form just above its button */
+.exp-mpw .field {
   max-width: 360px;
 }
 
@@ -98,4 +96,12 @@
   border-color: var(--accent);
   background-image: linear-gradient(var(--accent), var(--accent));
   background-size: 10px 2.5px;
+}
+
+/* Beside a grey export button: what it waits for (Backup.tsx ExportWhy). */
+.exp-why {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
 }
