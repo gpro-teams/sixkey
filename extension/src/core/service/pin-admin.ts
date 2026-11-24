@@ -21,7 +21,7 @@ import {
   setAsideRestart,
   writeRestart,
 } from "./pin-restart-admin";
-import type { VaultService } from "./service";
+import type { Secret, VaultService } from "./service";
 import { ServiceError } from "./service-error";
 import { profileOf } from "./types";
 
@@ -65,7 +65,13 @@ export class PinAdmin {
    * openWithPassword), returning the vault key it opens. A wrong one is recorded once (unlock_failed) and refused
    * (wrong_secret); "" is a typo, as at the lock screen (empty_password). The PIN's tries are not touched.
    */
-  private async passwordVk(keyring: Keyring, password: string): Promise<Vk> {
+  private async passwordVk(keyring: Keyring, password: Secret): Promise<Vk> {
+    // the current PIN typed again (OWNER-DECISIONS/26): checked by confirmSecret (its tries the lock screens'), and the
+    // key is the session's, as this page is unlocked
+    if (typeof password !== "string") {
+      await this.s.confirmSecret(password);
+      return this.s["requireVk"](keyring);
+    }
     let vk: Vk | null = null;
     try {
       vk = (await openWithPassword(keyring, password)).vk;
@@ -107,7 +113,7 @@ export class PinAdmin {
    *      offered (pin-restart.ts: "paused");
    *   4. pin_set recorded.
    */
-  async setPin(password: string, input: string): Promise<void> {
+  async setPin(password: Secret, input: string): Promise<void> {
     const check = checkPinPolicy(input);
     if (!check.ok) throw new ServiceError("bad_pin");
     if (profileOf(await this.s["settings"].get()) === "shared") throw new ServiceError("quick_off");
@@ -135,7 +141,7 @@ export class PinAdmin {
    * again; its PIN waits for the master password), never a removed PIN that works. pin_removed is recorded when there was
    * one.
    */
-  async removePin(password: string): Promise<void> {
+  async removePin(password: Secret): Promise<void> {
     const keyring = await this.target();
     await this.passwordVk(keyring, password);
     const had = (await this.pins!.read()) !== null;

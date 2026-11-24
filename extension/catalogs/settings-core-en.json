@@ -315,7 +315,7 @@
     "message": "Change shortcut"
   },
   "expPwLead": {
-    "message": "Every export asks for your master password again, even while Sixkey is unlocked."
+    "message": "Every export asks you to confirm again, even while Sixkey is unlocked: with your PIN, or your master password when there is no PIN."
   },
   "secLogTitle": {
     "message": "Security record"
@@ -389,6 +389,12 @@
   "pwUseAnyway": {
     "message": "Use anyway"
   },
+  "pwWeakWhyFile": {
+    "message": "Someone who gets this file can guess offline, with no limit on tries: one graphics card finds a password this strong in about $1, and more cards are faster."
+  },
+  "lockPinWaiting": {
+    "message": "The PIN works again once you type the master password."
+  },
   "pwGroup": {
     "message": "$1, group $2 of $3"
   },
@@ -431,11 +437,23 @@
   "pinLabel": {
     "message": "PIN"
   },
+  "pinWrong": {
+    "message": "Wrong PIN. Tries left: $1."
+  },
+  "pinExhausted": {
+    "message": "Too many wrong PINs. Enter the master password."
+  },
+  "useMasterPassword": {
+    "message": "Use master password"
+  },
+  "usePin": {
+    "message": "Use PIN"
+  },
   "pinFormat": {
     "message": "Use 4 to 8 digits."
   },
   "eraseNeedsPassword": {
-    "message": "Deleting for good cannot be undone, so it asks for your master password."
+    "message": "Deleting for good cannot be undone, so it asks for your PIN, or your master password when there is no PIN."
   },
   "railCsb": {
     "message": "Chrome Sync"

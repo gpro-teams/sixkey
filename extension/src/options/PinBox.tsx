@@ -15,7 +15,7 @@ import { PIN_KEY, RESTART_KEY } from "../core/service/pin-store";
 import { quickChanged } from "../platform/session";
 import { t } from "../ui/i18n";
 import { Icon } from "./icons";
-import { MasterField } from "./MasterField";
+import { ConfirmField, useConfirm } from "./ConfirmField";
 import { errText, Fold, type Ctx } from "./shared";
 
 /** The PIN's lazy part: what it costs, and "Turn back on" (loaded when the PIN is available here). */
@@ -33,7 +33,10 @@ function pinError(e: unknown): string {
 export function PinBox({ rt, status, reload }: Ctx) {
   const admin = useMemo(() => new PinAdmin(rt.service), [rt]);
   const [st, setSt] = useState<QuickState | null>(null);
-  const [pw, setPw] = useState("");
+  // the current PIN or the master password (OWNER-DECISIONS/26: a PIN set changes with the PIN it replaces; the first
+  // one, or after its 5th wrong try, with the master password)
+  const confirm = useConfirm(rt, status.state === "unlocked");
+  const pw = confirm.value;
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,7 +45,7 @@ export function PinBox({ rt, status, reload }: Ctx) {
   const [open, setOpen] = useState(false);
   const [Box, setBox] = useState<RestartBox | null>(null);
   const wipe = () => {
-    setPw("");
+    confirm.setValue("");
     setPin("");
     setPin2("");
   };
@@ -101,9 +104,10 @@ export function PinBox({ rt, status, reload }: Ctx) {
       setOpen(false);
       setInfo(done);
     } catch (e) {
-      setError(pinError(e));
+      setError(confirm.refused(e) ?? pinError(e));
     } finally {
       setBusy(false);
+      confirm.reread(); // the PIN set, changed or removed: what confirms the next change
       await refresh();
     }
   }
@@ -201,10 +205,10 @@ export function PinBox({ rt, status, reload }: Ctx) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canSet) void run(() => admin.setPin(pw, pin), t("pinSaved"));
+                if (canSet) void run(() => admin.setPin(confirm.secret(), pin), t("pinSaved"));
               }}
             >
-              <MasterField id="pin-pw" label={t("passwordLabel")} value={pw} onValue={setPw} rt={rt} />
+              <ConfirmField c={confirm} id="pin-pw" label={t("passwordLabel")} rt={rt} />
               <div class="row2">
                 <div class="field">
                   <label for="pin-new">{t("pinNew")}</label>
@@ -244,7 +248,7 @@ export function PinBox({ rt, status, reload }: Ctx) {
                     class="btn ghost"
                     type="button"
                     disabled={busy || !pw}
-                    onClick={() => void run(() => admin.removePin(pw), t("pinRemoved"))}
+                    onClick={() => void run(() => admin.removePin(confirm.secret()), t("pinRemoved"))}
                   >
                     {t("pinRemove")}
                   </button>

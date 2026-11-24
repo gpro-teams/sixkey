@@ -315,7 +315,7 @@
     "message": "修改快捷键"
   },
   "expPwLead": {
-    "message": "每次导出都要重新输入主密码，即使 Sixkey 已解锁。"
+    "message": "每次导出都要再确认一次，即使 Sixkey 已解锁：输 PIN；没有 PIN 时输主密码。"
   },
   "secLogTitle": {
     "message": "安全记录"
@@ -389,6 +389,12 @@
   "pwUseAnyway": {
     "message": "仍然使用"
   },
+  "pwWeakWhyFile": {
+    "message": "拿到这个文件的人可以离线猜，不限次数：一张显卡大约 $1 就能猜出这种强度的密码，显卡越多越快。"
+  },
+  "lockPinWaiting": {
+    "message": "输一次主密码后，PIN 就能重新使用。"
+  },
   "pwGroup": {
     "message": "$1，第 $2 组，共 $3 组"
   },
@@ -431,11 +437,23 @@
   "pinLabel": {
     "message": "PIN"
   },
+  "pinWrong": {
+    "message": "PIN 不对，还可以再试 $1 次。"
+  },
+  "pinExhausted": {
+    "message": "PIN 输错次数过多，请输入主密码。"
+  },
+  "useMasterPassword": {
+    "message": "使用主密码"
+  },
+  "usePin": {
+    "message": "使用 PIN"
+  },
   "pinFormat": {
     "message": "请输入 4 到 8 位数字。"
   },
   "eraseNeedsPassword": {
-    "message": "永久删除无法撤销，所以需要输入主密码。"
+    "message": "永久删除无法撤销，所以要再确认一次：输 PIN；没有 PIN 时输主密码。"
   },
   "railCsb": {
     "message": "Chrome 同步"

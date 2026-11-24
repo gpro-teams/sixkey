@@ -13,7 +13,7 @@ import { FAILURES, SECURITY_LOG_KEY, type SecurityEntry, type SecurityLogView } 
 import { KEYS } from "../core/storage/format";
 import { formatDateTime, getLang, t } from "../ui/i18n";
 import { Icon } from "./icons";
-import { MasterField } from "./MasterField";
+import { ConfirmField, useConfirm } from "./ConfirmField";
 import { BoxTitle, errText, type Ctx } from "./shared";
 import "./securitycard.css";
 
@@ -76,7 +76,8 @@ export function SecurityCard({ rt, status }: Ctx) {
   const [log, setLog] = useState<SecurityLogView | "unread" | null>(null);
   const [stored, setStored] = useState<Stored | null>(null);
   const [asking, setAsking] = useState(false);
-  const [pw, setPw] = useState("");
+  // the PIN too while unlocked (OWNER-DECISIONS/26); locked, the master password (a PIN opens nothing here then)
+  const confirm = useConfirm(rt, status.state === "unlocked");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cleared, setCleared] = useState(false);
@@ -132,7 +133,7 @@ export function SecurityCard({ rt, status }: Ctx) {
   const device = status.state === "unlocked" && !status.passwordProtected; // a locked vault always has a password
   const close = () => {
     setAsking(false);
-    setPw("");
+    confirm.setValue("");
     setError(null);
   };
 
@@ -141,11 +142,11 @@ export function SecurityCard({ rt, status }: Ctx) {
     setBusy(true);
     setError(null);
     try {
-      await rt.service.clearSecurityLog(device ? "" : pw);
+      await rt.service.clearSecurityLog(device ? "" : confirm.secret());
       close();
       setCleared(true);
     } catch (e) {
-      setError(errText(e)); // a wrong password: refused, and the record now lists it
+      setError(confirm.refused(e) ?? errText(e)); // a wrong password or PIN: refused, and the record now lists it
     } finally {
       setBusy(false);
       void readLog();
@@ -198,14 +199,7 @@ export function SecurityCard({ rt, status }: Ctx) {
             {!device && (
               <>
                 <p class="muted">{t("secLogClearLead")}</p>
-                <MasterField
-                  id="sec-log-pw"
-                  label={t("passwordLabel")}
-                  value={pw}
-                  onValue={setPw}
-                  rt={rt}
-                  inputRef={pwRef}
-                />
+                <ConfirmField c={confirm} id="sec-log-pw" label={t("passwordLabel")} rt={rt} inputRef={pwRef} />
               </>
             )}
             {error && (
@@ -216,7 +210,7 @@ export function SecurityCard({ rt, status }: Ctx) {
             )}
             <div class="row2">
               {/* Nothing typed is not a guess, and the service would not record it either: the button waits for a password. */}
-              <button class="btn" type="submit" id="sec-log-confirm" disabled={busy || (!device && !pw)}>
+              <button class="btn" type="submit" id="sec-log-confirm" disabled={busy || (!device && !confirm.value)}>
                 {t("secLogClear")}
               </button>
               <button class="btn ghost" type="button" onClick={close}>

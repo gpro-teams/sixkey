@@ -39,7 +39,7 @@ import { updatePrf } from "./prf-write";
 import { formatRecord, type PwFormatRecord } from "./pw-format";
 import type { ExportKind, SecurityKind, SharesReminder } from "./security-log";
 import { ServiceError } from "./service-error";
-import { removeRestart, setAsideRestart } from "./pin-restart-admin";
+import { removeRestart, RestartAdmin, setAsideRestart, type PinConfirm } from "./pin-restart-admin";
 import { rewrappedHere, rotatedHere } from "./rotated";
 import { hasDevice, isSessionExpired, ServiceCore } from "./service-core";
 import { profileOf, type Settings } from "./types";
@@ -74,6 +74,11 @@ export type ServiceStatus =
  * throw). The code is not also returned, so no page can wait for the cleanup before showing it.
  */
 export type CodeDelivery = { onCode: (recoveryCode: string) => void };
+/**
+ * What an action done while unlocked takes as its confirmation (confirmSecret): the master password as typed, or the PIN
+ * (OWNER-DECISIONS/26, 2026-11-24).
+ */
+export type Secret = string | { pin: string };
 
 /**
  * A password reset prepared in memory (GM2-13): the new password and recovery code wrapped around the vault key, nothing
@@ -214,11 +219,13 @@ export class VaultService extends ServiceCore {
   }
 
   /**
-   * Switching to "lock every time" locks now, so a key already stored for other contexts does not outlive the choice. A
-   * change of lock mode, and declaring the profile shared, are hard locks (QUICK-UNLOCK §5.5): the gate's arming ends with
-   * them. `next` without a profile keeps the one stored (a caller written before the marker cannot flip it). A profile
-   * declared shared also loses the PIN's record (OWNER-DECISIONS/20: no PIN there), at every save there; a change of lock
-   * mode leaves it ("lock every time" opens with the PIN too).
+   * Declaring the profile shared is a hard lock (QUICK-UNLOCK §5.5): the gate's arming ends with it. A change of lock mode
+   * is no longer a hard lock (OWNER-DECISIONS/26, 2026-11-24: the gate it ended asked for the master password again,
+   * every copy of which is one more exposure): switching to "lock every time" is the soft lock, so a key already stored
+   * for other contexts does not outlive the choice, and the PIN or the gate opens Sixkey again; any other change does not
+   * lock at all, the new mode deciding the next lock. `next` without a profile keeps the one stored (a caller written
+   * before the marker cannot flip it). A profile declared shared also loses the PIN's record (OWNER-DECISIONS/20: no PIN
+   * there), at every save there; a change of lock mode leaves it.
    */
   async updateSettings(next: Settings): Promise<void> {
     if ((await this.saveSettings(next)) !== "shared" || !this.pins) return;
@@ -235,7 +242,8 @@ export class VaultService extends ServiceCore {
     const merged: Settings = next.profile === undefined ? { ...next, profile: profileOf(prev) } : next;
     await this.settings.set(merged);
     const toShared = profileOf(merged) === "shared" && profileOf(prev) !== "shared";
-    if (merged.autoLock.mode !== prev.autoLock.mode || toShared) await this.hardLock();
+    if (toShared) await this.hardLock();
+    else if (merged.autoLock.mode === "always" && prev.autoLock.mode !== "always") await this.lock();
     return profileOf(merged);
   }
 
@@ -514,6 +522,26 @@ export class VaultService extends ServiceCore {
   }
 
   /**
+   * What an action done while unlocked asks for again (OWNER-DECISIONS/26, 2026-11-24: every copy of the master password
+   * is one more exposure): `{pin}`, the PIN, when one opens Sixkey now (RestartAdmin.confirmPin: counted with the lock
+   * screens' tries; refused with pin_wrong and the tries left as its message, pin_typo for one that is not 4 to 8
+   * digits, pin_exhausted for the 5th wrong one, pin_ended when it no longer confirms: the master password then), or the
+   * master password itself (requireMasterPassword: a wrong one refused with wrong_secret and recorded; a Phase 0
+   * device-key vault needs none).
+   */
+  async confirmSecret(secret: Secret): Promise<void> {
+    if (typeof secret === "string") return this.requireMasterPassword(secret);
+    const r = await new RestartAdmin(this)
+      .confirmPin(secret.pin)
+      .catch((): PinConfirm => ({ ok: false, reason: "ended" }));
+    if (r.ok) return;
+    if (r.reason === "wrong") throw new ServiceError("pin_wrong", String(r.triesLeft));
+    throw new ServiceError(
+      r.reason === "malformed" ? "pin_typo" : r.reason === "exhausted" ? "pin_exhausted" : "pin_ended",
+    );
+  }
+
+  /**
    * The settings page calls this once an export has been written (H3, H6). Never throws; an unknown kind adds nothing:
    * checked here, since the record itself knows a kind by its form only (security-log.ts isKind), and `export_${kind}`
    * of any word has that form.
@@ -529,12 +557,8 @@ export class VaultService extends ServiceCore {
    * vault anyway, so there it needs none (`password` is ignored). With no readable vault (bad_state) it is refused: there
    * is nothing to prove ownership of. A failure to write rejects; nothing is cleared then.
    */
-  async clearSecurityLog(password: string): Promise<void> {
-    try {
-      await this.verifyPassword(password);
-    } catch (e) {
-      if (!(e instanceof ServiceError && e.code === "not_protected")) throw e;
-    }
+  async clearSecurityLog(secret: Secret): Promise<void> {
+    await this.confirmSecret(secret); // the PIN too since 2026-11-24 (OWNER-DECISIONS/26)
     await this.security?.clear();
   }
 
@@ -832,12 +856,8 @@ export class VaultService extends ServiceCore {
    * not recorded). A Phase 0 device-key vault has no master password (not_protected): anyone at it can open the vault
    * anyway, so there `password` is ignored, as in clearSecurityLog and the export.
    */
-  async newRecoveryCode(password: string, deliver: CodeDelivery): Promise<void> {
-    try {
-      await this.verifyPassword(password);
-    } catch (e) {
-      if (!(e instanceof ServiceError && e.code === "not_protected")) throw e;
-    }
+  async newRecoveryCode(secret: Secret, deliver: CodeDelivery): Promise<void> {
+    await this.confirmSecret(secret); // the PIN too since 2026-11-24 (OWNER-DECISIONS/26)
     let recoveryCode!: string;
     let vk!: Vk;
     await this.store.transact(async (cur) => {
@@ -868,7 +888,7 @@ export class VaultService extends ServiceCore {
    * itself is zeroed once the shares are made.
    */
   async prepareShares(
-    from: { password: string } | { recoveryCode: string },
+    from: { password: string } | { pin: string } | { recoveryCode: string },
     setup: ShareSetup,
   ): Promise<PreparedShares> {
     const { threshold, count } = setup;
@@ -915,12 +935,11 @@ export class VaultService extends ServiceCore {
    * code's text, the keyring it was taken against, and for a new code the new keyring and its vault key.
    */
   private async recoveryKeyFrom(
-    from: { password: string } | { recoveryCode: string },
+    from: { password: string } | { pin: string } | { recoveryCode: string },
   ): Promise<{ code: string; keyring: Keyring; next: { keyring: Keyring; vk: Vk } | null }> {
-    const fresh = "password" in from;
-    if (fresh) {
-      await this.verifyPassword(from.password);
-    }
+    const fresh = !("recoveryCode" in from);
+    if ("password" in from) await this.verifyPassword(from.password);
+    else if ("pin" in from) await this.confirmSecret({ pin: from.pin }); // since 2026-11-24 (OWNER-DECISIONS/26)
     const r = await this.store.load();
     if (r.status !== "ok") throw new ServiceError("bad_state", r.status);
     const keyring = r.gen.keyring;
@@ -1144,8 +1163,9 @@ export class VaultService extends ServiceCore {
    * database may keep old bytes on disk until it compacts (see docs/security/local-vault.md). The master password first
    * (requireMasterPassword): a wrong one is refused (wrong_secret, recorded) and nothing is erased.
    */
-  async purgeForever(ids: string[], password: string): Promise<void> {
-    await this.requireMasterPassword(password); // irreversible: never on the strength of a PIN or an open page alone
+  async purgeForever(ids: string[], secret: Secret): Promise<void> {
+    // irreversible: never on the strength of an open page alone; the PIN typed again since 2026-11-24 (OWNER-DECISIONS/26)
+    await this.confirmSecret(secret);
     if (ids.length === 0) return;
     const device = await this.settings.deviceId();
     const purgeIn = (vault: Vault, clock: Clock): Vault =>

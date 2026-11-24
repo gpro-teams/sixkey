@@ -57,7 +57,7 @@ test("Shared: locks every time and at once, and the popup hides codes; Standard 
   await expect(opt.locator("#al-screen")).toBeChecked();
   await expect(opt.locator("#sm-hide")).toBeChecked();
   await expect(opt.locator("#sm-shared")).toBeChecked();
-  // the change of lock mode locked Sixkey, and the page says so where the change was made
+  // the change locked Sixkey (declared shared: a hard lock, quick unlock ends there), and the page says so where it was made
   await expect(opt.locator("#sm-locked")).toBeVisible();
   await expect(opt.locator("#unlock-pw")).toBeVisible();
   await showSection(opt, "appearance");

@@ -18,7 +18,7 @@ import { webauthn } from "../platform/webauthn";
 import { deviceName, dx } from "../ui/device-text";
 import { formatDate, t } from "../ui/i18n";
 import { Icon } from "./icons";
-import { MasterField } from "./MasterField";
+import { ConfirmField, useConfirm } from "./ConfirmField";
 import { errText, Fold, type Ctx } from "./shared";
 import "./device-box.css";
 
@@ -61,13 +61,15 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
   const [ready, setReady] = useState(dx.words() !== undefined);
   const [st, setSt] = useState<DeviceState | null>(null);
   const [open, setOpen] = useState(false);
-  const [pw, setPw] = useState("");
+  // the PIN or the master password typed again (OWNER-DECISIONS/26)
+  const confirm = useConfirm(rt, status.state === "unlocked");
+  const pw = confirm.value;
   const [optIn, setOptIn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const unlocked = status.state === "unlocked";
   const wipe = () => {
-    setPw("");
+    confirm.setValue("");
     setOptIn(false);
   };
 
@@ -128,7 +130,7 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
       if (m?.ok) wipe();
     } catch (e) {
       const code = e instanceof Error ? (e as { message?: string }).message : "";
-      setMsg({ ok: false, text: code === "device_full" ? dx("dvFull") : errText(e) });
+      setMsg({ ok: false, text: code === "device_full" ? dx("dvFull") : (confirm.refused(e) ?? errText(e)) });
     } finally {
       setBusy(false);
       await refresh();
@@ -136,19 +138,19 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
   }
   const enrol = () =>
     void run(async () => {
-      const r = await admin.enrol(pw, { name, allowSynced: optIn && !st.shared });
+      const r = await admin.enrol(confirm.secret(), { name, allowSynced: optIn && !st.shared });
       // a gate armed now: the service worker sets its sk-quick-expiry alarm, as after any unlock
       if (r.ok) void chrome.runtime.sendMessage({ type: "sk-reschedule-autolock" }).catch(() => undefined);
       return answer(r);
     });
   const remove = (c: DeviceCred) =>
     void run(async () => {
-      await admin.remove(pw, c.id);
+      await admin.remove(confirm.secret(), c.id);
       return { ok: true, text: dx("dvRemoved", dx(c.provider ? WHERE[c.provider] : "dvWhereUnknown")) };
     });
   const turnOn = (c: DeviceCred) =>
     void run(async () => {
-      const r = await admin.reenable(pw, c.id);
+      const r = await admin.reenable(confirm.secret(), c.id);
       if (r.ok) void chrome.runtime.sendMessage({ type: "sk-reschedule-autolock" }).catch(() => undefined); // armed
       return answer(r);
     });
@@ -157,7 +159,7 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
   const alsoAfterRestart = (c: DeviceCred) =>
     void run(async () => {
       setUpgrading(null);
-      return answer(await admin.alsoAfterRestart(pw, c.id));
+      return answer(await admin.alsoAfterRestart(confirm.secret(), c.id));
     });
   const endQuick = () =>
     void run(async () => {
@@ -223,7 +225,7 @@ export function DeviceBox({ rt, status, reload }: Ctx) {
             if (pw && !busy && st.platform && !st.full) enrol();
           }}
         >
-          <MasterField id="device-pw" label={t("passwordLabel")} value={pw} onValue={setPw} rt={rt} />
+          <ConfirmField c={confirm} id="device-pw" label={t("passwordLabel")} rt={rt} />
           {st.creds.length > 0 && (
             <ul class="dv-actions">
               {st.creds.map((c) => (

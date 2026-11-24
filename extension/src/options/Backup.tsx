@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { BackupError, createBackup, openBackup, parseBackupFile } from "../core/backup/backup";
 import { createSubsetBackup, sameAsShown, selectedEntries } from "../core/backup/subset";
 import { generatedForm } from "../core/crypto/password-candidates";
 import { MAX_TEXT_BYTES } from "../core/import/file-text";
 import { exportOtpauthList } from "../core/import/importer";
+import { isMasterPassword } from "../core/service/master-check";
+import { RestartAdmin } from "../core/service/pin-restart-admin";
 import type { ExportKind } from "../core/service/security-log";
 import { ServiceError } from "../core/service/service";
 import { aliveEntries, type Vault } from "../core/vault/model";
 import { logError } from "../ui/errors";
 import { formatDateTime, t } from "../ui/i18n";
-import { measure, type Strength } from "../ui/strength";
+import { masterAccepts, measure, type Strength } from "../ui/strength";
 import { Icon } from "./icons";
 import type { SetupStart } from "./FirstRun";
 import type { Picked } from "../platform/file-access";
@@ -35,6 +37,8 @@ type Made = { name: string; text: string; type?: string; done: string };
  * other sites, deleted, from another page since this one loaded): nothing is saved, and the page reloads to show them.
  */
 const CHANGED = new Error("changed");
+/** A selected-accounts file under the master password, found at export when the PIN confirmed it (expSubSamePw). */
+const SAME = new Error("same as the master password");
 /** A typed master password is emptied after this long without typing (C6-REVIEW C6-6). */
 const EXPORT_PW_IDLE_MS = 60_000;
 /** Nothing typed in any export's master password field. */
@@ -65,10 +69,37 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   const typedFor = (kind: ExportKind) => (v: string) => setMasterPw((m) => ({ ...m, [kind]: v }));
   /** One export's typed master password emptied, or (no kind) every one's. */
   const dropMasterPw = (kind?: ExportKind) => setMasterPw((m) => (kind ? { ...m, [kind]: "" } : NO_PW));
+  // OWNER-DECISIONS/26 (2026-11-24): with a PIN that opens Sixkey now, each export asks for the PIN in that field instead
+  // (every copy of the master password is one more exposure), counted as the lock screens count it (confirmPin);
+  // "Use master password" is the way back, and the master password is asked when the PIN does not open Sixkey now
+  const restart = useMemo(() => new RestartAdmin(rt.service), [rt]);
+  const [pinTries, setPinTries] = useState<number | null>(null);
+  const [withPassword, setWithPassword] = useState(false);
+  const byPin = asks && pinTries !== null && !withPassword;
+  const typedPw = useRef(masterPw);
+  typedPw.current = masterPw;
+  const readPin = () =>
+    void restart.state().then(
+      (v) => {
+        const n = v?.state === "pin" && v.triesLeft > 0 ? v.triesLeft : null;
+        // never swapped under the user's fingers: a master password already being typed stays in its field
+        if (n !== null && pinTries === null && Object.values(typedPw.current).some((x) => x !== ""))
+          setWithPassword(true);
+        setPinTries(n);
+      },
+      () => setPinTries(null),
+    );
+  const confirmWith = (password: boolean) => {
+    setWithPassword(password);
+    dropMasterPw();
+  };
   const [busy, setBusy] = useState(false);
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [strength, setStrength] = useState<Strength | null>(null);
+  // a backup file's password below the recommended strength is a warning with "Use anyway", as the master password's
+  // (2026-11-24: the risk is a password copied around, not guessed): the value it was pressed for
+  const [anyway, setAnyway] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // a file of another app's, kept here until the person follows the link to Add account (import-handoff.ts): it is not
@@ -80,6 +111,7 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   const [subPw, setSubPw] = useState("");
   const [subPw2, setSubPw2] = useState("");
   const [subStrength, setSubStrength] = useState<Strength | null>(null);
+  const [subAnyway, setSubAnyway] = useState<string | null>(null);
   // "Selected accounts" is one line until opened; closing it (its button, Escape, a lock, leaving the section) drops the
   // file password typed in it
   const [subOpen, setSubOpen] = useState(false);
@@ -140,7 +172,9 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
       dropMasterPw();
       closeSubset();
     }
-  }, [unlocked]);
+    if (unlocked && asks) readPin();
+    else setPinTries(null);
+  }, [unlocked, asks]);
   // The hand-over's file and its message (with its link) go with a lock. Keyed on the lock itself, as the hand-over is,
   // not on the vault having been read: a lock while the vault is still being read must take them too.
   const open = status.state === "unlocked";
@@ -191,16 +225,36 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   // spelling from an IME nor the code without its hyphens gets through.
   const samePw = asks && subPw !== "" && sameMasterPassword(subPw, masterPw.subset);
   const ready = (kind: ExportKind) => unlocked && !busy && (!asks || masterPw[kind] !== "");
-  const canEncrypted = ready("encrypted") && strong(pw, pw2, strength);
+  const canEncrypted = ready("encrypted") && strong(pw, pw2, strength, anyway === pw);
   const canPlain = ready("plain") && plainOk;
-  const canSubset = ready("subset") && count > 0 && strong(subPw, subPw2, subStrength) && !samePw;
+  const canSubset = ready("subset") && count > 0 && strong(subPw, subPw2, subStrength, subAnyway === subPw) && !samePw;
   // What an export button waits for before its own fields, said beside it (ExportWhy): grey and silent, it stopped a
   // user twice (2026-11-23), scrolled down past the lock.
   const why = (kind: ExportKind) =>
     status.state === "locked" ? "locked" : unlocked && asks && masterPw[kind] === "" ? "password" : null;
 
-  /** Whether the export may go ahead: the master password typed for it, checked by the service, which records a wrong one. */
-  async function confirmed(typed: string): Promise<boolean> {
+  /**
+   * Whether the export may go ahead: the PIN typed for it (confirmPin: a wrong one counted and recorded there, its tries
+   * shared with the lock screens; when it no longer opens Sixkey, the master password's field), or the master password,
+   * checked by the service, which records a wrong one.
+   */
+  async function confirmed(kind: ExportKind, typed: string): Promise<boolean> {
+    if (byPin) {
+      // a PIN removed or set up again in another page since this page read it: the master password's field, as "ended"
+      const r = await restart.confirmPin(typed).catch(() => ({ ok: false, reason: "ended" }) as const);
+      if (r.ok) return true;
+      if (r.reason === "wrong") setPinTries(r.triesLeft);
+      else if (r.reason !== "malformed") setPinTries(null);
+      setError(
+        r.reason === "wrong"
+          ? t("pinWrong", r.triesLeft)
+          : r.reason === "malformed"
+            ? t("pinFormat")
+            : t(r.reason === "exhausted" ? "pinExhausted" : "lockPinWaiting"),
+      );
+      setRetype((x) => ({ kind, n: (x?.n ?? 0) + 1 }));
+      return false;
+    }
     if (asks) {
       await rt.service.verifyPassword(typed);
       return true;
@@ -236,7 +290,7 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
     dropMasterPw(kind);
     setRetype(null);
     try {
-      if (!(await confirmed(typed))) return false;
+      if (!(await confirmed(kind, typed))) return false;
       const out = await make((await rt.service.read()).vault);
       await rt.service.recordExport(kind); // never throws
       download(out.name, out.text, out.type);
@@ -246,7 +300,8 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
         await rt.service.markBackedUp().catch((e: unknown) => logError("last backup time not saved", e));
       return true;
     } catch (e) {
-      if (e === CHANGED) {
+      if (e === SAME) setError(t("expSubSamePw"));
+      else if (e === CHANGED) {
         setError(t("expSubChanged"));
         await reload();
       } else setError(errText(e));
@@ -262,8 +317,9 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
     ev.preventDefault();
     if (!canEncrypted) return; // defence in depth: a disabled submit button already stops Enter from submitting (measured)
     void exportWith("encrypted", async (v) => {
-      // the page's 50-bit rule once more before the file is made: the button's answer may be a frame old
-      if (!(await measure(pw)).ok) throw new ServiceError("weak_password");
+      // the page's rule once more before the file is made (the floor, then the bar or "Use anyway"): the button's answer
+      // may be a frame old
+      if (!masterAccepts(await measure(pw), anyway === pw)) throw new ServiceError("weak_password");
       return {
         name: `sixkey-backup-${stamp()}.json`,
         text: JSON.stringify(await createBackup(v, pw)),
@@ -297,7 +353,9 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
       // Exactly the accounts this page lists as ticked, and only as it shows them: if one is gone, renamed, regrouped or
       // has other sites in the vault as it is now, nothing is saved and the page reloads to show the change (C6-2).
       if (!sameAsShown(shown, selectedEntries(v, ids))) throw CHANGED;
-      if (!(await measure(subPw)).ok) throw new ServiceError("weak_password"); // as above
+      if (!masterAccepts(await measure(subPw), subAnyway === subPw)) throw new ServiceError("weak_password"); // as above
+      // confirmed with the PIN, the master password was not typed to compare it with: asked of the keys (nothing recorded)
+      if (byPin && (await isMasterPassword(rt.service, subPw))) throw SAME;
       const { file, count: n } = await createSubsetBackup(v, ids, subPw);
       return { name: `sixkey-selected-${stamp()}.json`, text: JSON.stringify(file), done: t("expSubSaved", n) };
     }).then((ok) => {
@@ -454,19 +512,41 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
             onValue={setPw}
             onConfirm={setPw2}
             onStrength={setStrength}
+            anyway={{ value: anyway, set: setAnyway }}
           />
           {unlocked && asks && (
             <div class="exp-mpw">
-              <MasterField
-                id="export-pw"
-                label={t("passwordLabel")}
-                value={masterPw.encrypted}
-                onValue={typedFor("encrypted")}
-                rt={rt}
-                autocomplete="off"
-                disabled={busy}
-                inputRef={pwRefs.encrypted}
-              />
+              {byPin ? (
+                <PinField
+                  id="export-pin"
+                  value={masterPw.encrypted}
+                  onValue={typedFor("encrypted")}
+                  disabled={busy}
+                  inputRef={pwRefs.encrypted}
+                />
+              ) : (
+                <MasterField
+                  id="export-pw"
+                  label={t("passwordLabel")}
+                  value={masterPw.encrypted}
+                  onValue={typedFor("encrypted")}
+                  rt={rt}
+                  autocomplete="off"
+                  disabled={busy}
+                  inputRef={pwRefs.encrypted}
+                />
+              )}
+              {pinTries !== null && (
+                <button
+                  type="button"
+                  id="export-pw-switch"
+                  class="btn sm quiet"
+                  disabled={busy}
+                  onClick={() => confirmWith(byPin)}
+                >
+                  {t(byPin ? "useMasterPassword" : "usePin")}
+                </button>
+              )}
             </div>
           )}
           <div class="row2">
@@ -501,19 +581,41 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
             onValue={setSubPw}
             onConfirm={setSubPw2}
             onStrength={setSubStrength}
+            anyway={{ value: subAnyway, set: setSubAnyway }}
           />
           {unlocked && asks && (
             <div class="exp-mpw">
-              <MasterField
-                id="export-pw-subset"
-                label={t("passwordLabel")}
-                value={masterPw.subset}
-                onValue={typedFor("subset")}
-                rt={rt}
-                autocomplete="off"
-                disabled={busy}
-                inputRef={pwRefs.subset}
-              />
+              {byPin ? (
+                <PinField
+                  id="export-pin-subset"
+                  value={masterPw.subset}
+                  onValue={typedFor("subset")}
+                  disabled={busy}
+                  inputRef={pwRefs.subset}
+                />
+              ) : (
+                <MasterField
+                  id="export-pw-subset"
+                  label={t("passwordLabel")}
+                  value={masterPw.subset}
+                  onValue={typedFor("subset")}
+                  rt={rt}
+                  autocomplete="off"
+                  disabled={busy}
+                  inputRef={pwRefs.subset}
+                />
+              )}
+              {pinTries !== null && (
+                <button
+                  type="button"
+                  id="export-pw-subset-switch"
+                  class="btn sm quiet"
+                  disabled={busy}
+                  onClick={() => confirmWith(byPin)}
+                >
+                  {t(byPin ? "useMasterPassword" : "usePin")}
+                </button>
+              )}
             </div>
           )}
           {samePw && (
@@ -547,16 +649,37 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
           </label>
           {unlocked && asks && (
             <div class="exp-mpw">
-              <MasterField
-                id="export-pw-plain"
-                label={t("passwordLabel")}
-                value={masterPw.plain}
-                onValue={typedFor("plain")}
-                rt={rt}
-                autocomplete="off"
-                disabled={busy}
-                inputRef={pwRefs.plain}
-              />
+              {byPin ? (
+                <PinField
+                  id="export-pin-plain"
+                  value={masterPw.plain}
+                  onValue={typedFor("plain")}
+                  disabled={busy}
+                  inputRef={pwRefs.plain}
+                />
+              ) : (
+                <MasterField
+                  id="export-pw-plain"
+                  label={t("passwordLabel")}
+                  value={masterPw.plain}
+                  onValue={typedFor("plain")}
+                  rt={rt}
+                  autocomplete="off"
+                  disabled={busy}
+                  inputRef={pwRefs.plain}
+                />
+              )}
+              {pinTries !== null && (
+                <button
+                  type="button"
+                  id="export-pw-plain-switch"
+                  class="btn sm quiet"
+                  disabled={busy}
+                  onClick={() => confirmWith(byPin)}
+                >
+                  {t(byPin ? "useMasterPassword" : "usePin")}
+                </button>
+              )}
             </div>
           )}
           <div class="row2">
@@ -644,15 +767,18 @@ export function Backup({ rt, status, vault, reload, onSetup }: Ctx & { onSetup: 
   );
 }
 
-/** A file password the pages accept: typed twice the same, and strong by the page's estimate (the service has its floor). */
-function strong(pw: string, pw2: string, s: Strength | null): boolean {
-  return pw.length > 0 && pw === pw2 && s?.ok === true;
+/**
+ * A file password the pages accept: typed twice the same, past the floor (the service has the same), and at the
+ * recommended strength or with "Use anyway" pressed for it (masterAccepts, 2026-11-24).
+ */
+function strong(pw: string, pw2: string, s: Strength | null, anyway: boolean): boolean {
+  return pw.length > 0 && pw === pw2 && masterAccepts(s, anyway);
 }
 
 /**
- * Beside an export button: why it is grey before its own fields count. Locked (the page's top unlocks), or the master
- * password every export asks for (H3) not typed in the field just above; nothing otherwise, as the form's own fields say
- * what they lack.
+ * Beside an export button: why it is grey before its own fields count. Locked (the page's top unlocks), or what every
+ * export asks for (H3) not typed in the field just above: the PIN (OWNER-DECISIONS/26) or the master password; nothing
+ * otherwise, as the form's own fields say what they lack.
  */
 function ExportWhy({ why }: { why: "locked" | "password" | null }) {
   if (!why) return null;
@@ -661,5 +787,35 @@ function ExportWhy({ why }: { why: "locked" | "password" | null }) {
       <Icon name="lock" size={14} />
       {t(why === "locked" ? "unlockToManage" : "expPwLead")}
     </span>
+  );
+}
+
+/**
+ * The PIN typed again for an export (OWNER-DECISIONS/26): a field of its own, never kept by the browser (a password
+ * field with autocomplete off), digits on a touch keyboard; what is typed goes to confirmPin as it is.
+ */
+function PinField(p: {
+  id: string;
+  value: string;
+  onValue: (v: string) => void;
+  disabled: boolean;
+  inputRef: { current: HTMLInputElement | null };
+}) {
+  return (
+    <div class="field">
+      <label for={p.id}>{t("pinLabel")}</label>
+      <input
+        id={p.id}
+        ref={p.inputRef}
+        class="mono-pw"
+        type="password"
+        inputMode="numeric"
+        autocomplete="off"
+        maxLength={8}
+        value={p.value}
+        disabled={p.disabled}
+        onInput={(e) => p.onValue((e.target as HTMLInputElement).value)}
+      />
+    </div>
   );
 }

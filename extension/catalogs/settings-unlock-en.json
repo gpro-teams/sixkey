@@ -14,31 +14,16 @@
   "resetChanged": {
     "message": "Your password or recovery key was changed in another window meanwhile, so nothing was changed here and the key that was shown will not work. Start again."
   },
-  "lockPinWaiting": {
-    "message": "The PIN works again once you type the master password."
-  },
   "pinTitle": {
     "message": "Enter your PIN"
   },
   "pinTriesLeft": {
     "message": "Tries left: $1. After that, the master password."
   },
-  "pinWrong": {
-    "message": "Wrong PIN. Tries left: $1."
-  },
-  "pinExhausted": {
-    "message": "Too many wrong PINs. Enter the master password."
-  },
   "pinEnded": {
     "message": "The PIN can't be used now. Enter the master password."
   },
   "pinRetry": {
     "message": "Sixkey locked meanwhile. Enter the PIN again."
-  },
-  "useMasterPassword": {
-    "message": "Use master password"
-  },
-  "usePin": {
-    "message": "Use PIN"
   }
 }

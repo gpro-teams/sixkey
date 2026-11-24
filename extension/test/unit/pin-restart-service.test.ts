@@ -12,6 +12,7 @@ import type { RestartRecord } from "../../src/core/crypto/pin-restart";
 import { openRestart, restartMac, restartOk, sealRestart } from "../../src/core/crypto/pin-restart-wrap";
 import { fromB64 } from "../../src/core/crypto/bytes";
 import { vkFromRaw } from "../../src/core/crypto/vk";
+import { isMasterPassword } from "../../src/core/service/master-check";
 import { REWRAPPED_MS } from "../../src/core/service/pin-restart-admin";
 import { pinKit, type PinKit } from "../../src/core/service/pin-kit";
 import { restartOffer } from "../../src/core/service/pin-restart-count";
@@ -361,6 +362,74 @@ describe("after a browser restart or an extension reload: the PIN opens Sixkey w
     };
     expect(await pinIn(svc, PIN, kit)).toEqual({ ok: false, reason: "locked" });
     expect((await w.ctx().service.openView()).state).toBe("locked");
+  });
+});
+
+describe("the PIN typed again while unlocked (confirmPin: an export, OWNER-DECISIONS/26)", () => {
+  it("right: confirmed, nothing counted; wrong: counted on the record and recorded, its tries the lock screen's; a typo is not counted", async () => {
+    const w = await quickWorld();
+    const page = w.ctx();
+    expect(await page.restart.confirmPin(PIN)).toEqual({ ok: true });
+    expect(got(w).fails).toBe(0);
+    expect(await page.restart.confirmPin("12")).toEqual({ ok: false, reason: "malformed" });
+    expect(got(w).fails).toBe(0);
+    for (const left of [4, 3, 2])
+      expect(await page.restart.confirmPin(WRONG)).toEqual({ ok: false, reason: "wrong", triesLeft: left });
+    expect((await w.kinds()).filter((k) => k === "pin_failed")).toHaveLength(3);
+    expect(await page.restart.confirmPin(PIN)).toEqual({ ok: true });
+    expect(got(w).fails).toBe(0); // the right one takes the count back to none
+    for (let i = 0; i < 4; i++) await page.restart.confirmPin(WRONG);
+    await page.service.lock();
+    restart(w);
+    expect(await lockScreen(w)).toMatchObject({ quick: { triesLeft: 1 }, restart: "pin" }); // one count for both
+  });
+
+  it("a selected-accounts file under the master password is still found when the PIN confirmed the export, nothing recorded", async () => {
+    const w = await quickWorld();
+    const svc = w.ctx().service;
+    const before = (await w.kinds()).length;
+    expect(await isMasterPassword(svc, STRONG)).toBe(true);
+    expect(await isMasterPassword(svc, STRONG2)).toBe(false);
+    expect(await isMasterPassword(svc, "")).toBe(false);
+    expect((await w.kinds()).length).toBe(before); // a "no" is not a wrong guess
+  });
+
+  it("the PIN confirms what the master password did while unlocked: clear the record, delete for good, change and remove the PIN, a new code", async () => {
+    const w = await quickWorld();
+    const page = w.ctx();
+    await expect(page.service.clearSecurityLog({ pin: WRONG })).rejects.toMatchObject({
+      code: "pin_wrong",
+      message: "4",
+    });
+    await expect(page.service.clearSecurityLog({ pin: "12" })).rejects.toMatchObject({ code: "pin_typo" });
+    await page.service.clearSecurityLog({ pin: PIN });
+    expect(await w.kinds()).toEqual(["log_cleared"]); // the wrong one went with the rest
+    await page.service.purgeForever([], { pin: PIN });
+    await page.admin.setPin({ pin: PIN }, PIN2); // the PIN it replaces confirms the change
+    await expect(page.service.clearSecurityLog({ pin: PIN })).rejects.toMatchObject({ code: "pin_wrong" });
+    let code = "";
+    await page.service.newRecoveryCode({ pin: PIN2 }, { onCode: (c) => void (code = c) });
+    expect(code).not.toBe("");
+    // a new code is a key event: it pauses the PIN as before (turned back on in Settings, or the next master password)
+    await expect(page.service.clearSecurityLog({ pin: PIN2 })).rejects.toMatchObject({ code: "pin_ended" });
+    await page.service.clearSecurityLog(STRONG);
+    const other = await quickWorld();
+    await other.ctx().admin.removePin({ pin: PIN });
+    expect(rec(other)).toBeUndefined();
+    await expect(other.ctx().service.clearSecurityLog({ pin: PIN })).rejects.toMatchObject({ code: "pin_ended" });
+  });
+
+  it("the 5th wrong one ends the PIN as on a lock screen: its wrap set aside, the gate ended; then the master password", async () => {
+    const w = await quickWorld();
+    const page = w.ctx();
+    for (let i = 0; i < 4; i++) await page.restart.confirmPin(WRONG);
+    expect(await page.restart.confirmPin(WRONG)).toEqual({ ok: false, reason: "exhausted" });
+    expect(got(w).wrap).toBeNull();
+    expect((await w.kinds()).at(-1)).toBe("quick_ended");
+    expect(await page.restart.confirmPin(PIN)).toEqual({ ok: false, reason: "ended" }); // the right PIN no longer confirms
+    await page.service.lock();
+    restart(w);
+    expect(await lockScreen(w)).toMatchObject({ restart: "wait" });
   });
 });
 

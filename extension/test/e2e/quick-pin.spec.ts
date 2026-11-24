@@ -44,7 +44,7 @@ async function setPin(pin = PIN): Promise<Page> {
   await expect(opt.locator("#pin-info")).toBeVisible();
   await expect(opt.locator("#pin-state")).toBeVisible();
   await openFold(opt, "pin-box"); // the box closed itself; opened again, nothing is left in the fields
-  await expect(opt.locator("#pin-pw")).toHaveValue("");
+  await expect(opt.locator("#pin-pw-pin")).toHaveValue(""); // a PIN set now: its change asks for it (OWNER-DECISIONS/26)
   await expect(opt.locator("#pin-new")).toHaveValue("");
   return opt;
 }
@@ -71,13 +71,13 @@ test("set the PIN, Lock now, the PIN field focused and numeric; the PIN opens Si
   // what a PIN costs is said in the box, above its form (OWNER-DECISIONS/20, 2026-10-30)
   await openFold(opt, "pin-box");
   await expect(opt.locator("#pin-restart-cost")).toContainText(/guess your PIN offline|离线猜你的 PIN/);
-  // a weak PIN is said to be weak, and taken (warn, do not block)
-  await opt.locator("#pin-pw").fill(STRONG);
+  // a weak PIN is said to be weak, and taken (warn, do not block); the PIN set confirms its change (OWNER-DECISIONS/26)
+  await opt.locator("#pin-pw-pin").fill(PIN);
   await opt.locator("#pin-new").fill("1234");
   await opt.locator("#pin-new2").fill("1234");
   await expect(opt.locator("#pin-hint")).toHaveText(/1234/);
   await expect(opt.locator("#pin-set")).toBeEnabled();
-  await opt.locator("#pin-pw").fill("");
+  await opt.locator("#pin-pw-pin").fill("");
   // nothing of the PIN is in chrome.storage.local: its set-up under the vault key, and its record (the vault key under
   // a key only the PIN derives)
   const local = await opt.evaluate(async () => JSON.stringify(await chrome.storage.local.get(null)));
@@ -273,7 +273,7 @@ test("End quick unlock and lock is offered on a locked settings page too, with n
   await expect(pop.locator("#pin")).toHaveCount(0);
 });
 
-test("Delete forever asks for the master password (it cannot be undone), so a PIN never reaches it; the edit dialog loads on first use", async () => {
+test("Delete forever asks again (it cannot be undone): the PIN since 2026-11-24, a wrong one refused; the edit dialog loads on first use", async () => {
   await startFresh(p);
   await addByPaste(p, GITHUB_URI);
   await (await setPin()).close();
@@ -289,13 +289,13 @@ test("Delete forever asks for the master password (it cannot be undone), so a PI
   const opt = await openOptions(p, "#trash");
   const row = opt.locator("#trash tr", { hasText: "GitHub" });
   const erase = row.getByRole("button", { name: /^(Delete forever|永久删除)$/ });
-  await expect(erase).toBeDisabled(); // no password typed
-  await opt.locator("#trash-pw").fill(PIN); // the PIN is not the master password
+  await expect(erase).toBeDisabled(); // nothing typed
+  await opt.locator("#trash-pw-pin").fill(WRONG); // a wrong PIN: refused, with its tries left (OWNER-DECISIONS/26)
   await erase.click();
-  await expect(opt.locator("#trash [role=alert]")).toBeVisible();
+  await expect(opt.locator("#trash [role=alert]")).toContainText(/Tries left: 4|还可以再试 4 次/);
   await expect(row).toHaveCount(1);
-  await opt.locator("#trash-pw").fill(STRONG);
+  await opt.locator("#trash-pw-pin").fill(PIN);
   await erase.click();
   await expect(row).toHaveCount(0);
-  await expect(opt.locator("#trash-pw")).toHaveCount(0); // nothing left in the trash: no field
+  await expect(opt.locator("#trash-pw-pin")).toHaveCount(0); // nothing left in the trash: no field
 });

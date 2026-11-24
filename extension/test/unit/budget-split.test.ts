@@ -107,6 +107,7 @@ const FULL_MEMBERS = [
   "guarding",
   "verifyPassword",
   "requireMasterPassword",
+  "confirmSecret", // the PIN or the master password typed again (OWNER-DECISIONS/26)
   "recordExport",
   "clearSecurityLog",
   "read",
@@ -163,7 +164,7 @@ describe("the service in two classes", () => {
     expect(allListed).toBe(true);
     expect(own(ServiceCore).sort()).toEqual([...CORE_MEMBERS].sort());
     expect(own(VaultService).sort()).toEqual([...FULL_MEMBERS].sort());
-    // the whole facade, through the prototype chain, as before the split: 66 members, none twice
+    // the whole facade, through the prototype chain: the 66 members from before the split and confirmSecret, none twice
     const chain = new Set([...own(VaultService), ...own(ServiceCore)]);
     expect(chain.size).toBe(CORE_MEMBERS.length + FULL_MEMBERS.length);
     for (const m of POPUP_API) expect(typeof ServiceCore.prototype[m], m).toBe("function");

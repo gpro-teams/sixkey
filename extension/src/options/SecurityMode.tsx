@@ -21,6 +21,8 @@ export function SecurityMode({ rt, status, reload }: Ctx) {
   const { settings: s, change: changeSaved } = useSettings(rt);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // switching to "lock every time" (a soft lock: the PIN opens) and declaring the profile shared (a hard lock) lock
+  // Sixkey (VaultService.updateSettings): the page says so where the change was made
   const [lockedNow, setLockedNow] = useState(false);
   const [busy, setBusy] = useState(0); // changes still being saved (and the page brought up to date after them)
   // What is typed in the minutes field until it is committed (Enter, or leaving the field). The field is drawn from the
@@ -30,23 +32,26 @@ export function SecurityMode({ rt, status, reload }: Ctx) {
   if (!s) return null;
   const mode = detectPreset(s);
   const al = s.autoLock;
-  // A change of lock mode ends the session (VaultService.updateSettings): with a master password, that locks Sixkey.
-  const wouldLock = status.state === "unlocked" && status.passwordProtected;
 
-  /** Save one change, the whole record (src/options/settings-store.ts), then show the real state: it may be locked now. */
+  /**
+   * Save one change, the whole record (src/options/settings-store.ts), then show the real state. A change of lock mode
+   * other than to "lock every time" no longer locks (OWNER-DECISIONS/26): it decides the next lock.
+   */
   async function save(change: (cur: Settings) => Settings) {
     setError(null);
     setLockedNow(false);
-    let modeChanged = false;
+    let locks = false;
     setBusy((n) => n + 1);
     try {
       await changeSaved((cur) => {
         const next = change(cur);
-        modeChanged = next.autoLock.mode !== cur.autoLock.mode;
+        locks =
+          (next.profile === "shared" && cur.profile !== "shared") ||
+          (next.autoLock.mode === "always" && cur.autoLock.mode !== "always");
         return next;
       });
       await reload();
-      setLockedNow(modeChanged && wouldLock);
+      setLockedNow(locks && status.state === "unlocked" && status.passwordProtected);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {
@@ -88,12 +93,6 @@ export function SecurityMode({ rt, status, reload }: Ctx) {
           </label>
         )}
       </div>
-      {wouldLock && (
-        <p class="callout">
-          <Icon name="lock" size={16} />
-          <span>{t("smLocksNow")}</span>
-        </p>
-      )}
 
       <h4 class="sm-sub">{t("autoLockTitle")}</h4>
       <div class="row2">
@@ -189,17 +188,17 @@ export function SecurityMode({ rt, status, reload }: Ctx) {
         <span>{t("expPwLead")}</span>
       </p>
 
-      {error && (
-        <div class="err" role="alert">
-          <Icon name="alert" size={15} />
-          {error}
-        </div>
-      )}
       {lockedNow && (
         <p class="callout" id="sm-locked" role="status">
           <Icon name="lock" size={16} />
           <span>{t("smLockedNow")}</span>
         </p>
+      )}
+      {error && (
+        <div class="err" role="alert">
+          <Icon name="alert" size={15} />
+          {error}
+        </div>
       )}
       {saved && (
         <span class="ok-msg" role="status">

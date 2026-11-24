@@ -5,7 +5,7 @@
 // is a vault that cannot be recovered. App draws the code above every section (RecoveryCodeBox) until the person has
 // saved it; the forms hold only what is typed, and hand it over when they submit.
 import { useCallback, useRef, useState } from "preact/hooks";
-import { ServiceError, type PreparedShares } from "../core/service/service";
+import { ServiceError, type PreparedShares, type Secret } from "../core/service/service";
 import type { Runtime } from "../platform/runtime";
 import { t } from "../ui/i18n";
 import { masterAccepts, measure } from "../ui/strength";
@@ -26,7 +26,8 @@ export type KeyOps = {
    */
   enable: (pw: string, anyway: boolean) => Promise<boolean>;
   change: (old: string, pw: string, anyway: boolean) => Promise<boolean>;
-  newCode: (pw: string) => Promise<boolean>;
+  /** The PIN or the master password (a Secret, OWNER-DECISIONS/26); `say`: the PIN's own refusals (useConfirm). */
+  newCode: (secret: Secret, say?: (e: unknown) => string | null) => Promise<boolean>;
   rotate: (pw: string) => Promise<boolean>;
   /**
    * The shares wizard's switch (ShareWizard.tsx; docs/design/notes/SHAMIR-NOTES.md §4): the test restore's shares, and
@@ -105,10 +106,14 @@ export function useKeyOps(rt: Runtime, reload: () => Promise<void>): KeyOps {
         if (!masterAccepts(await measure(pw), anyway)) throw new ServiceError("weak_password");
         await rt.service.changePassword(old, pw);
       }, t("passwordChanged")),
-    newCode: (pw) =>
-      run(async () => {
-        await rt.service.newRecoveryCode(pw, { onCode: setCode });
-      }),
+    newCode: (secret, say) =>
+      run(
+        async () => {
+          await rt.service.newRecoveryCode(secret, { onCode: setCode });
+        },
+        undefined,
+        say,
+      ),
     rotate: (pw) =>
       run(async () => {
         await rt.service.rotateKey(pw, { onCode: setCode });

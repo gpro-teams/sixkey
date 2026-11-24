@@ -8,6 +8,7 @@
 import type { Runtime } from "../platform/runtime";
 import { t } from "../ui/i18n";
 import { codeSymbols, CODE_SYMBOLS } from "./code-text";
+import { ConfirmField, type Confirm } from "./ConfirmField";
 import { MasterField } from "./MasterField";
 import { RecoveryCodeInput } from "./RecoveryCodeInput";
 
@@ -20,8 +21,9 @@ export function recoveryKeyOf(
   source: RecoveryKeySource,
   password: string,
   code: string,
-): { password: string } | { recoveryCode: string } | null {
-  if (source === "new") return password ? { password } : null;
+  pin = false,
+): { password: string } | { pin: string } | { recoveryCode: string } | null {
+  if (source === "new") return password ? (pin ? { pin: password } : { password }) : null;
   return codeSymbols(code).length === CODE_SYMBOLS ? { recoveryCode: code } : null;
 }
 
@@ -33,6 +35,8 @@ export function RecoveryKeyStep(p: {
   onSource: (s: RecoveryKeySource) => void;
   password: string;
   onPassword: (v: string) => void;
+  /** A new code confirmed with the PIN or the master password (ConfirmField, OWNER-DECISIONS/26): `password` is its value. */
+  confirm?: Confirm;
   code: string;
   onCode: (v: string) => void;
   /** The code field's "I have shares instead" is on screen (a stale set is then said by the shares' entry). */
@@ -61,14 +65,18 @@ export function RecoveryKeyStep(p: {
       </div>
       {p.source === "new" ? (
         <>
-          <MasterField
-            id={`${p.id}-pw`}
-            label={t("passwordLabel")}
-            value={p.password}
-            onValue={p.onPassword}
-            rt={p.rt}
-            disabled={p.disabled}
-          />
+          {p.confirm ? (
+            <ConfirmField c={p.confirm} id={`${p.id}-pw`} label={t("passwordLabel")} rt={p.rt} disabled={p.disabled} />
+          ) : (
+            <MasterField
+              id={`${p.id}-pw`}
+              label={t("passwordLabel")}
+              value={p.password}
+              onValue={p.onPassword}
+              rt={p.rt}
+              disabled={p.disabled}
+            />
+          )}
           <p class="callout" id={`${p.id}-new-note`}>
             {p.words.newNote}
           </p>

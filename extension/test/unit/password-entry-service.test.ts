@@ -585,15 +585,26 @@ describe("source rules: the hint decides nothing, and is kept in chrome.storage.
   it("every settings prompt for the master password is a MasterField, with the plain field one click away", () => {
     for (const [f, ids] of [
       ["options/UnlockBar.tsx", ["unlock-pw"]],
-      ["options/Security.tsx", ["old-pw", "code-pw", "rot-pw"]],
+      ["options/Security.tsx", ["old-pw", "rot-pw"]],
+      ["options/Backup.tsx", ["export-pw", "export-pw-subset", "export-pw-plain"]],
+      ["options/ConfirmField.tsx", ["{p.id}"]],
+    ] as const) {
+      const s = read(f);
+      for (const id of ids) expect(s, `${f} ${id}`).toMatch(new RegExp(`<MasterField\\s+id=(\\{p\\.id\\}|"${id}")`));
+      expect(s, f).not.toMatch(/autocomplete="current-password"/); // no plain master-password field left beside it
+    }
+    // where the PIN confirms too (OWNER-DECISIONS/26), the field is ConfirmField's, which is the MasterField above
+    for (const [f, ids] of [
+      ["options/Security.tsx", ["code-pw"]],
       ["options/PinBox.tsx", ["pin-pw"]],
       ["options/Misc.tsx", ["trash-pw"]],
       ["options/SecurityCard.tsx", ["sec-log-pw"]],
-      ["options/Backup.tsx", ["export-pw", "export-pw-subset", "export-pw-plain"]],
+      ["options/DeviceBox.tsx", ["device-pw"]],
     ] as const) {
       const s = read(f);
-      for (const id of ids) expect(s, `${f} ${id}`).toMatch(new RegExp(`<MasterField\\s+id="${id}"`));
-      expect(s, f).not.toMatch(/autocomplete="current-password"/); // no plain master-password field left beside it
+      for (const id of ids)
+        expect(s, `${f} ${id}`).toMatch(new RegExp(`<ConfirmField\\s+c=\\{confirm\\}\\s+id="${id}"`));
+      expect(s, f).not.toMatch(/autocomplete="current-password"/);
     }
     const m = read("options/MasterField.tsx");
     expect(m).toMatch(/groups && \(/);

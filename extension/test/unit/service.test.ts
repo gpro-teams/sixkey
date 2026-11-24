@@ -402,9 +402,12 @@ describe("lock every time", () => {
     const ctxB = mk(new RoutedSession(shared, settings)); // the next popup
     expect((await ctxB.status()).state).toBe("locked");
   });
-  it("switching to it while unlocked locks immediately", async () => {
+  // switching to it while unlocked is the soft lock (since 2026-11-24 no longer a hard one, OWNER-DECISIONS/26): the key
+  // stored for other contexts goes; any other change of mode does not lock
+  it("switching to it while unlocked locks at once; another change of mode does not", async () => {
     const w = setup();
     await createProtected(w.svc);
+    await w.svc.updateSettings({ autoLock: { mode: "session" }, lockOnScreenLock: true });
     expect((await w.svc.status()).state).toBe("unlocked");
     await w.svc.updateSettings({ autoLock: { mode: "always" }, lockOnScreenLock: true });
     expect((await w.svc.status()).state).toBe("locked");
