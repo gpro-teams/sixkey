@@ -27,7 +27,7 @@ import { formatDate, formatDateTime, t } from "../ui/i18n";
 import { Avatar } from "../ui/art";
 import { Icon } from "./icons";
 import type { SetupStart } from "./FirstRun";
-import { MasterField } from "./MasterField";
+import { ConfirmField, useConfirm } from "./ConfirmField";
 import { BoxTitle, download, errText, Panel, stamp, type Ctx } from "./shared";
 
 const TRASH_DAYS = 30;
@@ -36,14 +36,12 @@ export function Trash({ rt, vault, status, reload }: Ctx) {
   const unlocked = status.state === "unlocked" && vault !== null;
   const trash = vault ? trashEntries(vault) : [];
   const [error, setError] = useState<string | null>(null);
-  // Deleting for good cannot be undone: the master password typed again, whenever there is one (the service checks it,
-  // VaultService.requireMasterPassword), so that what opened the vault (a PIN, an unlocked page) never reaches it.
+  // Deleting for good cannot be undone: the PIN or the master password typed again, whenever there is a master password
+  // (the service checks it, VaultService.confirmSecret; the PIN since 2026-11-24, OWNER-DECISIONS/26), so that an
+  // unlocked page left alone never reaches it. The field is emptied on a lock (useConfirm).
   const needsPw = status.state === "unlocked" && status.passwordProtected;
-  const [pw, setPw] = useState("");
-  useEffect(() => {
-    if (!unlocked) setPw(""); // not left in the field for whoever sits down next
-  }, [unlocked]);
-  const canErase = unlocked && (!needsPw || pw.length > 0);
+  const confirm = useConfirm(rt, unlocked);
+  const canErase = unlocked && (!needsPw || confirm.value.length > 0);
   const deletedAt = (e: Entry) => (e.dhlc ? (parseHlc(e.dhlc)?.wall ?? 0) : 0);
 
   const oldOnes = trash.filter((e) => deletedAt(e) > 0 && Date.now() - deletedAt(e) > TRASH_DAYS * 86_400_000);
@@ -61,11 +59,11 @@ export function Trash({ rt, vault, status, reload }: Ctx) {
   async function erase(ids: string[]) {
     setError(null);
     try {
-      await rt.service.purgeForever(ids, pw);
-      setPw("");
+      await rt.service.purgeForever(ids, needsPw ? confirm.secret() : "");
+      confirm.setValue("");
       await reload();
     } catch (e) {
-      setError(errText(e));
+      setError(confirm.refused(e) ?? errText(e));
     }
   }
   return (
@@ -77,19 +75,18 @@ export function Trash({ rt, vault, status, reload }: Ctx) {
         </div>
       )}
       {needsPw && trash.length > 0 && (
-        <MasterField
+        <ConfirmField
+          c={confirm}
           id="trash-pw"
           fieldId="trash-pw-field"
           label={t("passwordLabel")}
-          value={pw}
-          onValue={setPw}
           rt={rt}
           describedBy="trash-pw-why"
         >
           <p class="muted" id="trash-pw-why">
             {t("eraseNeedsPassword")}
           </p>
-        </MasterField>
+        </ConfirmField>
       )}
       {oldOnes.length > 0 && (
         <div class="row2">

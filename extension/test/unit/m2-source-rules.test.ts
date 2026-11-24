@@ -120,6 +120,8 @@ describe("M2 source rules", () => {
         "core/service/pin-restart-admin.ts",
         "core/service/pin-restart-steps.ts",
         "core/service/pin-restart-count.ts",
+        // the master password compared without a record (an export confirmed with the PIN, OWNER-DECISIONS/26): the store
+        "core/service/master-check.ts",
       ]),
     );
   });

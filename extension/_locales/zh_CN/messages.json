@@ -1145,17 +1145,14 @@
   "smCustomBody": {
     "message": "下面的设置是你自己选的组合。在上面选一个模式即可恢复。"
   },
-  "smLocksNow": {
-    "message": "更改锁定时机会立即锁定 Sixkey，之后用主密码再解锁即可。"
+  "smClipNote": {
+    "message": "共享或自动化的配置文件，建议同时开启复制后清空剪贴板："
   },
   "smLockedNow": {
     "message": "Sixkey 现已锁定。请在本页顶部解锁后继续。"
   },
-  "smClipNote": {
-    "message": "共享或自动化的配置文件，建议同时开启复制后清空剪贴板："
-  },
   "expPwLead": {
-    "message": "每次导出都要重新输入主密码，即使 Sixkey 已解锁。"
+    "message": "每次导出都要再确认一次，即使 Sixkey 已解锁：输 PIN；没有 PIN 时输主密码。"
   },
   "expNoPw": {
     "message": "这个库没有主密码，导出时无从验证：任何能用这个浏览器的人都能导出你的密钥。请在“安全”中开启主密码。"
@@ -1221,7 +1218,7 @@
     "message": "清空记录"
   },
   "secLogClearLead": {
-    "message": "需要主密码，输错会被拒绝并记下。清空后留下一行带时间的记录。"
+    "message": "需要 PIN；没有 PIN 时需要主密码。输错会被拒绝并记下。清空后留下一行带时间的记录。"
   },
   "secKUnlockFailed": {
     "message": "主密码输错"
@@ -1526,6 +1523,9 @@
   "pwUseAnyway": {
     "message": "仍然使用"
   },
+  "pwWeakWhyFile": {
+    "message": "拿到这个文件的人可以离线猜，不限次数：一张显卡大约 $1 就能猜出这种强度的密码，显卡越多越快。"
+  },
   "lockPinWaiting": {
     "message": "输一次主密码后，PIN 就能重新使用。"
   },
@@ -1608,7 +1608,7 @@
     "message": "PIN 能挡住坐到你电脑前的人：输错 5 次后只有主密码能打开 Sixkey。它挡不住这台电脑上的程序，也挡不住会打开浏览器开发者工具的人。"
   },
   "pinRoot": {
-    "message": "主密码始终可用，导出、更改密钥、永久删除以及设置或更改 PIN 时仍会要求输入主密码。"
+    "message": "主密码始终可用。PIN 能打开 Sixkey 时，导出、永久删除、更改 PIN 这类操作改为再输一次 PIN；更改密钥仍要主密码。"
   },
   "pinClose": {
     "message": "想每次关闭弹窗就锁定，请在“自动锁定”中选择“$1”，之后用 PIN 重新打开。"
@@ -1677,7 +1677,7 @@
     "message": "PIN 快速解锁已结束"
   },
   "eraseNeedsPassword": {
-    "message": "永久删除无法撤销，所以需要输入主密码。"
+    "message": "永久删除无法撤销，所以要再确认一次：输 PIN；没有 PIN 时输主密码。"
   },
   "viewAuto": {
     "message": "自动"

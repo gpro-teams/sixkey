@@ -55,7 +55,7 @@ family, published and maintained by VIEW TECH LTD.
 - Can show its list in the browser's side panel instead of the popup.
 - Keeps several local copies (two slots, rolling and daily snapshots, a second copy in IndexedDB) so that a crash or a
   damaged write does not lose saved data, and reminds you to export an encrypted backup.
-- Asks for the master password again before every export, and keeps a local record of wrong passwords and exports.
+- Asks you to confirm again before every export (your PIN, or the master password when there is no PIN), and keeps a local record of wrong PINs and passwords and of exports.
 - Lets you change how the list looks without leaving the popup: the Appearance button (a sun, beside the search field)
   sets the theme, standard or compact rows, the order, and whether codes are hidden until you ask, the same four
   choices as Settings › Appearance, in the popup and in the side panel.

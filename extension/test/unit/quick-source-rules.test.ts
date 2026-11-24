@@ -87,8 +87,10 @@ describe("the session quick unlock's records", () => {
     // wrong PIN ends it (pin-restart-steps.ts: whatever ends the PIN ends the gate, OWNER-DECISIONS/17 Q1)
     const callers = where(/\.setQuick\(/).sort();
     expect(callers).toEqual(["core/service/device-admin.ts", "core/service/service-core.ts", "platform/session.ts"]);
+    // the 5th wrong PIN typed again while unlocked ends it as on a lock screen (pin-restart-admin.ts confirmPin)
     expect(where(/\.clearQuick\(/).sort()).toEqual([
       "core/service/device-admin.ts",
+      "core/service/pin-restart-admin.ts",
       "core/service/pin-restart-steps.ts",
       "core/service/service-core.ts",
       "core/service/service.ts",

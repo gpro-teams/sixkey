@@ -4,6 +4,7 @@ import { t } from "../ui/i18n";
 import { masterAccepts, type Strength } from "../ui/strength";
 import { Icon } from "./icons";
 import type { KeyOps } from "./key-ops";
+import { ConfirmField, useConfirm } from "./ConfirmField";
 import { MasterField } from "./MasterField";
 import { PinBox } from "./PinBox";
 import { SecurityCard } from "./SecurityCard";
@@ -151,7 +152,10 @@ function ChangeForm({ keys, rt, onDone }: { keys: KeyOps; rt: Ctx["rt"]; onDone:
   );
 }
 
-/** A new recovery code, or a new key (`kind`): each asks for the master password (H3, C6-1). */
+/**
+ * A new recovery code, or a new key (`kind`): a new code asks for the PIN or the master password (H3, C6-1; the PIN since
+ * 2026-11-24, OWNER-DECISIONS/26); a new key the master password, which it is wrapped under.
+ */
 function AskForm({
   kind,
   keys,
@@ -164,7 +168,12 @@ function AskForm({
   onDone: () => void;
 }) {
   const [pw, setPw] = useState("");
-  const go = () => void (kind === "code" ? keys.newCode(pw) : keys.rotate(pw)).then((ok) => ok && onDone());
+  const confirm = useConfirm(rt, true); // shown only while unlocked
+  const typed = kind === "code" ? confirm.value : pw;
+  const go = () =>
+    void (kind === "code" ? keys.newCode(confirm.secret(), (e) => confirm.refused(e)) : keys.rotate(pw)).then(
+      (ok) => ok && onDone(),
+    );
   return (
     <>
       <p class="muted">{t(kind === "code" ? "newCodeBody" : "rotateBody")}</p>
@@ -172,7 +181,7 @@ function AskForm({
         {t("sharesStopWarn")}
       </p>
       {kind === "code" ? (
-        <MasterField id="code-pw" label={t("passwordLabel")} value={pw} onValue={setPw} rt={rt} />
+        <ConfirmField c={confirm} id="code-pw" label={t("passwordLabel")} rt={rt} />
       ) : (
         <MasterField id="rot-pw" label={t("passwordLabel")} value={pw} onValue={setPw} rt={rt} />
       )}
@@ -180,7 +189,7 @@ function AskForm({
         <button
           class="btn ghost"
           id={kind === "code" ? "new-code" : "rotate-key"}
-          disabled={keys.busy || !pw}
+          disabled={keys.busy || !typed}
           onClick={go}
         >
           {t(kind === "code" ? "newCodeAction" : "rotateAction")}

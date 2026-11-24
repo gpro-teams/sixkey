@@ -118,7 +118,7 @@ Settings › Backup turns that backup on as it opens); in `localStorage` `sk_lan
   the diagnostics file. A browser that syncs, clones or exports whole profiles carries it along with everything else.
 - After you unlock in the popup, Sixkey tells you how many wrong attempts there were since you last saw this. Settings ›
   Security › Security record shows the list.
-- You can clear it there with your master password; one dated line saying it was cleared stays.
+- You can clear it there with your PIN, or your master password when no PIN is set; one dated line saying it was cleared stays.
 - It is an alert, not evidence: anyone who can change the files of this profile can change it.
 
 ## The backup in Chrome sync
@@ -288,8 +288,8 @@ Chrome, on this computer only, and nothing goes over the network.
 
 - **Export** (Settings › Backup): an encrypted backup file (protected by a password you choose), **Export selected
   accounts** (an encrypted file with only the accounts you tick, under its own password), or a plain text list. Every
-  export asks for your master password again, even while Sixkey is unlocked; a vault from an earlier version that has no
-  master password shows a warning instead. Each export is noted in the security record (kind and time only).
+  export asks you to confirm again, even while Sixkey is unlocked: with your PIN, or with your master password when no PIN
+  is set (or after 5 wrong PINs); a vault from an earlier version that has no master password shows a warning instead. Each export is noted in the security record (kind and time only).
 - **A file of selected accounts** holds those accounts and nothing else of your vault: new IDs, every date in it set to
   when you exported it, and nothing from the trash. It can still be recognised as a selected-accounts file once opened
   (all its dates are the same) and by its default name (`sixkey-selected-<date>.json`); it keeps the order the accounts

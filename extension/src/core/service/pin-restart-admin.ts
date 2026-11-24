@@ -50,6 +50,12 @@ export type RestartView = {
   byPin: boolean;
 };
 
+/** What a PIN typed again answered (confirmPin): as a lock screen's PinUnlock, with no session started. */
+export type PinConfirm =
+  | { ok: true }
+  | { ok: false; reason: "malformed" | "ended" | "exhausted" | "locked" }
+  | { ok: false; reason: "wrong"; triesLeft: number };
+
 const protectedBy = (k: Keyring) => !hasDevice(k) && k.wraps.some((w) => w.method === "password");
 /** The PIN store's own KV and lock (by element access: the record is the PIN's, under the same lock). */
 const io = (pins: PinStore) => ({ kv: pins["kv"] as KV, lock: pins["lock"] as Lock });
@@ -249,6 +255,71 @@ export class RestartAdmin {
       }
     }
     await this.make(vk, keyring, set, this.s["now"]());
+  }
+
+  /**
+   * The PIN typed again for what is done while Sixkey is unlocked, where the master password was asked until 2026-11-24
+   * (OWNER-DECISIONS/26: every copy of the master password is one more exposure; an export first). Only while the PIN
+   * opens Sixkey now: a record Sixkey made for these keys that offers it (restartState "pin"); else "ended", and the
+   * master password then. Counted on that record as the lock screens count it (pin-restart-steps.ts unlock): the try
+   * written FIRST in the vault lock, the 5th setting its wrap aside in that same write (PINR-07), so the two share their
+   * 5 tries. Then checked against the PIN's set-up under the session's key (the key is in hand: the wrap is not derived).
+   * Wrong: pin_failed recorded and the tries left; the 5th also ends the Touch ID / Windows Hello gate (quick_ended), as on
+   * a lock screen: "exhausted". Right: compare-and-set on the record the try was counted on (one changed meanwhile:
+   * "ended"), the count back to none, and a wrap this try set aside put back unless Sixkey locked meanwhile ("locked").
+   * Not 4 to 8 digits: "malformed", a typo, not counted.
+   */
+  async confirmPin(pin: string): Promise<PinConfirm> {
+    if (normalizePin(pin) === null) return { ok: false, reason: "malformed" };
+    const epoch = await this.s["session"].lockEpoch();
+    const { keyring, vk, set } = await this.target();
+    const rec = await genuineRestart(this.s["pins"]!, keyring, vk);
+    if (!rec || restartState(rec, keyring, set, false) !== "pin") return { ok: false, reason: "ended" };
+    const { kv, lock } = io(this.s["pins"]!);
+    const spent = await lock(async () => {
+      const cur: unknown = (await kv.get([RESTART_KEY]))[RESTART_KEY];
+      if (!restartOk(cur) || cur.id !== rec.id || !cur.wrap) return "ended" as const;
+      if (cur.fails >= QUICK_TRIES) return "exhausted" as const;
+      const fails = cur.fails + 1;
+      const next: RestartRecord = { ...cur, fails, wrap: fails >= QUICK_TRIES ? null : cur.wrap };
+      await kv.set({ [RESTART_KEY]: next });
+      return { wrap: cur.wrap, next };
+    });
+    if (typeof spent === "string") return { ok: false, reason: spent };
+    let ok = false;
+    try {
+      const typed = await derivePinKek(pin, set.kdf);
+      const own = await openPinRecord(set, vk);
+      ok = sameBytes(typed, own);
+      typed.fill(0);
+      own.fill(0);
+    } catch (e) {
+      if (!(e instanceof CryptoError)) throw e;
+    }
+    if (!ok) {
+      await this.s["record"]("pin_failed");
+      if (spent.next.fails < QUICK_TRIES)
+        return { ok: false, reason: "wrong", triesLeft: QUICK_TRIES - spent.next.fails };
+      await this.s["quickLock"](() => this.s["session"].clearQuick()); // the 5th: whatever ends the PIN ends the gate
+      await this.s["record"]("quick_ended");
+      return { ok: false, reason: "exhausted" };
+    }
+    const still = await lock(async (): Promise<"ok" | "ended" | "locked"> => {
+      const cur: unknown = (await kv.get([RESTART_KEY]))[RESTART_KEY];
+      if (!restartOk(cur) || cur.id !== spent.next.id || JSON.stringify(cur.wrap) !== JSON.stringify(spent.next.wrap))
+        return "ended";
+      const back = !spent.next.wrap && JSON.stringify(cur) === JSON.stringify(spent.next);
+      if (back && (await this.s["session"].lockEpoch()) !== epoch) {
+        await kv.set({ [RESTART_KEY]: { ...cur, fails: 0 } }); // a lock meanwhile: the master password once
+        return "locked";
+      }
+      if (back) await kv.set({ [RESTART_KEY]: { ...cur, fails: 0, wrap: spent.wrap } });
+      else if (cur.fails) await kv.set({ [RESTART_KEY]: { ...cur, fails: 0 } });
+      return "ok";
+    });
+    if (still !== "ok") return { ok: false, reason: still };
+    if ((await this.s["session"].lockEpoch()) !== epoch) return { ok: false, reason: "locked" };
+    return { ok: true };
   }
 
   /** This page's own key event to `keyring`'s very keys in the last 10 minutes: its time; else null. */

@@ -34,7 +34,7 @@ import {
 import type { Keyring } from "../crypto/keyring";
 import type { Vk } from "../crypto/vk";
 import { rotatedBy } from "./rotated";
-import type { VaultService } from "./service";
+import type { Secret, VaultService } from "./service";
 import { hasDevice } from "./service-core";
 import { updatePrf } from "./prf-write";
 import { ServiceError } from "./service-error";
@@ -126,14 +126,16 @@ export class DeviceAdmin {
    * `null` in place of the password: this page's own key change, to this very key, in the last 10 minutes (the master
    * password was typed for it: VaultService `rotated`; OWNER-DECISIONS/17 Q3); else wrong_secret, nothing recorded.
    */
-  private async target(password: string | null): Promise<{ keyring: Keyring; vk: Vk }> {
+  private async target(password: Secret | null): Promise<{ keyring: Keyring; vk: Vk }> {
     if (!this.s["prfs"]) throw new ServiceError("quick_off");
     const r = await this.s["store"].load();
     if (r.status !== "ok") throw new ServiceError("bad_state", r.status);
     const keyring = r.gen.keyring;
     if (!protectedBy(keyring)) throw new ServiceError("not_protected");
     const vk = await this.s["requireVk"](keyring); // unlocked (QUICK-UNLOCK §5.3: requirements)
-    if (password !== null) await this.s.verifyPassword(password);
+    // the PIN typed again too since 2026-11-24 (confirmSecret, OWNER-DECISIONS/26); the master password as before
+    if (password !== null)
+      await (typeof password === "string" ? this.s.verifyPassword(password) : this.s.confirmSecret(password));
     else if (!this.justRotated(keyring)) throw new ServiceError("wrong_secret");
     return { keyring, vk };
   }
@@ -177,7 +179,7 @@ export class DeviceAdmin {
    *      in place of whatever was armed (one method at a time).
    * The PRF output is zeroed once the wrap is made.
    */
-  async enrol(password: string, o: { name: string; allowSynced: boolean }): Promise<Enrolment> {
+  async enrol(password: Secret, o: { name: string; allowSynced: boolean }): Promise<Enrolment> {
     const shared = profileOf(await this.s["settings"].get()) === "shared";
     if (o.allowSynced && shared) throw new ServiceError("quick_off");
     const { keyring, vk } = await this.target(password);
@@ -271,7 +273,7 @@ export class DeviceAdmin {
    * record goes with its last one), then prf_removed. A page closed in between leaves the credential listed (to be
    * removed again), never a removed one that opens anything. The passkey itself stays in the OS: the box says where.
    */
-  async remove(password: string, id: string): Promise<void> {
+  async remove(password: Secret, id: string): Promise<void> {
     const { keyring } = await this.target(password);
     const rec = forVault(await this.prfs.read(), keyring.vaultId);
     const had = rec?.creds.some((c) => c.id === id) ?? false;
@@ -299,7 +301,7 @@ export class DeviceAdmin {
    * or no PRF output for a PRF one). prf_enrolled recorded: a way in is back. `password` null: one touch right after this
    * page's own key change, without the master password typed again (OWNER-DECISIONS/17 Q3; target()).
    */
-  async reenable(password: string | null, id: string): Promise<Enrolment> {
+  async reenable(password: Secret | null, id: string): Promise<Enrolment> {
     const { keyring, vk } = await this.target(password);
     const rec = forVault(await this.prfs.read(), keyring.vaultId);
     const cred = rec?.creds.find((c) => c.id === id && c.kind === "platform");
@@ -370,7 +372,7 @@ export class DeviceAdmin {
    * start, prf_enrolled. No new passkey, none left behind in the provider. Never in a profile declared shared
    * (quick_off). When it was the last gate credential, the gate's arming goes.
    */
-  async alsoAfterRestart(password: string, id: string): Promise<Enrolment> {
+  async alsoAfterRestart(password: Secret, id: string): Promise<Enrolment> {
     if (profileOf(await this.s["settings"].get()) === "shared") throw new ServiceError("quick_off");
     const { keyring, vk } = await this.target(password);
     const rec = forVault(await this.prfs.read(), keyring.vaultId);

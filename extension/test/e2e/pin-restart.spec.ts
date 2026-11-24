@@ -46,12 +46,16 @@ const recOf = (page: Page) =>
 const pinKeyOf = (page: Page) =>
   page.evaluate(async () => ((await chrome.storage.local.get("sk_pin")).sk_pin as { vkId?: string } | undefined)?.vkId);
 
-/** Settings › Security › PIN quick unlock: what it costs read first, the master password and the PIN twice, Set PIN. */
-async function setPin(opt: Page, pin = PIN) {
+/**
+ * Settings › Security › PIN quick unlock: what it costs read first, the master password (or `current`, the PIN that
+ * opens Sixkey now, which confirms its change since 2026-11-24: OWNER-DECISIONS/26) and the PIN twice, Set PIN.
+ */
+async function setPin(opt: Page, pin = PIN, current?: string) {
   await expect(opt.locator(".status dd.num")).toHaveText(/^\d+$/); // loaded: nothing redraws the fields while typing
   await openFold(opt, "pin-box");
   await expect(opt.locator("#pin-restart-cost")).toContainText(/guess your PIN offline|离线猜你的 PIN/);
-  await opt.locator("#pin-pw").fill(STRONG);
+  if (current) await opt.locator("#pin-pw-pin").fill(current);
+  else await opt.locator("#pin-pw").fill(STRONG);
   await opt.locator("#pin-new").fill(pin);
   await opt.locator("#pin-new2").fill(pin);
   await opt.locator("#pin-set").click();
@@ -325,7 +329,7 @@ test("paused, a restart: no PIN offered and the line says the master password on
 test("a new PIN of 4 digits: the record made again with it, which opens after a restart; paused by a key change, the new PIN makes its own", async () => {
   const opt = await withPin();
   const first = (await recOf(opt))!;
-  await setPin(opt, PIN4);
+  await setPin(opt, PIN4, PIN); // the PIN it replaces confirms the change
   const second = (await recOf(opt))!;
   expect(second.id).not.toBe(first.id);
   await expect(opt.locator("#pin-state")).toContainText(/On \(4 digits\)|已开启（4 位）/);

@@ -6,6 +6,11 @@
 # moves one of these by editing this table; test/unit/budget-split.test.ts says which keys are out of place.
 PARTS = {
     "core": [
+        # the unlock bar's, and the backup page's since the PIN confirms an export (OWNER-DECISIONS/26)
+        "pinWrong",
+        "pinExhausted",
+        "useMasterPassword",
+        "usePin",
         "pinLabel",  # the unlock bar's PIN field, and the PIN after a restart's (PIN-RESTART-NOTES.md §8)
         "add",
         "back",
@@ -166,7 +171,6 @@ PARTS = {
         "smLead",
         "smCustomTitle",
         "smCustomBody",
-        "smLocksNow",
         "smLockedNow",
         "smClipNote",
         "secNoticeBad",
@@ -380,11 +384,7 @@ PARTS = {
         "resetChanged",
         "pinTitle",
         "pinTriesLeft",
-        "pinWrong",
-        "pinExhausted",
         "pinEnded",
         "pinRetry",
-        "useMasterPassword",
-        "usePin",
     ],
 }

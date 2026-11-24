@@ -14,6 +14,7 @@ EN = {
     "strengthCommon": "Too easy to guess: too close to a common password.",
     "pwWeakWhy": "Someone who copies this browser profile can guess offline, with no limit on tries: one graphics card finds a password this strong in about $1, and more cards are faster.",
     "pwUseAnyway": "Use anyway",
+    "pwWeakWhyFile": "Someone who gets this file can guess offline, with no limit on tries: one graphics card finds a password this strong in about $1, and more cards are faster.",
     "lockPinWaiting": "After a browser restart, an extension reload, 12 hours or 5 wrong tries, the PIN needs the master password once.",
 }
 ZH = {
@@ -23,6 +24,7 @@ ZH = {
     "strengthCommon": "太容易猜：和常见密码太像。",
     "pwWeakWhy": "拷走这个浏览器配置文件的人可以离线猜，不限次数：一张显卡大约 $1 就能猜出这种强度的密码，显卡越多越快。",
     "pwUseAnyway": "仍然使用",
+    "pwWeakWhyFile": "拿到这个文件的人可以离线猜，不限次数：一张显卡大约 $1 就能猜出这种强度的密码，显卡越多越快。",
     "lockPinWaiting": "浏览器重启、扩展重新加载、超过 12 小时或输错 5 次后，PIN 需要先输一次主密码。",
 }
 OVERRIDE_EN = {
@@ -35,9 +37,17 @@ OVERRIDE_ZH = {
     "pwWhyWords": "$1 个随机单词：约 $2 位，高于 $3 位的门槛。",
     "deviceOnlyBody": "你的账户目前只受一把存放在旁边的密钥保护。它能防止随手查看，但挡不住能访问这个浏览器配置文件的人或恶意软件。设置主密码后，配置文件被拷走时有多安全，取决于你选的密码。",
 }
-# PasswordFields is drawn by several parts, so its keys are core's; the unlock bar is the "unlock" part. lockPinWaiting is
+# PasswordFields is drawn by several parts, so its keys are core's; lockPinWaiting too, the unlock bar's and the backup page's (a PIN that no longer confirms an export, OWNER-DECISIONS/26). It is
 # also in the popup's catalog, which the build cuts from the popup's code.
 PARTS = {
-    "core": ["strengthHintOwn", "strengthLowOwn", "strengthShort", "strengthCommon", "pwWeakWhy", "pwUseAnyway"],
-    "unlock": ["lockPinWaiting"],
+    "core": [
+        "strengthHintOwn",
+        "strengthLowOwn",
+        "strengthShort",
+        "strengthCommon",
+        "pwWeakWhy",
+        "pwWeakWhyFile",
+        "pwUseAnyway",
+        "lockPinWaiting",
+    ],
 }

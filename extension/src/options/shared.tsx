@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { PBKDF2_DEFAULT_ITERATIONS } from "../core/crypto/kdf";
 import type { ServiceStatus } from "../core/service/service";
 import type { Vault } from "../core/vault/model";
 import { armClipboardClear } from "../platform/clipboard";
@@ -156,9 +157,10 @@ function sayTime(r: RoughTime): string {
  * the fields, then "Generate for me" as a secondary button, its box and "Choose my own" under it. For a backup file
  * (`purpose="file"`), "Generate for me" stays first and primary, with "Choose my own" beside it.
  *
- * `anyway` (the master password's pages, never a backup file or the sync key operations): MIN_BITS is a warning. Past the
- * service's floor and below MIN_BITS, a box says what that means (a copy of this browser profile can be guessed at
- * offline, and how long one graphics card takes at this strength) and offers "Use anyway", a toggle for this very value:
+ * `anyway` (the master password's pages, and a backup file's since 2026-11-24, never the sync key operations): MIN_BITS is
+ * a warning. Past the service's floor and below MIN_BITS, a box says what that means (a copy of this browser profile, or
+ * of the file, can be guessed at offline, and how long one graphics card takes at this strength) and offers "Use
+ * anyway", a toggle for this very value:
  * `anyway.value` is the value it was pressed for, and the page accepts with masterAccepts(strength, anyway.value ===
  * value). It is let go (set(null)) as soon as the value changes, on a lock, when the page goes away and on unmount.
  * Without `anyway`, MIN_BITS is the bar, as before. Below the bar the line says by how much and offers a generated one.
@@ -399,7 +401,7 @@ export function PasswordFields(p: {
       </div>
     </div>
   );
-  // the warning: only on the master password's pages, for the value it was measured for, past the floor, below the bar
+  // the warning: only where "Use anyway" is offered, for the value it was measured for, past the floor, below the bar
   const weak = view.warn && cur !== null && p.anyway !== undefined;
   const described = [`${id}-strength`, made ? `${id}-why` : "", weak ? `${id}-weak-why` : ""].filter(Boolean).join(" ");
   return (
@@ -442,7 +444,11 @@ export function PasswordFields(p: {
           <div class="callout pw-weak" id={`${id}-weak`}>
             <Icon name="alert" size={16} />
             <div>
-              <p id={`${id}-weak-why`}>{t("pwWeakWhy", sayTime(roughTime(offlineSeconds(cur.bits))))}</p>
+              <p id={`${id}-weak-why`}>
+                {p.purpose === "file"
+                  ? t("pwWeakWhyFile", sayTime(roughTime(offlineSeconds(cur.bits, PBKDF2_DEFAULT_ITERATIONS))))
+                  : t("pwWeakWhy", sayTime(roughTime(offlineSeconds(cur.bits))))}
+              </p>
               <button
                 type="button"
                 class="btn sm ghost"

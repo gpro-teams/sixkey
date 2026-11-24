@@ -1145,17 +1145,14 @@
   "smCustomBody": {
     "message": "Your own choice of the settings below. Pick a mode above to go back to it."
   },
-  "smLocksNow": {
-    "message": "Changing when Sixkey locks also locks it right away. You then unlock it again with your master password."
+  "smClipNote": {
+    "message": "In a shared or automated profile, also clear the clipboard after each copy:"
   },
   "smLockedNow": {
     "message": "Sixkey is locked now. Unlock it at the top of this page to go on."
   },
-  "smClipNote": {
-    "message": "In a shared or automated profile, also clear the clipboard after each copy:"
-  },
   "expPwLead": {
-    "message": "Every export asks for your master password again, even while Sixkey is unlocked."
+    "message": "Every export asks you to confirm again, even while Sixkey is unlocked: with your PIN, or your master password when there is no PIN."
   },
   "expNoPw": {
     "message": "This vault has no master password for an export to ask for: anyone at this browser can save your secret keys. Turn one on under Security."
@@ -1221,7 +1218,7 @@
     "message": "Clear record"
   },
   "secLogClearLead": {
-    "message": "Needs your master password. A wrong one is refused and recorded. One dated line stays."
+    "message": "Needs your PIN, or your master password when there is no PIN. A wrong one is refused and recorded. One dated line stays."
   },
   "secKUnlockFailed": {
     "message": "Wrong master password"
@@ -1526,6 +1523,9 @@
   "pwUseAnyway": {
     "message": "Use anyway"
   },
+  "pwWeakWhyFile": {
+    "message": "Someone who gets this file can guess offline, with no limit on tries: one graphics card finds a password this strong in about $1, and more cards are faster."
+  },
   "lockPinWaiting": {
     "message": "The PIN works again once you type the master password."
   },
@@ -1608,7 +1608,7 @@
     "message": "A PIN stops people at your computer: after 5 wrong tries only the master password opens Sixkey. It does not stop programs on this computer, or anyone who opens the browser's developer tools."
   },
   "pinRoot": {
-    "message": "The master password always works, and exports, key changes, deleting for good, and setting or changing the PIN still ask for it."
+    "message": "The master password always works. While the PIN opens Sixkey, exports, deleting for good and changing the PIN ask for the PIN again; key changes ask for the master password."
   },
   "pinClose": {
     "message": "To lock whenever the popup closes, choose “$1” under Automatic lock. The PIN opens it again."
@@ -1677,7 +1677,7 @@
     "message": "PIN quick unlock ended"
   },
   "eraseNeedsPassword": {
-    "message": "Deleting for good cannot be undone, so it asks for your master password."
+    "message": "Deleting for good cannot be undone, so it asks for your PIN, or your master password when there is no PIN."
   },
   "viewAuto": {
     "message": "Auto"

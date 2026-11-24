@@ -412,6 +412,39 @@ test("a typed master password does not wait in the field: emptied after a minute
   await expect(opt.locator(PLAIN_PW)).toHaveValue("");
 });
 
+// OWNER-DECISIONS/26 (2026-11-24): with a PIN set, an export asks for the PIN, not the master password (every copy of the
+// master password is one more exposure); a wrong PIN is counted with the lock screen's tries, the right one saves, and
+// "Use master password" brings the master password's field back
+test("with a PIN, an export asks for the PIN instead of the master password", async () => {
+  await startFresh(p);
+  await addByPaste(p, GITHUB_URI);
+  const sec = await openOptions(p, "#security");
+  await expect(sec.locator(".status dd.num")).toHaveText(/^\d+$/);
+  await openFold(sec, "pin-box");
+  await sec.locator("#pin-pw").fill(STRONG);
+  await sec.locator("#pin-new").fill("2468");
+  await sec.locator("#pin-new2").fill("2468");
+  await sec.locator("#pin-set").click();
+  await expect(sec.locator("#pin-info")).toBeVisible();
+  await sec.close();
+  const opt = await openOptions(p, "#backup");
+  const downloads = countDownloads(opt);
+  await opt.locator("#plain-ok").check();
+  await expect(opt.locator("#export-pin-plain")).toBeVisible();
+  await expect(opt.locator("#export-pw-plain")).toHaveCount(0);
+  await opt.locator("#export-pin-plain").fill("1357");
+  await opt.locator("#export-plain").click();
+  await expect(opt.locator("#backup-error")).toContainText(/Tries left: 4|还可以再试 4 次/);
+  expect(downloads.n).toBe(0);
+  await opt.locator("#export-pin-plain").fill("2468");
+  await opt.locator("#export-plain").click();
+  await expect.poll(() => downloads.n).toBe(1);
+  expect(await securityKinds(opt)).toContain("pin_failed");
+  await opt.locator("#export-pw-plain-switch").click();
+  await expect(opt.locator("#export-pw-plain")).toBeVisible();
+  await expect(opt.locator("#export-pin-plain")).toHaveCount(0);
+});
+
 // KNOWN OPEN: C6-REVIEW C6-1 (High), not C6's to fix. Settings › Security › "Create new recovery code" asks for no
 // password, so someone at the unlocked browser makes a code, locks, resets the master password with it, and exports
 // every seed with their own password. The fix (a master password for a new recovery code: VaultService.newRecoveryCode

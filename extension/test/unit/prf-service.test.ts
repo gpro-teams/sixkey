@@ -607,16 +607,9 @@ describe("the session gate (§5.4 'Gate unlock')", () => {
     expect(await quickOf(u)).toBeNull();
   });
 
-  it("hard locks end it (§5.5): End quick unlock now, a lock-mode change, a shared profile, a key change, a removal", async () => {
+  it("hard locks end it (§5.5): End quick unlock now, a shared profile, a key change, a removal", async () => {
     const steps: [string, (w: QuickWorld) => Promise<unknown>][] = [
       ["end now", (w) => w.ctx().admin.endQuickUnlock()],
-      [
-        "lock mode",
-        async (w) => {
-          const s = w.ctx().service;
-          await s.updateSettings({ ...(await w.settings.get()), autoLock: { mode: "session" } });
-        },
-      ],
       ["shared", async (w) => w.ctx().service.updateSettings(applyPreset(await w.settings.get(), "shared"))],
       ["password", (w) => w.first.service.changePassword(STRONG, STRONG2)],
       ["rotation", (w) => codeOf((d) => w.first.service.rotateKey(STRONG, d))],
@@ -637,6 +630,16 @@ describe("the session gate (§5.4 'Gate unlock')", () => {
     const w = await enrolled({ prf: false });
     await w.ctx().service.lock();
     await w.ctx().service.lock();
+    expect(await quickOf(w)).toMatchObject({ method: "device" });
+  });
+
+  // OWNER-DECISIONS/26 (2026-11-24): a change of lock mode no longer locks, nor ends the gate
+  it("a change of lock mode keeps it, and the session too", async () => {
+    const w = await quickWorld({ pin: null, fake: { prf: false } });
+    await enrol(w);
+    const s = w.ctx().service;
+    await s.updateSettings({ ...(await w.settings.get()), autoLock: { mode: "session" } });
+    expect((await s.status()).state).toBe("unlocked");
     expect(await quickOf(w)).toMatchObject({ method: "device" });
   });
 

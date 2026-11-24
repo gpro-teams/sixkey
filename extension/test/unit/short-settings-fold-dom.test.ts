@@ -14,6 +14,14 @@ import { PinBox } from "../../src/options/PinBox";
 import { installMiniDom, type MiniDocument, type MiniElement } from "../helpers/mini-dom";
 
 let quick: unknown = { available: "ok", pin: null };
+// what the PIN's record offers (RestartAdmin.state): none unless a test sets it
+let restartView: unknown = null;
+vi.mock("../../src/core/service/pin-restart-admin", () => ({
+  RestartAdmin: class {
+    state = () => Promise.resolve(restartView);
+    confirmPin = () => Promise.resolve({ ok: true });
+  },
+}));
 vi.mock("../../src/core/service/pin-admin", () => ({
   PinAdmin: class {
     state = () => Promise.resolve(quick);
@@ -41,6 +49,7 @@ beforeEach(() => {
     runtime: { sendMessage: () => Promise.resolve() },
   };
   quick = { available: "ok", pin: null };
+  restartView = null;
 });
 afterEach(() => {
   act(() => render(null, root as unknown as Element));
@@ -168,7 +177,7 @@ describe("Backup: Encrypted backup", () => {
   // its own form, just above its button, and beside the button says what it waits for: the lock, then that field
   it("each export asks in its own form; a grey button says what it waits for: the lock, then the field above", () => {
     const beside = (id: string) => byId(id)!.parentNode!.textContent;
-    const ASKS = "Every export asks for your master password again";
+    const ASKS = "Every export asks you to confirm again";
     put(locked);
     click("encrypted-toggle");
     expect(byId("export-pw")).toBeNull();
@@ -184,6 +193,24 @@ describe("Backup: Encrypted backup", () => {
     expect(beside("export-encrypted")).not.toContain(ASKS);
     expect(byId("export-pw-plain")!.value).toBe(""); // ...is not the plain list's
     expect(beside("export-plain")).toContain(ASKS);
+  });
+
+  // OWNER-DECISIONS/26 (2026-11-24): with a PIN that opens Sixkey now, each export asks for the PIN, not the master password
+  it("with a PIN that opens Sixkey, each export asks for the PIN; 'Use master password' brings its field back", async () => {
+    const beside = (id: string) => byId(id)!.parentNode!.textContent;
+    restartView = { on: true, state: "pin", triesLeft: 5, byPin: false };
+    put(unlocked);
+    await settle();
+    click("encrypted-toggle");
+    expect(byId("export-pin")).not.toBeNull();
+    expect(byId("export-pin-plain")).not.toBeNull();
+    expect(byId("export-pw")).toBeNull();
+    expect(beside("export-encrypted")).toContain("Every export asks you to confirm again");
+    click("export-pw-switch");
+    expect(byId("export-pin")).toBeNull();
+    expect(byId("export-pw")).not.toBeNull();
+    expect(byId("export-pw-plain")).not.toBeNull(); // the choice is the page's, for every export
+    expect(beside("export-encrypted")).toContain("Every export asks you to confirm again");
   });
 });
 
@@ -246,6 +273,21 @@ describe("PIN quick unlock", () => {
     expect(byId("pin-box-toggle")!.getAttribute("aria-expanded")).toBe("false");
     click("pin-box-toggle");
     expect(byId("pin-pw")!.value).toBe("");
+  });
+
+  // OWNER-DECISIONS/26: with a PIN that opens Sixkey, its change is confirmed with the PIN (ConfirmField, as the trash,
+  // the security record, a new code and Touch ID / Windows Hello are)
+  it("with a PIN that opens Sixkey, changing it asks for the current PIN; 'Use master password' brings that field back", async () => {
+    quick = { available: "ok", pin: { digits: 6 } };
+    restartView = { on: true, state: "pin", triesLeft: 5, byPin: false };
+    await put(unlocked);
+    click("pin-box-toggle");
+    await settle();
+    expect(byId("pin-pw-pin")).not.toBeNull();
+    expect(byId("pin-pw")).toBeNull();
+    click("pin-pw-switch");
+    expect(byId("pin-pw")).not.toBeNull();
+    expect(byId("pin-pw-pin")).toBeNull();
   });
 
   it("what must stay in view is not behind the fold: the PIN's state and 'End quick unlock now'", async () => {

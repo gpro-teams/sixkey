@@ -1,6 +1,6 @@
 // The master password is the user's own (OWNER-DECISIONS/15; docs/design/notes/OWN-PASSWORD-NOTES.md):
 //   §1 below 50 bits is a warning with "Use anyway" (masterAccepts, meterView's own mode), the service's floor still blocks,
-//      generated passwords are handled as before, backup files keep the bar;
+//      generated passwords are handled as before, and backup files have the same warning since 2026-11-24;
 //   §2 new master-password wraps at PBKDF2_PASSWORD_WRAP_ITERATIONS; a 600k wrap still opens and is re-wrapped only by the
 //      next password change, never by an unlock; the PIN and backup files keep 600k (the server sync's engine, which
 //      kept it too, went with its client: OWNER-DECISIONS/25, DV-0b);
@@ -354,10 +354,14 @@ describe("§1 below 50 bits: a warning and 'Use anyway', never the floor", () =>
     ]);
   });
 
-  it("backup files keep the bar: no 'Use anyway' reaches them", () => {
+  // 2026-11-24 (the risk is a password copied around, not one guessed): a backup file's password below the bar is
+  // the master password's warning with "Use anyway", no longer a grey button; the floor still blocks
+  it("backup files have the warning and 'Use anyway', and their last check before writing is masterAccepts", () => {
     const backup = read("options/Backup.tsx");
-    expect(backup).not.toMatch(/anyway|masterAccepts/);
-    expect(backup.match(/if \(!\(await measure\((pw|subPw)\)\)\.ok\) throw/g)).toHaveLength(2);
+    expect(backup.match(/anyway=\{\{ value: (anyway|subAnyway), set: (setAnyway|setSubAnyway) \}\}/g)).toHaveLength(2);
+    expect(
+      backup.match(/if \(!masterAccepts\(await measure\((pw|subPw)\), (anyway === pw|subAnyway === subPw)\)\) throw/g),
+    ).toHaveLength(2);
     // (the Sync section's key operations, which kept it too, are gone from every build with the server sync's client:
     // OWNER-DECISIONS/25, DV-0b) the service-level floor stays where it was
     expect(read("core/backup/backup.ts")).toMatch(/if \(!checkPasswordPolicy\(password\)\.ok\) throw new BackupError/);

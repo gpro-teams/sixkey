@@ -13,7 +13,14 @@ export type ServiceErrorCode =
   // OWNER-DECISIONS/20), and quick unlock not available here (a profile declared shared, §5.12 item 5; or a runtime
   // without it)
   | "bad_pin"
-  | "quick_off";
+  | "quick_off"
+  // the PIN typed again for something done while unlocked (VaultService.confirmSecret, OWNER-DECISIONS/26): wrong (the
+  // message: the tries left), not 4 to 8 digits (a typo, not counted), its 5th wrong one (the PIN ended), or it no longer
+  // confirms (ended, or set up again in another page): the master password then
+  | "pin_wrong"
+  | "pin_typo"
+  | "pin_exhausted"
+  | "pin_ended";
 export class ServiceError extends Error {
   constructor(
     readonly code: ServiceErrorCode,

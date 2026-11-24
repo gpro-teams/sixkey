@@ -564,7 +564,7 @@ describe("the profile marker (§5.12 item 5) and lock when the popup closes (ite
   it("solo, lock every time the popup closes: the key lives in the popup's memory only, and the next popup opens with the PIN", async () => {
     const w = await quickWorld();
     const svc = w.ctx().service;
-    await svc.updateSettings({ ...(await w.settings.get()), autoLock: { mode: "always" } }); // a hard lock
+    await svc.updateSettings({ ...(await w.settings.get()), autoLock: { mode: "always" } }); // a soft lock
     const popup = w.ctx().service;
     await popup.unlockWithPassword(STRONG);
     expect(await w.area.get()).toBeNull(); // the unlocked key is not in shared storage

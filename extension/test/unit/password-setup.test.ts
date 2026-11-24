@@ -505,8 +505,6 @@ describe("PasswordFields and its callers (source rules)", () => {
     expect(fields).toMatch(/aria-describedby=/);
   });
   it("the last check before writing is measure() as well, on every page that sets a password", () => {
-    const recheck = (v: string) =>
-      new RegExp(`if \\(!\\(await measure\\(${v}\\)\\)\\.ok\\) throw new ServiceError\\("weak_password"\\)`);
     // the master password's pages: the same measure(), through masterAccepts with "Use anyway" for this value
     const recheckMaster = (v: string, anyway: string) =>
       new RegExp(
@@ -518,8 +516,9 @@ describe("PasswordFields and its callers (source rules)", () => {
       ["options/Reset.tsx", recheckMaster("pw", "anyway === pw"), "rt.service.prepareReset("],
       ["options/key-ops.ts", recheckMaster("pw", "anyway"), "rt.service.enableMasterPassword("], // SHORT-SETTINGS F1
       ["options/key-ops.ts", recheckMaster("pw", "anyway"), "rt.service.changePassword("],
-      ["options/Backup.tsx", recheck("pw"), "createBackup(v, pw)"],
-      ["options/Backup.tsx", recheck("subPw"), "createSubsetBackup(v, ids, subPw)"],
+      // a backup file's too since 2026-11-24 (the warning and "Use anyway", OWNER-DECISIONS/26's principle)
+      ["options/Backup.tsx", recheckMaster("pw", "anyway === pw"), "createBackup(v, pw)"],
+      ["options/Backup.tsx", recheckMaster("subPw", "subAnyway === subPw"), "createSubsetBackup(v, ids, subPw)"],
     ];
     for (const [f, check, write] of sites) {
       const text = read(f);
@@ -539,9 +538,12 @@ describe("PasswordFields and its callers (source rules)", () => {
       expect(text.match(/anyway=\{\{ value: anyway, set: setAnyway \}\}/g), f).toHaveLength(n);
       expect(text, f).not.toMatch(/strength\?\.ok === true/);
     }
-    // a backup file keeps the bar: no "Use anyway" there (nor in the Sync section's key operations, gone from every
-    // build: OWNER-DECISIONS/25)
-    expect(read("options/Backup.tsx")).not.toMatch(/anyway/);
+    // a backup file has "Use anyway" too since 2026-11-24, its buttons waiting for the same rule (the Sync section's key
+    // operations, which kept the bar, are gone from every build: OWNER-DECISIONS/25)
+    const backup = read("options/Backup.tsx");
+    expect(backup).toContain("strong(pw, pw2, strength, anyway === pw)");
+    expect(backup).toContain("strong(subPw, subPw2, subStrength, subAnyway === subPw)");
+    expect(backup).toMatch(/return pw\.length > 0 && pw === pw2 && masterAccepts\(s, anyway\);/);
   });
   it("a password is never in a text field the browser keeps: masked, or shown with autocomplete off", () => {
     expect(fields).toMatch(/type: shown \? "text" : "password",/);

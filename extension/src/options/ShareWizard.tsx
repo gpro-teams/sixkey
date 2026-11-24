@@ -27,6 +27,7 @@ import { formatDate, getLang, t } from "../ui/i18n";
 import { ShareEntry } from "../ui/ShareEntry";
 import { sx } from "../ui/share-text";
 import type { KeyOps } from "./key-ops";
+import { useConfirm } from "./ConfirmField";
 import { recoveryKeyOf, RecoveryKeyStep, type RecoveryKeySource } from "./RecoveryKeyStep";
 import { download, errText } from "./shared";
 import "./share-wizard.css";
@@ -126,7 +127,10 @@ export function ShareWizard({ rt, keys, start }: { rt: Runtime; keys: KeyOps; st
   const [step, setStep] = useState<Step>(start === "check" ? { at: "check" } : { at: "start" });
   const [setup, setSetup] = useState<SetupId>("23");
   const [source, setSource] = useState<RecoveryKeySource>("new"); // a new code (replace) or the current one (split)
-  const [pw, setPw] = useState("");
+  // a new code: the PIN or the master password (OWNER-DECISIONS/26)
+  const confirm = useConfirm(rt, true);
+  const pw = confirm.value;
+  const setPw = confirm.setValue;
   const [code, setCode] = useState("");
   const [viaShares, setViaShares] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -169,7 +173,7 @@ export function ShareWizard({ rt, keys, start }: { rt: Runtime; keys: KeyOps; st
     else setError(errText(e));
   };
 
-  async function make(from: { password: string } | { recoveryCode: string }) {
+  async function make(from: { password: string } | { pin: string } | { recoveryCode: string }) {
     setBusy(true);
     setError(null);
     try {
@@ -178,7 +182,9 @@ export function ShareWizard({ rt, keys, start }: { rt: Runtime; keys: KeyOps; st
       setCode("");
       go({ at: "show", h, i: 0 });
     } catch (e) {
-      say(e, "password" in from ? "password" : "code");
+      const line = confirm.refused(e); // the PIN's own refusals
+      if (line) setError(line);
+      else say(e, "recoveryCode" in from ? "code" : "password");
     } finally {
       setBusy(false);
     }
@@ -420,7 +426,7 @@ export function ShareWizard({ rt, keys, start }: { rt: Runtime; keys: KeyOps; st
       </div>
     );
 
-  const from = recoveryKeyOf(source, pw, code);
+  const from = recoveryKeyOf(source, pw, code, confirm.byPin);
   return (
     <div class="sh-wiz" id="shares-wizard">
       <p class="muted" id="shares-intro">
@@ -452,6 +458,7 @@ export function ShareWizard({ rt, keys, start }: { rt: Runtime; keys: KeyOps; st
         }}
         password={pw}
         onPassword={setPw}
+        confirm={confirm}
         code={code}
         onCode={(v) => {
           setCode(v);

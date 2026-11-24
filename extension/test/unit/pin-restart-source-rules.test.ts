@@ -122,9 +122,13 @@ describe("the PIN record's sources", () => {
     // what the PIN offers (no crypto) comes with the popup's lock screen, imported by it only (the settings page's unlock
     // bar has it from PinAdmin.state)
     expect(where(/from\s+"[^"]*pin-restart-count"/).sort()).toEqual(["popup/screens/Locked.tsx"]);
+    // the backup page's too since an export is confirmed with the PIN (confirmPin, OWNER-DECISIONS/26); service.ts brings
+    // it into every page that has the service anyway
     expect(where(/from\s+"[^"]*pin-restart-admin"/).sort()).toEqual([
       "core/service/pin-admin.ts",
       "core/service/service.ts",
+      "options/Backup.tsx",
+      "options/ConfirmField.tsx",
       "options/PinRestartBox.tsx",
     ]);
     // its text, the settings page's only (the lock screen's line is the main catalog's lockPinWaiting since 2026-10-30)
