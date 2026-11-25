@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { PasswordFormat } from "../../core/crypto/password-candidates";
 import { normalizePin } from "../../core/crypto/pin";
-import { formatRecoveryCode } from "../../core/crypto/recovery-code";
 import { pinKit } from "../../core/service/pin-kit";
 import { restartOffer } from "../../core/service/pin-restart-count";
 import type { DeviceView, UnlockedView, UnlockResult } from "../../core/service/service-core";
@@ -9,7 +8,6 @@ import { ServiceError } from "../../core/service/service-error";
 import { hereNow, peekRequest, REQ_MS, requestArea, watchRequest, type FillReq } from "../../platform/fill-request";
 import type { PopupRuntime } from "../../platform/runtime-base";
 import { usePageLock } from "./page-lock";
-import { LOCK_EPOCH_KEY } from "../../platform/session";
 import { VaultDial } from "../../ui/art";
 import { errorLine, logError } from "../../ui/errors";
 import { Icon } from "../../ui/icons";
@@ -77,13 +75,6 @@ declare const __SUGGEST_UI__: boolean;
 const SUGGEST_UI = typeof __SUGGEST_UI__ === "boolean" && __SUGGEST_UI__;
 /** The line for a PIN sent by Enter at another length than the PIN's (page-lock.ts R2-M1 c): the gate's words only. */
 const lengthLine = (digits: number) => SUGGEST_UI && t("pinLength", digits);
-
-/**
- * "I have shares instead" (docs/design/notes/SHAMIR-NOTES.md §5): the recovery code rebuilt from shares, then used
- * exactly as a typed one (the same unlock, the same answers and records). The entry and its text are a lazy chunk
- * (ui/ShareEntry.tsx), loaded at the link's click, so the popup's counted bundle carries only the link.
- */
-const shareEntry = () => import("../../ui/ShareEntry");
 
 /**
  * Touch ID / Windows Hello (QUICK-UNLOCK Stage 2; docs/design/notes/PRF-NOTES.md): the button and its lines are a lazy
@@ -155,11 +146,6 @@ export function Locked({
   const [digits, setDigits] = useState(field?.digits ?? 0);
   const [plain, setPlain] = useState(false); // asked for over the hint's grouped input
   const [waitingNow, setWaitingNow] = useState(false); // the PIN's 5th wrong try was on this screen
-  // the recovery code from shares: the entry (loaded on the link's first click), and whether the code it rebuilt was
-  // refused (the shares belong to an old recovery code: the entry says so, in its own words)
-  const [Shares, setShares] = useState<Awaited<ReturnType<typeof shareEntry>>["ShareEntry"] | null>(null);
-  const [viaShares, setViaShares] = useState(false);
-  const [stale, setStale] = useState(false);
   const [Device, setDevice] = useState<Awaited<ReturnType<typeof deviceUnlock>>["DeviceUnlock"] | null>(null);
   useEffect(() => {
     if (device)
@@ -255,8 +241,8 @@ export function Locked({
     await attempt(mode, value);
   }
 
-  /** The master password or the recovery code (typed, or rebuilt from shares: `fromShares`), to the same unlock. */
-  async function attempt(asked: "password" | "recovery", secret: string, fromShares = false) {
+  /** The master password or the recovery code, to the same unlock. */
+  async function attempt(asked: "password" | "recovery", secret: string) {
     setBusy(true);
     setError(null);
     const fail = (msg: string) => {
@@ -264,7 +250,7 @@ export function Locked({
       setError(msg);
       setShake((n) => n + 1);
     };
-    const shownNow = SUGGEST_UI && page?.on ? page.handOn(shownReq.current, fromShares) : shownReq.current;
+    const shownNow = SUGGEST_UI && page?.on ? page.handOn(shownReq.current) : shownReq.current;
     try {
       let done: UnlockResult;
       if (asked === "password") {
@@ -288,13 +274,7 @@ export function Locked({
           : e instanceof Error && "code" in e
             ? String((e as { code: unknown }).code)
             : "unknown";
-      if (code === "wrong_secret" && fromShares) {
-        // shares that rebuild a valid code which does not open this vault: an old recovery code's (the entry says so)
-        if (now.current === asked) {
-          setStale(true);
-          setShake((n) => n + 1);
-        }
-      } else if (code === "wrong_secret") {
+      if (code === "wrong_secret") {
         if (SUGGEST_UI && page) page.wrong(); // Enter only, after its quiet, on this screen from now (R2-M1 b)
         fail(t(asked === "password" ? "wrongPassword" : "wrongRecovery"));
       } else if (code.startsWith("recovery_")) fail(t("badRecoveryFormat"));
@@ -314,21 +294,7 @@ export function Locked({
     setValue("");
     setError(null);
     setShow(false);
-    setViaShares(false);
-    setStale(false);
   };
-  const toShares = () =>
-    void shareEntry().then(
-      (m) => {
-        setShares(() => m.ShareEntry);
-        setViaShares(true);
-        setValue("");
-        setError(null);
-        setShow(false);
-      },
-      (e) => logError("popup shares entry", e),
-    );
-  const sharing = mode === "recovery" && viaShares && Shares !== null;
   const pin = mode === "pin";
   // the recovery code is read off paper, so it can be shown while it is typed (masked by default, like the settings
   // page's code field); a password or PIN never is, in the plain field or the grouped boxes (showable={false})
@@ -367,24 +333,7 @@ export function Locked({
           <label for={pin ? "pin" : "secret"} id="lock-label">
             {t(pin ? "pinLabel" : mode === "password" ? "passwordLabel" : "recoveryLabel")}
           </label>
-          {sharing ? (
-            <Shares
-              id="lock-shares"
-              lockKey={LOCK_EPOCH_KEY}
-              toCode={formatRecoveryCode}
-              autoFocus={!surface.panel || document.hasFocus()}
-              disabled={busy}
-              stale={stale}
-              onCode={(code) => {
-                setStale(false);
-                if (code) void attempt("recovery", code, true);
-              }}
-              onCodeField={() => {
-                setViaShares(false);
-                setStale(false);
-              }}
-            />
-          ) : groups ? (
+          {groups ? (
             <PasswordGroups
               key="groups"
               id="secret"
@@ -442,7 +391,7 @@ export function Locked({
               </button>
             </div>
           )}
-          {mode === "recovery" && !sharing && (
+          {mode === "recovery" && (
             <label class="show">
               <input
                 type="checkbox"
@@ -472,16 +421,9 @@ export function Locked({
           </div>
         )}
         <div class="stack">
-          {!sharing && (
-            <button class="btn" type="submit" disabled={SUGGEST_UI && page?.holdSend() ? true : busy || !value}>
-              {t("unlock")}
-            </button>
-          )}
-          {mode === "recovery" && !sharing && (
-            <button type="button" class="btn ghost" id="use-shares" onClick={toShares}>
-              {t("sharesInsteadLink")}
-            </button>
-          )}
+          <button class="btn" type="submit" disabled={SUGGEST_UI && page?.holdSend() ? true : busy || !value}>
+            {t("unlock")}
+          </button>
           {pin && (
             <button type="button" class="btn ghost" id="use-password" onClick={() => go("password")}>
               {t("useMasterPassword")}

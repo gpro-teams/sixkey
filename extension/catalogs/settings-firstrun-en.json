@@ -64,5 +64,23 @@
   },
   "frScanHint": {
     "message": "You can also click the Sixkey icon on a website to read a QR code shown on the page."
+  },
+  "frStepPin": {
+    "message": "PIN"
+  },
+  "frPinTitle": {
+    "message": "Set a PIN (recommended)"
+  },
+  "frPinBody": {
+    "message": "Unlock with a PIN of 4 to 8 digits every day, also after the browser restarts, instead of typing the master password. After 5 wrong PINs in a row, the master password is needed once. No need to type the master password again now."
+  },
+  "frPinSkip": {
+    "message": "Not now"
+  },
+  "frPinLater": {
+    "message": "The PIN was not set here. You can set it any time in Settings › Security › PIN quick unlock."
+  },
+  "frSavedLead": {
+    "message": "Your vault is saved. One more step, then your first account."
   }
 }

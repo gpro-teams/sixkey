@@ -66,34 +66,16 @@ export function SecurityNotice({ notice, onShown }: { notice: SecNotice; onShown
     onShown();
   }, []);
   return (
-    <>
-      {("failed" in notice || "unreadable" in notice) && (
-        <div class="note warn" id="sec-notice" role="status">
-          <span class="ni">
-            <Icon name="shieldAlert" />
-          </span>
-          <span class="nt" id="sec-notice-t">
-            {"failed" in notice ? t("secNoticeFailed", notice.failed) : t("secNoticeBad")}
-          </span>
-          <button class="btn sm ghost" aria-describedby="sec-notice-t" onClick={() => openOptions("#security-log")}>
-            {t("instDetails")}
-          </button>
-        </div>
-      )}
-      {/* after the next browser start since shares replaced the recovery code: check them before destroying the old one */}
-      {"remind" in notice && (
-        <div class="note" id="shares-remind" role="status">
-          <span class="ni">
-            <Icon name="key" />
-          </span>
-          <span class="nt" id="shares-remind-t">
-            {t("sharesRemind")}
-          </span>
-          <button class="btn sm ghost" aria-describedby="shares-remind-t" onClick={() => openOptions("#shares")}>
-            {t("sharesRemindGo")}
-          </button>
-        </div>
-      )}
-    </>
+    <div class="note warn" id="sec-notice" role="status">
+      <span class="ni">
+        <Icon name="shieldAlert" />
+      </span>
+      <span class="nt" id="sec-notice-t">
+        {"failed" in notice ? t("secNoticeFailed", notice.failed) : t("secNoticeBad")}
+      </span>
+      <button class="btn sm ghost" aria-describedby="sec-notice-t" onClick={() => openOptions("#security-log")}>
+        {t("instDetails")}
+      </button>
+    </div>
   );
 }

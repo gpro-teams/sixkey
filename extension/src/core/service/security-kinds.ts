@@ -34,17 +34,19 @@
  * shipped). keys_adopted_back, the server sync's (keys this device had committed before, adopted back from the server),
  * went with its client as the kinds above did.
  * Added in version 2 without a bump (QUICK-UNLOCK §5.10, Stage 1; the rule above, not that document's "one bump"):
- * - pin_set / pin_removed: the PIN was set (or changed) / removed, each after the master password was typed again.
+ * - pin_set / pin_removed: the PIN was set (or changed) / removed, each after the master password (or the PIN in force,
+ *   OWNER-DECISIONS/26) was typed again; or the first PIN set on first run, right after the vault was made with the
+ *   master password typed on that page (pin-admin.ts setFirstPin, 2026-11-25).
  * - pin_failed: a wrong PIN at the lock screen. A wrong guess like a wrong password: counted in FAILURES, so the popup's
  *   notice reports it. A PIN that is not even 4 to 8 digits is a typo, not a guess, and is not recorded.
  * - quick_ended: quick unlock was ended: the 5th wrong PIN, or "End quick unlock now". The Touch ID / Windows Hello
  *   gate's 12-hour end, a browser restart and the hard locks that follow a key change are not recorded.
- * - shares_made: recovery code shares of the current code (docs/design/notes/SHAMIR-NOTES.md §3): the strongest root
- *   copied once more, as an export is recorded; a set that replaced the code is recovery_code_new.
  * pin_restart_on / pin_restart_off (the PIN's "Also after a restart" switch turned on / off, docs/design/notes/
  * BUDGET3-NOTES.md §5) went with that switch (OWNER-DECISIONS/20, its second 2026-10-30 note: the PIN always works after
  * a restart): nothing records them, so they are not kinds any more (budget3-rules: no kind nobody records), and entries of
  * theirs already in a record are kept there as a newer version's are, not listed.
+ * shares_made (recovery code shares of the current code) went with the shares (OWNER-DECISIONS/27, 2026-11-25) in the
+ * same way.
  */
 export const SECURITY_KINDS = [
   "unlock_failed",
@@ -66,6 +68,5 @@ export const SECURITY_KINDS = [
   "pin_removed",
   "pin_failed",
   "quick_ended",
-  "shares_made",
 ] as const;
 export type SecurityKind = (typeof SECURITY_KINDS)[number];

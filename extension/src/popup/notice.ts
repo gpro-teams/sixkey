@@ -11,20 +11,14 @@
 //   - Its own role="status" line (Notices.tsx), apart from the "data restored" banner (role="alert", sk_events).
 import type { PopupRuntime } from "../platform/runtime-base";
 
-/**
- * `remind`: the shares reminder is due (security-log.ts `remind`; docs/design/notes/SHAMIR-NOTES.md §4), read in the same
- * read, shown beside the count after every unlock, never acked here (it goes when "Check my shares" passes after the
- * restart).
- */
-export type SecNotice = { failed: number; remind?: true } | { unreadable: true } | { remind: true };
+export type SecNotice = { failed: number } | { unreadable: true };
 
 /** The one read: the notice to show after this unlock, or null for none. Never writes, never rejects. */
 export async function readNotice(rt: Pick<PopupRuntime, "security">): Promise<SecNotice | null> {
   try {
     const v = await rt.security.read();
     if (v.state !== "ok") return { unreadable: true };
-    const remind = v.remind === "shares" ? ({ remind: true } as const) : null;
-    return v.failed > 0 ? { failed: v.failed, ...remind } : remind;
+    return v.failed > 0 ? { failed: v.failed } : null;
   } catch {
     return { unreadable: true };
   }

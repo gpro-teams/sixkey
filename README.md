@@ -39,8 +39,8 @@ family, published and maintained by VIEW TECH LTD.
   other apps' unencrypted exports (link lists, Aegis, 2FAS, andOTP, Raivo, Bitwarden, FreeOTP+, Proton Authenticator,
   CSV), and Sixkey backup files. After an import from a file it offers to delete that file.
 - Encrypts the vault with a key protected by your master password and by a recovery key. Without both, the data
-  cannot be recovered by anyone, by design. The master password is one you choose; the random recovery key can be split
-  into shares, any 2 of 3 or 3 of 5 of which bring it back.
+  cannot be recovered by anyone, by design. The master password is one you choose; the random recovery key is for the day
+  you forget it.
 - Unlocks for every day with a PIN of 4 to 8 digits, also after a browser restart, or with Touch ID or Windows Hello.
 - Fills the current code into the page's code box when you click Fill or press the Fill shortcut, for an account
   registered for that site. On sites you turn on, one at a time, the toolbar icon also shows when a code can be filled.

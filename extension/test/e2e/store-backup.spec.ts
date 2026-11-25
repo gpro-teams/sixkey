@@ -28,6 +28,7 @@ import {
   type Profile,
   SECRET,
   writeTmp,
+  skipFirstPin,
 } from "./harness";
 import { confirmExport, downloadText } from "./export-helpers";
 
@@ -173,6 +174,7 @@ test("store build: a cloud backup file, no readable vault, opened in Settings �
   await expect(opt.locator("#open-pw")).toHaveCount(0);
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toContainText(/Restored 1|已恢复 1/);
   // what the restore found and how the backup goes on, in the backup's own words (none of Google Drive's), at its end:
   // the box was left ticked, so it is on

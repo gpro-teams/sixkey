@@ -247,6 +247,7 @@ describe("the listeners", () => {
       "options/App.tsx",
       "options/Backup.tsx",
       "options/DeviceBox.tsx", // Touch ID / Windows Hello's box follows sk_prf and the session record, as PinBox (PRF-NOTES.md)
+      "options/FirstPin.tsx", // first run's PIN step: emptied at a lock (2026-11-25)
       "options/MasterField.tsx",
       "options/Misc.tsx", // Settings › Security › Autofill follows the list of sites (AUTOFILL2-NOTES.md §7)
       "options/PinBox.tsx",
@@ -267,7 +268,6 @@ describe("the listeners", () => {
       "popup/main/aliases.ts", // the "same sign-in" chunk: emptied at a lock (AUTOFILL3-NOTES.md §8.12)
       "sidepanel/guard.ts", // the side panel follows commits, settings and unlocks made elsewhere
       "ui/PasswordGroups.tsx", // the grouped input both pages draw: emptied at a lock (PASSWORD-SETUP-NOTES §8.2)
-      "ui/ShareEntry.tsx", // the recovery code shares' entry both pages draw: emptied at a lock (SHAMIR-NOTES.md §5)
     ]);
   });
 

@@ -22,6 +22,7 @@ import {
   showSection,
   STRONG,
   writeTmp,
+  skipFirstPin,
 } from "./harness";
 
 let p: Profile;
@@ -204,6 +205,7 @@ test("two setup tabs: the one that finishes second is told so and changes nothin
   }
   await first.locator("#fr-solo").check();
   await first.locator("#fr-finish").click();
+  await skipFirstPin(first);
   await expect(first.locator("#fr-hint")).toBeVisible();
 
   await second.locator("#fr-shared").check();
@@ -278,6 +280,7 @@ test("while a code is on screen and nothing is saved, leaving asks first and the
   await opt.locator("#recovery-done").click();
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toBeVisible();
   await expect(opt.locator("#lang-select")).toBeEnabled();
   await opt.close({ runBeforeUnload: true }); // written: nothing left to ask about
@@ -312,6 +315,7 @@ test("after a restore on a fresh install the page goes straight to the accounts:
   });
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toContainText(/Restored 1|已恢复 1/);
   await expect(opt.locator("#add")).toBeVisible();
   expect(await opt.evaluate(() => (window as unknown as { frAgain: number }).frAgain)).toBe(0);

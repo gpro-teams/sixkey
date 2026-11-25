@@ -548,7 +548,7 @@ describe("source rules: the hint decides nothing, and is kept in chrome.storage.
     expect(l).toMatch(/import \{ PasswordGroups \} from "\.\.\/\.\.\/ui\/PasswordGroups";/); // the settings page's own
     expect(l).not.toMatch(/from "[^"]*options\//);
     expect(l).toMatch(/const groups = mode === "password" && format === "gen16-v1" && !plain;/);
-    expect(l).toMatch(/\bgroups \? \(\s*<PasswordGroups/); // (after the shares' entry, which is the recovery code's)
+    expect(l).toMatch(/\bgroups \? \(\s*<PasswordGroups/);
     expect(l).toMatch(
       /<PasswordGroups\s+key="groups"\s+id="secret"\s+label=\{t\("passwordLabel"\)\}\s+labelledBy="lock-label"/,
     );

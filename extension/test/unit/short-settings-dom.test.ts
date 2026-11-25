@@ -130,7 +130,6 @@ describe("Security › Password and recovery: the forms", () => {
     change: async (o, pw) => (calls.push(["change", o, pw]), true),
     newCode: async (pw) => (calls.push(["newCode", pw as string]), true), // no PIN here: the master password
     rotate: async (pw) => (calls.push(["rotate", pw]), true),
-    confirmShares: async () => (calls.push(["confirmShares"]), true),
     codeSaved: () => undefined,
     ...over,
   });
@@ -211,26 +210,6 @@ describe("Security › Password and recovery: the forms", () => {
     expect(byId("fold-rotate-toggle")!.getAttribute("aria-expanded")).toBe("false");
     click("fold-rotate-toggle");
     expect(byId("rot-pw")!.value).toBe("");
-  });
-
-  it("opened from the shares reminder (#shares) while locked: the shares fold opens at the unlock, once (the review's N5)", () => {
-    const g = globalThis as { location?: unknown };
-    const had = "location" in g;
-    const saved = g.location;
-    g.location = { hash: "#shares" };
-    try {
-      put(locked);
-      expect(byId("fold-shares-toggle")).toBeNull();
-      put(unlocked);
-      expect(byId("fold-shares-toggle")!.getAttribute("aria-expanded")).toBe("true");
-      click("fold-shares-toggle"); // closed by the person: the address's ask is answered
-      put(locked);
-      put(unlocked);
-      expect(byId("fold-shares-toggle")!.getAttribute("aria-expanded")).toBe("false");
-    } finally {
-      if (had) g.location = saved;
-      else delete g.location;
-    }
   });
 
   it("a hidden tab closes the form too: nothing typed waits there for whoever sits down next", () => {

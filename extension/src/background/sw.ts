@@ -166,16 +166,12 @@ async function rescheduleQuickExpiry(): Promise<void> {
   if (end !== null) await chrome.alarms.create(ALARM_QUICK, { when: Math.max(end + 1000, Date.now() + 1000) });
 }
 
-// A start of the browser, or of Sixkey (an update, a load from the command line, which is how the browser tests start
-// it), makes a pending shares reminder due: the popup shows it after every unlock until the shares pass a check
-// (docs/design/notes/SHAMIR-NOTES.md §4; it reads the security record it reads anyway).
 // The dev and e2e builds' worker also removes, at an install or an update, what the server sync's client left in a
 // profile that once had it on, its records, its identity's database and its alarms (platform/server-sync-leftovers.ts;
 // the build's define __SYNC_DEV__, below): the store and test builds never had a way to turn it on, and compile this
 // out. A line in the diagnostics log says what went.
 chrome.runtime.onInstalled.addListener(() => {
   void routine(true);
-  void rt.service.browserStarted().catch(() => undefined);
   if (typeof __SYNC_DEV__ === "boolean" && __SYNC_DEV__)
     void dropServerSyncLeftovers(rt.local, globalThis.indexedDB, chrome.alarms).then(
       (gone) => {
@@ -187,7 +183,6 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 chrome.runtime.onStartup.addListener(() => {
   void routine(true);
-  void rt.service.browserStarted().catch(() => undefined);
 });
 
 // Every event that may be about a site (any event that names a host) reconciles autofill's sites: a site withdrawn in

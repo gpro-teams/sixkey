@@ -109,15 +109,6 @@ precedence = "override"
 SPDX-FileCopyrightText = "The Linux Foundation and its contributors (https://developercertificate.org/)"
 SPDX-License-Identifier = "LicenseRef-DCO"
 
-# A test fixture derived from SLIP-39's official test vectors and its reference implementation
-# (trezor/python-shamir-mnemonic, MIT): the raw shares of each vector and the reference's outputs, for the recovery code
-# shares' arithmetic (docs/design/notes/SHAMIR-NOTES.md §2). Its generator, shares-slip39-gen.py, is the extension's.
-[[annotations]]
-path = "extension/test/fixtures/shares-slip39.json"
-precedence = "override"
-SPDX-FileCopyrightText = ["2018 Andrew R. Kozlik", "2019 SatoshiLabs"]
-SPDX-License-Identifier = "MIT"
-
 # Apple's password-manager-resources files, kept verbatim under rules/upstream/apple/ (their LICENSE.md included) and pinned
 # by commit and SHA-256 in rules/upstream/SOURCES.json: Apple's copyright and licence, last so that nothing above wins.
 [[annotations]]

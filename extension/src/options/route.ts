@@ -18,9 +18,7 @@ export const GROUPS: readonly Group[] = [
 ];
 
 /** Names that are not leaves any more: where they went (#clipboard is a panel inside a leaf). */
-// #shares: the shares fold of Password & recovery, opened at "Check my shares" (the popup's reminder after a browser
-// start; docs/design/notes/SHAMIR-NOTES.md §4).
-const MOVED: Readonly<Record<string, string>> = { clipboard: "appearance", shares: "security-keys" };
+const MOVED: Readonly<Record<string, string>> = { clipboard: "appearance" };
 
 /** The leaf the page opens on when the hash names none. */
 export const DEFAULT_LEAF = "security";

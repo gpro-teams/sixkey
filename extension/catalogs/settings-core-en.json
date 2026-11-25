@@ -449,8 +449,23 @@
   "usePin": {
     "message": "Use PIN"
   },
+  "pinNew": {
+    "message": "New PIN"
+  },
+  "pinAgain": {
+    "message": "New PIN again"
+  },
   "pinFormat": {
     "message": "Use 4 to 8 digits."
+  },
+  "pinWeak": {
+    "message": "Too easy to guess. Avoid repeated digits, runs like 1234 and common PINs."
+  },
+  "pinDiffer": {
+    "message": "The two PINs differ."
+  },
+  "pinSet": {
+    "message": "Set PIN"
   },
   "eraseNeedsPassword": {
     "message": "Deleting for good cannot be undone, so it asks for your PIN, or your master password when there is no PIN."
@@ -481,15 +496,6 @@
   },
   "railCsbStopped": {
     "message": "Backup stopped"
-  },
-  "sharesInsteadLink": {
-    "message": "I split my recovery key into shares"
-  },
-  "sharesStopWarn": {
-    "message": "Shares made of the current recovery key stop working too."
-  },
-  "sharesSwitched": {
-    "message": "Switched to your shares. Keep the old recovery key until “Check my shares” passes after a browser restart."
   },
   "grpAccounts": {
     "message": "Accounts"

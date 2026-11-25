@@ -9,9 +9,12 @@ import { describe, expect, it, vi } from "vitest";
 import { toB64 } from "../../src/core/crypto/bytes";
 import { PIN_CFG_LABEL, PIN_TAG } from "../../src/core/crypto/pin";
 import type { RestartRecord } from "../../src/core/crypto/pin-restart";
+import { openWithPassword } from "../../src/core/crypto/keyring";
 import { applyPreset } from "../../src/core/service/presets";
 import { ServiceError } from "../../src/core/service/service";
 import { MemorySession } from "../../src/core/service/types";
+import { MemoryKV } from "../../src/core/storage/kv";
+import { emptyVault } from "../../src/core/vault/model";
 import { NO_PAGE, STRONG, resetWithCode } from "../helpers/vaults";
 import {
   lockScreen,
@@ -117,6 +120,52 @@ describe("setting the PIN (§5.3): master password first, a solo profile, a vaul
     const admin = new PinAdmin(svc);
     await expect(admin.setPin(STRONG, PIN)).rejects.toMatchObject({ code: "not_protected" });
     expect(await admin.state()).toEqual({ available: "no_password", pin: null });
+  });
+});
+
+describe("first run's PIN (2026-11-25): right after this page made the vault, without the master password typed again", () => {
+  it("set once, by the page that made the vault: pin_set recorded, the PIN opens Sixkey; then spent, and no other page's", async () => {
+    const w = await quickWorld({ pin: null }); // the vault made by w.first, from a master password typed there
+    expect(await w.ctx().admin.firstPinOpen()).toBe(false); // another page made nothing
+    expect(await w.first.admin.firstPinOpen()).toBe(true);
+    await w.first.admin.setFirstPin(PIN);
+    expect(await w.first.admin.state()).toMatchObject({ pin: { digits: 6 }, restart: { state: "pin", triesLeft: 5 } });
+    expect(await w.kinds()).toEqual(["pin_set"]);
+    expect(await w.first.admin.firstPinOpen()).toBe(false);
+    await expect(w.first.admin.setFirstPin(PIN2)).rejects.toMatchObject({ code: "bad_state" });
+    expect(await softLocked(w)).toMatchObject({ pin: "pin", field: { digits: 6, triesLeft: 5 } });
+    expect((await pinIn(w.ctx().service, PIN)).ok).toBe(true);
+  });
+
+  it("not after 10 minutes, nor in a profile declared shared, nor once a PIN is set up; a bad PIN is refused first", async () => {
+    const late = await quickWorld({ pin: null });
+    late.t.now += 10 * 60_000 + 1;
+    expect(await late.first.admin.firstPinOpen()).toBe(false);
+    await expect(late.first.admin.setFirstPin(PIN)).rejects.toMatchObject({ code: "bad_state" });
+    const shared = await quickWorld({ pin: null });
+    await shared.first.service.updateSettings(applyPreset(await shared.settings.get(), "shared"));
+    await shared.first.service.unlockWithPassword(STRONG);
+    expect(await shared.first.admin.firstPinOpen()).toBe(false);
+    const set = await quickWorld({ pin: null });
+    await set.first.admin.setPin(STRONG, PIN);
+    expect(await set.first.admin.firstPinOpen()).toBe(false);
+    await expect(set.first.admin.setFirstPin("12")).rejects.toMatchObject({ code: "bad_pin" });
+    for (const x of [late, shared]) expect(x.kv.data.has("sk_pin")).toBe(false);
+  });
+
+  it("a restore opened with the master password opens it; one that kept the copy's password, with only the recovery key typed, does not", async () => {
+    const w = await quickWorld({ pin: null });
+    const keyring = (await w.first.service.currentGeneration())!.keyring;
+    const { vk } = await openWithPassword(keyring, STRONG);
+    for (const [how, open] of [
+      [{ typed: STRONG }, true],
+      [{ keep: true }, false],
+    ] as const) {
+      const other = w.ctx({ local: new MemoryKV(), session: new MemorySession() });
+      const keys = await other.service.prepareRestoredKeys(keyring, vk, how);
+      await other.service.restoreBackup(emptyVault(keyring.vaultId), keys);
+      expect(await other.admin.firstPinOpen(), JSON.stringify(how)).toBe(open);
+    }
   });
 });
 

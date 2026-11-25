@@ -15,6 +15,7 @@ import {
   securityReader,
 } from "../../src/core/service/security-log";
 import { tear } from "../helpers/faulty-kv";
+import { readNotice } from "../../src/popup/notice";
 
 /** Records every key asked for, so a test can show the log touches nothing but its own. */
 class SpyKV implements KV {
@@ -370,6 +371,18 @@ describe("the security log on its own", () => {
     const kinds = await kindsOldestFirst(log);
     expect(kinds).toHaveLength(3);
     expect(kinds).toEqual(expect.arrayContaining(["keys_adopted", "keys_adopted_back", "unlock_failed"]));
+  });
+
+  it("the recovery code shares' kind and reminder (0.1.4 and earlier; the shares went on 2026-11-25) are kept, unread and not shown", async () => {
+    const kv = new MemoryKV();
+    const { log } = make(kv);
+    const remind = { kind: "shares", at: 3, due: true, id: "0123456789abcdef", set: "AB12" };
+    kv.data.set(SECURITY_LOG_KEY, { v: 2, entries: [{ at: 1, kind: "shares_made" }], failed: 0, remind });
+    expect((await log.read()).state).toBe("ok");
+    expect(await readNotice({ security: log })).toBeNull(); // no reminder in the popup any more
+    await log.append("unlock_failed");
+    expect(await kindsOldestFirst(log)).toEqual(["shares_made", "unlock_failed"]);
+    expect((kv.data.get(SECURITY_LOG_KEY) as { remind?: unknown }).remind).toEqual(remind);
   });
 
   // the form: a lower-case ASCII letter, then lower-case ASCII letters and underscores, 1 to 32 in all

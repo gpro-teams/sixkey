@@ -95,14 +95,10 @@ describe("the recovery key's name in the text", () => {
     expect(hits).toEqual([]);
   });
 
-  it("the new words are there: the field's label, the shares' title, the printed share", () => {
+  it("the new words are there: the field's label", () => {
     const cat = (f: string) => JSON.parse(readFileSync(join(EXT, f), "utf8")) as Record<string, { message: string }>;
     expect(cat("_locales/en/messages.json").recoveryLabel!.message).toBe("Recovery key");
     expect(cat("_locales/zh_CN/messages.json").recoveryLabel!.message).toBe("恢复密钥");
-    expect(cat("_locales/en/messages.json").sharesFoldTitle!.message).toBe("Recovery key shares");
-    expect(cat("_locales/zh_CN/messages.json").sharesFoldTitle!.message).toBe("恢复密钥分片");
-    expect(cat("catalogs/shares-en.json").shPaperTitle!.message).toBe("Sixkey recovery key share $1 of $2");
-    expect(cat("catalogs/shares-zh_CN.json").shPaperTitle!.message).toBe("Sixkey 恢复密钥分片 第 $1 份，共 $2 份");
   });
 
   it("the file a new recovery key is saved as is named for the key, in its one place (the settings page's shared box)", () => {

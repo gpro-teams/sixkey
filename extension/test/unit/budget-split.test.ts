@@ -123,13 +123,6 @@ const FULL_MEMBERS = [
   "prepareReset",
   "commitReset",
   "newRecoveryCode",
-  // recovery code shares (docs/design/notes/SHAMIR-NOTES.md §3): the settings page's, not the popup's
-  "prepareShares",
-  "recoveryKeyFrom",
-  "confirmShares",
-  "unremind",
-  "checkRecoveryCode",
-  "browserStarted",
   "restoreBackup",
   "importBackup",
   // the cloud backup's restore and merge (CLOUDBK patch 5)
@@ -186,15 +179,7 @@ describe("the service in two classes", () => {
       "VkRecordResult",
     ])
       expect(s, t).toMatch(new RegExp(`\\btype ${t},`));
-    for (const t of [
-      "ServiceStatus",
-      "CodeDelivery",
-      "PreparedReset",
-      "PreparedKeys",
-      "FirstRunChoice",
-      "ShareSetup",
-      "PreparedShares",
-    ])
+    for (const t of ["ServiceStatus", "CodeDelivery", "PreparedReset", "PreparedKeys", "FirstRunChoice"])
       expect(s, t).toMatch(new RegExp(`export type ${t}\\b`));
   });
 
@@ -231,7 +216,6 @@ describe("the service in two classes", () => {
     for (const m of [
       "const preparedKeys = new WeakMap",
       "const preparedResets = new WeakMap",
-      "const preparedShares = new WeakMap",
       'const LANDED = new Error("landed")',
     ]) {
       expect(s.split(m).length - 1, m).toBe(1);
@@ -388,7 +372,6 @@ describe("the settings page's text parts", () => {
       "view",
       "plugins",
       "autofill",
-      "shares",
       "device",
       "restart",
       "rules",
@@ -424,10 +407,6 @@ describe("the settings page's text parts", () => {
     // places
     expect(pyBudgets.restart).toBe(
       +/^const RESTART_CATALOG_GZ = (\d+);$/m.exec(readFileSync(join(EXT, "scripts/check-dist.mjs"), "utf8"))![1]!,
-    );
-    // the recovery code shares' catalog (SHAMIR-NOTES.md §6): the same limit in both places
-    expect(pyBudgets.shares).toBe(
-      +/^const SHARES_CATALOG_GZ = (\d+);$/m.exec(readFileSync(join(EXT, "scripts/check-dist.mjs"), "utf8"))![1]!,
     );
     // the View menu's catalog (QUICKVIEW-NOTES.md): the same limit in both places
     expect(pyBudgets.view).toBe(

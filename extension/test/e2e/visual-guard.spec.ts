@@ -18,6 +18,7 @@ import {
   showSection,
   writeTmp,
   type Profile,
+  skipFirstPin,
 } from "./harness";
 import { closeWith, FAKE_CAMERA, launchWith, stubPicker } from "./import-helpers";
 import { grantScripting, holdsScripting } from "./autofill-helpers";
@@ -255,6 +256,7 @@ for (const lang of ["en", "zh_CN"] as const)
     await check(opt, "settings: first run, this profile");
     await opt.locator("#fr-solo").check();
     await opt.locator("#fr-finish").click();
+    await skipFirstPin(opt);
     await expect(opt.locator("#fr-hint")).toBeVisible();
     await opt.close();
 
@@ -632,14 +634,12 @@ for (const lang of ["en", "zh_CN"] as const)
       ["security-keys", "fold-change"],
       ["security-keys", "fold-code"],
       ["security-keys", "fold-rotate"],
-      ["security-keys", "fold-shares"], // its wizard is a lazy chunk (SHAMIR-NOTES.md §5): drawn before the checks
       ["security", "pin-box"],
       ["backup", "encrypted"], // a fold since the cloud backup's card is the leaf's first (BACKUP-VISUAL)
       ["backup", "subset"],
     ] as const) {
       await showSection(settings, section);
       await openFold(settings, fold);
-      if (fold === "fold-shares") await expect(settings.locator("#shares-make")).toBeVisible();
       await check(settings, `settings: ${section}, ${fold} open`);
       await check(settings, `settings: ${section}, ${fold} open, 320 px`, { width: 320 });
       await check(settings, `settings: ${section}, ${fold} open, 420 px`, { width: 420 });

@@ -1,6 +1,6 @@
 // The PIN or the master password typed again for what is done while Sixkey is unlocked (OWNER-DECISIONS/26, 2026-11-24:
 // every copy of the master password is one more exposure): deleting for good, clearing the security record, setting,
-// changing or removing the PIN, a new recovery key and its shares, Touch ID / Windows Hello. With a PIN that opens Sixkey
+// changing or removing the PIN, a new recovery key, Touch ID / Windows Hello. With a PIN that opens Sixkey
 // now (RestartAdmin.state "pin"), the field asks for the PIN, and "Use master password" is the way back; without one, the
 // master password's own field (MasterField) as before. What is typed goes to the service as a Secret
 // (VaultService.confirmSecret), which counts a PIN with the lock screens' 5 tries; after its refusals the field shows the

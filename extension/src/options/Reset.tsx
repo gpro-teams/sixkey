@@ -8,8 +8,7 @@ import { ServiceError } from "../core/service/service";
 import { t } from "../ui/i18n";
 import { Icon } from "./icons";
 import { masterAccepts, measure, type Strength } from "../ui/strength";
-import { RecoveryCodeInput } from "./RecoveryCodeInput";
-import { BoxTitle, errText, Panel, PasswordFields, type Ctx } from "./shared";
+import { BoxTitle, CodeField, errText, Panel, PasswordFields, type Ctx } from "./shared";
 
 /** How the reset ended, for the page to say: unlocked, or written but locked (the session could not be stored). */
 export type ResetOutcome = "unlocked" | "locked" | null;
@@ -30,16 +29,11 @@ export function ResetPassword({
   const [anyway, setAnyway] = useState<string | null>(null); // "Use anyway" was pressed for this value
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // the code rebuilt from shares (the field's shares link), and whether it was refused: shares of an old code
-  const [viaShares, setViaShares] = useState(false);
-  const [stale, setStale] = useState(false);
   const working = useRef(false);
 
   const say = (e: unknown) => {
     const c = (e as { code?: unknown } | null)?.code;
-    if (c === "wrong_secret" && viaShares)
-      setStale(true); // the shares' entry says why, in its words
-    else if (c === "wrong_secret") setError(t("wrongRecovery"));
+    if (c === "wrong_secret") setError(t("wrongRecovery"));
     else if (c === "bad_state") setError(t("resetChanged"));
     else if (typeof c === "string" && c.startsWith("recovery_")) setError(t("badRecoveryFormat"));
     else setError(errText(e));
@@ -78,18 +72,7 @@ export function ResetPassword({
     <Panel id="reset" icon="key" title={t("resetTitle")} lead={t("resetLead")}>
       <form class="box" onSubmit={reset}>
         <BoxTitle icon="key">{t("recoveryTitle")}</BoxTitle>
-        <RecoveryCodeInput
-          id="reset-code-in"
-          label={t("recoveryLabel")}
-          value={code}
-          onValue={(v) => {
-            setCode(v);
-            setStale(false);
-          }}
-          onShares={setViaShares}
-          stale={stale}
-          disabled={busy}
-        />
+        <CodeField id="reset-code-in" label={t("recoveryLabel")} value={code} onValue={setCode} disabled={busy} />
         <PasswordFields
           idPrefix="reset"
           value={pw}

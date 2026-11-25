@@ -27,6 +27,7 @@ import {
   openPopup,
   STRONG,
   type Profile,
+  skipFirstPin,
 } from "./harness";
 
 const area = (page: Page) => page.evaluate(() => chrome.storage.sync.get(null));
@@ -70,6 +71,7 @@ async function newVault(p: Profile): Promise<{ opt: Page; code: string }> {
   await expect(opt.locator("#fr-csb")).toBeChecked(); // "only me": ticked, with its cost beside it
   await expect(opt.locator("#fr-csb-cost")).toBeVisible();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toBeVisible();
   return { opt, code };
 }
@@ -94,6 +96,15 @@ async function restore(opt: Page, secret: string, o: { newPassword?: string; kee
   await expect(opt.locator("#fr-solo")).toBeVisible({ timeout: 30_000 });
   await expect(opt.locator("#fr-csb")).toBeChecked();
   await opt.locator("#fr-finish").click();
+  if (o.keep) {
+    // the recovery key alone was typed: no PIN step (a recovery key never arms the PIN); Settings sets it later
+    await expect(opt.locator("#fr-hint")).toBeVisible({ timeout: 30_000 });
+    await expect(opt.locator("#fr-pin")).toHaveCount(0);
+  } else {
+    // the master password was typed here (the copy's, or a new one): the PIN is offered without it again
+    await expect(opt.locator("#fr-pin-skip")).toBeVisible({ timeout: 30_000 });
+    await opt.locator("#fr-pin-skip").click();
+  }
   await expect(opt.locator("#fr-hint")).toBeVisible({ timeout: 30_000 });
 }
 

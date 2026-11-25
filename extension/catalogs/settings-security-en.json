@@ -197,21 +197,6 @@
   "pinNeedsPassword": {
     "message": "Set a master password first."
   },
-  "pinNew": {
-    "message": "New PIN"
-  },
-  "pinAgain": {
-    "message": "New PIN again"
-  },
-  "pinWeak": {
-    "message": "Too easy to guess. Avoid repeated digits, runs like 1234 and common PINs."
-  },
-  "pinDiffer": {
-    "message": "The two PINs differ."
-  },
-  "pinSet": {
-    "message": "Set PIN"
-  },
   "pinChange": {
     "message": "Change PIN"
   },
@@ -244,11 +229,5 @@
   },
   "secKQuickEnded": {
     "message": "PIN quick unlock ended"
-  },
-  "sharesFoldTitle": {
-    "message": "Recovery key shares"
-  },
-  "secKSharesMade": {
-    "message": "Recovery key shares made"
   }
 }

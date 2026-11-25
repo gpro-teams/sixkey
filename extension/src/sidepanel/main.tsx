@@ -35,10 +35,7 @@ surface.panel = panelHooks({
   setInterval: (f, ms) => window.setInterval(f, ms),
   clearInterval: (id) => window.clearInterval(id as number),
   shut,
-  // (and recovery code shares typed on the lock screen, which leave their field: ui/ShareEntry.tsx marks what it holds)
-  typed: () =>
-    [...document.querySelectorAll("input")].some((i) => (i.type === "checkbox" ? i.checked : !!i.value)) ||
-    document.querySelector("[data-sk-held]") !== null,
+  typed: () => [...document.querySelectorAll("input")].some((i) => (i.type === "checkbox" ? i.checked : !!i.value)),
   // drawn again from storage: every field empty, every Show box off (the page is on its lock screen: no key in memory)
   wipe: () => location.reload(),
   hint(show) {

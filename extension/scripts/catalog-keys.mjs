@@ -1147,8 +1147,6 @@ function fullKeys(catalogs) {
  */
 /** The Fill button's catalog files (scripts/messages.py AUTOFILL_EN / AUTOFILL_ZH): imported by src/popup/main/fill-text.ts only. */
 const AUTOFILL_CATALOG = /[\\/]catalogs[\\/]autofill-[A-Za-z_]+\.json$/;
-/** The recovery code shares' catalog files (scripts/messages.py SHARES_EN / SHARES_ZH): imported by src/ui/share-text.ts only. */
-const SHARES_CATALOG = /[\\/]catalogs[\\/]shares-[A-Za-z_]+\.json$/;
 /** The device unlock's catalog files (scripts/messages.py DEVICE_EN / DEVICE_ZH): imported by src/ui/device-text.ts only. */
 const DEVICE_CATALOG = /[\\/]catalogs[\\/]device-[A-Za-z_]+\.json$/;
 /** The PIN record's catalog files (scripts/messages.py RESTART): imported by src/ui/restart-text.ts only. */
@@ -1184,12 +1182,11 @@ export function popupKeys(root, catalogs = readCatalogs(root), o = {}) {
     catalogBinding: "catalog",
     allow: POPUP_ALLOW,
     catalogImports: [POPUP_CATALOG_PREFIX],
-    // the Fill button's, the shares', the device unlock's and the PIN record's own catalogs
-    // (src/popup/main/fill-text.ts, src/ui/share-text.ts, src/ui/device-text.ts, src/ui/restart-text.ts): text, loaded with
+    // the Fill button's, the device unlock's and the PIN record's own catalogs
+    // (src/popup/main/fill-text.ts, src/ui/device-text.ts, src/ui/restart-text.ts): text, loaded with
     // their lazy chunks, not the popup's keys
     pageCatalogs: (f) =>
       AUTOFILL_CATALOG.test(f) ||
-      SHARES_CATALOG.test(f) ||
       DEVICE_CATALOG.test(f) ||
       RESTART_CATALOG.test(f) ||
       CSB_POPUP_CATALOG.test(f) ||

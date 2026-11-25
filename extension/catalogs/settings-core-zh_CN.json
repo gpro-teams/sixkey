@@ -449,8 +449,23 @@
   "usePin": {
     "message": "使用 PIN"
   },
+  "pinNew": {
+    "message": "新 PIN"
+  },
+  "pinAgain": {
+    "message": "再次输入新 PIN"
+  },
   "pinFormat": {
     "message": "请输入 4 到 8 位数字。"
+  },
+  "pinWeak": {
+    "message": "太容易被猜到。请避开重复数字、1234 这样的连续数字和常见 PIN。"
+  },
+  "pinDiffer": {
+    "message": "两次输入的 PIN 不一致。"
+  },
+  "pinSet": {
+    "message": "设置 PIN"
   },
   "eraseNeedsPassword": {
     "message": "永久删除无法撤销，所以要再确认一次：输 PIN；没有 PIN 时输主密码。"
@@ -481,15 +496,6 @@
   },
   "railCsbStopped": {
     "message": "备份已停"
-  },
-  "sharesInsteadLink": {
-    "message": "我把恢复密钥分成了几份（分片）"
-  },
-  "sharesStopWarn": {
-    "message": "用当前恢复密钥做的分片也会一起失效。"
-  },
-  "sharesSwitched": {
-    "message": "已换成分片。请保留旧的恢复密钥，直到浏览器重启后“核对我的分片”通过。"
   },
   "grpAccounts": {
     "message": "账户"

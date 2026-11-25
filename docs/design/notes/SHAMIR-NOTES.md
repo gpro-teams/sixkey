@@ -1,5 +1,11 @@
 # Recovery key shares (Shamir): design notes
 
+> **Removed on 2026-11-25** (OWNER-DECISIONS/27): the shares are gone from the extension and from Sixkey for Mac, code,
+> text and tests. The recovery key is used rarely, the day the master password is forgotten, and splitting it added
+> things to keep, shares to gather and a reminder to answer. Version 0.1.4 and earlier are the last that make
+> or read shares. These notes stay as the record of what was built; §6 and §7 (the lazy catalogs' budget and the lazy
+> chunks' rules) still explain limits and module splits that outlived the feature.
+
 The owner asked for "私钥分片" (OWNER-DECISIONS/15, 2026-10-22): split the recovery key into 3 shares, any 2 of which
 recover it, with the master password the person's own and the PIN for every day. This is Feature B of
 `docs/design/proposals/ADVANCED-RECOVERY-AND-TIERS.md` (§3), built as specified there unless §9 below says otherwise.
@@ -221,7 +227,7 @@ A later feature takes the code through these instead of writing a second way to 
     old code until a check after the next restart. And (FU-3, behind the release gate) keys adopted through sync
     (`keys_adopted`, `keys_adopted_back`, `identity_restored`) do not end a reminder: a check then could say "your old
     recovery key still opens your vault" of a code the adopted keys replaced. For when the Sync section is finished.
-  The master password still opens the vault in every case.
+    The master password still opens the vault in every case.
 
 ## 5. The pages
 
@@ -297,19 +303,19 @@ out of the popup's class would save part of it if room is needed later.
 The figures are check-dist's, on the store build (gate open: the same build with `SYNC_UI_IN_STORE_BUILD` set);
 `messages.py`'s own gzip gives a few bytes less for the catalogs.
 
-| Gzipped bytes | before | revision 1 | revision 2 | follow-up | limit |
-| --- | --- | --- | --- | --- | --- |
-| popup, gate closed | 55,957 | 55,997 | 56,388 | 56,585 | 61,440 |
-| popup, gate open | 57,168 | 57,230 | 57,619 (headroom 3,821) | 57,818 (headroom 3,622) | 61,440 |
-| side panel, gate closed | 58,171 | 58,230 | 58,619 | 58,816 | 63,488 |
-| side panel, gate open | 59,389 | 59,475 | 59,865 | 60,063 | 63,488 |
-| settings core (zh_CN) | 3,740 | 3,829 | 3,855 | 3,855 | 5,120 |
-| settings security (zh_CN) | 3,327 | 3,347 | 3,355 | 3,355 | 5,120 |
-| other settings parts | | unchanged | unchanged | unchanged | 3,072 each |
-| settings, a vault's page (zh_CN) | 11,440 | 11,535 | 11,572 | 11,572 | 12,288 |
-| settings, every part (zh_CN) | 11,962 | 12,057 | 12,094 | 12,094 | 12,288 |
-| shares (lazy, zh_CN / en) | | 1,540 / 1,249 | 1,674 / 1,373 | 1,779 / 1,477 | 3,072 |
-| a vault's page with the shares (zh_CN) | | 12,625 | 12,753 | 12,848 | 15,360 |
+| Gzipped bytes                          | before | revision 1    | revision 2              | follow-up               | limit      |
+| -------------------------------------- | ------ | ------------- | ----------------------- | ----------------------- | ---------- |
+| popup, gate closed                     | 55,957 | 55,997        | 56,388                  | 56,585                  | 61,440     |
+| popup, gate open                       | 57,168 | 57,230        | 57,619 (headroom 3,821) | 57,818 (headroom 3,622) | 61,440     |
+| side panel, gate closed                | 58,171 | 58,230        | 58,619                  | 58,816                  | 63,488     |
+| side panel, gate open                  | 59,389 | 59,475        | 59,865                  | 60,063                  | 63,488     |
+| settings core (zh_CN)                  | 3,740  | 3,829         | 3,855                   | 3,855                   | 5,120      |
+| settings security (zh_CN)              | 3,327  | 3,347         | 3,355                   | 3,355                   | 5,120      |
+| other settings parts                   |        | unchanged     | unchanged               | unchanged               | 3,072 each |
+| settings, a vault's page (zh_CN)       | 11,440 | 11,535        | 11,572                  | 11,572                  | 12,288     |
+| settings, every part (zh_CN)           | 11,962 | 12,057        | 12,094                  | 12,094                  | 12,288     |
+| shares (lazy, zh_CN / en)              |        | 1,540 / 1,249 | 1,674 / 1,373           | 1,779 / 1,477           | 3,072      |
+| a vault's page with the shares (zh_CN) |        | 12,625        | 12,753                  | 12,848                  | 15,360     |
 
 ## 8. Tests and mutants
 
@@ -390,72 +396,72 @@ Each applied alone to a throwaway copy of the tree, its tests run, then reverted
 fails (the logs were checked for load errors). Revision 2: **64 mutants, 64 killed** (the first version's C1–C3 mutated
 the SHA check, which is gone; K1–K5 mutate the CRC):
 
-| | Mutant | Killed by |
-| --- | --- | --- |
-| G1 | GF(2⁸): reduction polynomial 0x11D | crypto, SLIP-39 vectors |
-| G2 | GF(2⁸): inverse a¹²⁸ | crypto, SLIP-39 vectors |
-| G3 | interpolation: the Lagrange denominator over (x − xⱼ) | crypto, SLIP-39 vectors |
-| D1 | digest: HMAC key and message swapped | digest test, SLIP-39 vectors |
-| D2 | digest share laid out r ‖ digest | digest test, SLIP-39 vectors |
-| D3 | recovery: the digest not checked | digest refusals, invalid SLIP-39 vectors, service |
-| R1 | digest: only the last byte compared (review) | the digest-byte tests |
-| S1 | split: members at x = 1 … n | properties, the cross-check |
-| S2 | split: r drawn before the random shares | the cross-check, the draw order |
-| S3 | split: the digest's random part not uniform | the cross-check |
-| K1 | check: a generator without its constant term | the exhaustive typo test, the syndromes |
-| K2 | check: the tag not in the register's start | known answer, domain separation |
-| K3 | check: 16 of the 20 bits compared | the exhaustive typo test |
-| K4 | check: the data bits not fed in | the exhaustive typo test, known answer |
-| K5 | check: another generator (x²⁰ + x³ + 1) | the syndromes test, known answer |
-| T1 | threshold: more than t accepted | set test |
-| T2 | threshold: fewer than t accepted | fewer-than-t property |
-| T3 | threshold 1 allowed | set test |
-| I1 | set id not compared | "different sets before any arithmetic" |
-| I2 | the threshold not compared | "same set id, another threshold" |
-| V1 | stale detection: reported current | check test |
-| V2 | commit only after the test: any members | service: other members, too few |
-| V3 | the shares' code not checked against the new keyring | service: forged set |
-| V4 | the base keyring not compared | service: keys changed meanwhile |
-| V5 | commit written while locked | service: locked meanwhile |
-| V6 | the new keyring written at prepare | service: prepare writes nothing |
-| V7 | split: a wrong code not recorded | service: recovery_failed |
-| V8 | replace: the master password not checked | service: unlock_failed |
-| V9 | the members to type back not random | service: uniform draw |
-| V10 | the rebuilt code kept in session storage | service: no persistence |
-| V11 | the password checked before `sync_on` | m3-keys |
-| R4 | commit: the typed shares' set id and threshold not compared (review) | service: another set of the same code |
-| R5 | commit: LANDED checked after the base compare (review) | service: a commit that landed and stayed |
-| R6 | commit: `noSync` dropped inside the transact (review) | service: sync on between the set and the switch |
-| F1a | reminder not set at the switch | service, reminder tests |
-| F1b | reminder never due at a start | service, reminder tests |
-| F1c | reminder not dropped when the check passes | service |
-| F1d | `onStartup` not making the reminder due | rules |
-| F9 | split: `shares_made` not recorded | service |
-| U1 | entry not wiped at a lock | DOM |
-| U2 | entry not wiped at pagehide | DOM |
-| U3 | the code handed over before the threshold | DOM |
-| U4 | `want` not enforced | DOM |
-| U5 | a plain text field | DOM |
-| U6 | the same share twice not refused | DOM |
-| U7 | another set not refused before combining | DOM |
-| F2 | test restore: a share of another set accepted while typed | DOM |
-| W1 | Switch before the test restore | DOM |
-| W2 | every share on the paper and in the file | DOM |
-| W3 | the next share without "kept" | DOM |
-| W4 | the rebuilt code not handed over as typed symbols | DOM |
-| F2b | the switch's errors in the page's words ("could not read") | DOM |
-| F5 | the done screen keeping the shares | rules |
-| P1 | the side panel's wipe not seeing held shares | e2e (side panel) |
-| P2 | the popup not saying a set is stale | e2e (split) |
-| P3 | the print view printing the page with the share | e2e (replace) |
-| P4 | the popup not showing the due reminder | e2e (restart) |
-| B1 | check-dist: the shares' text not held to its limit | shares-check-dist |
-| B2 | check-dist: a shares key of the full catalog allowed | shares-check-dist |
-| B3 | check-dist: the shares' chunks allowed in a static graph | shares-check-dist |
-| B4 | check-dist: the wizard allowed in the popup | shares-check-dist |
-| B5 | messages.py: a shares key of another catalog allowed | shares-check-dist |
-| B6 | messages.py: the shares' budget ten times larger | shares-check-dist, budget-split |
-| B7 | check-dist: the page with the shares not held to 15 KB | shares-check-dist |
+|     | Mutant                                                               | Killed by                                         |
+| --- | -------------------------------------------------------------------- | ------------------------------------------------- |
+| G1  | GF(2⁸): reduction polynomial 0x11D                                   | crypto, SLIP-39 vectors                           |
+| G2  | GF(2⁸): inverse a¹²⁸                                                 | crypto, SLIP-39 vectors                           |
+| G3  | interpolation: the Lagrange denominator over (x − xⱼ)                | crypto, SLIP-39 vectors                           |
+| D1  | digest: HMAC key and message swapped                                 | digest test, SLIP-39 vectors                      |
+| D2  | digest share laid out r ‖ digest                                     | digest test, SLIP-39 vectors                      |
+| D3  | recovery: the digest not checked                                     | digest refusals, invalid SLIP-39 vectors, service |
+| R1  | digest: only the last byte compared (review)                         | the digest-byte tests                             |
+| S1  | split: members at x = 1 … n                                          | properties, the cross-check                       |
+| S2  | split: r drawn before the random shares                              | the cross-check, the draw order                   |
+| S3  | split: the digest's random part not uniform                          | the cross-check                                   |
+| K1  | check: a generator without its constant term                         | the exhaustive typo test, the syndromes           |
+| K2  | check: the tag not in the register's start                           | known answer, domain separation                   |
+| K3  | check: 16 of the 20 bits compared                                    | the exhaustive typo test                          |
+| K4  | check: the data bits not fed in                                      | the exhaustive typo test, known answer            |
+| K5  | check: another generator (x²⁰ + x³ + 1)                              | the syndromes test, known answer                  |
+| T1  | threshold: more than t accepted                                      | set test                                          |
+| T2  | threshold: fewer than t accepted                                     | fewer-than-t property                             |
+| T3  | threshold 1 allowed                                                  | set test                                          |
+| I1  | set id not compared                                                  | "different sets before any arithmetic"            |
+| I2  | the threshold not compared                                           | "same set id, another threshold"                  |
+| V1  | stale detection: reported current                                    | check test                                        |
+| V2  | commit only after the test: any members                              | service: other members, too few                   |
+| V3  | the shares' code not checked against the new keyring                 | service: forged set                               |
+| V4  | the base keyring not compared                                        | service: keys changed meanwhile                   |
+| V5  | commit written while locked                                          | service: locked meanwhile                         |
+| V6  | the new keyring written at prepare                                   | service: prepare writes nothing                   |
+| V7  | split: a wrong code not recorded                                     | service: recovery_failed                          |
+| V8  | replace: the master password not checked                             | service: unlock_failed                            |
+| V9  | the members to type back not random                                  | service: uniform draw                             |
+| V10 | the rebuilt code kept in session storage                             | service: no persistence                           |
+| V11 | the password checked before `sync_on`                                | m3-keys                                           |
+| R4  | commit: the typed shares' set id and threshold not compared (review) | service: another set of the same code             |
+| R5  | commit: LANDED checked after the base compare (review)               | service: a commit that landed and stayed          |
+| R6  | commit: `noSync` dropped inside the transact (review)                | service: sync on between the set and the switch   |
+| F1a | reminder not set at the switch                                       | service, reminder tests                           |
+| F1b | reminder never due at a start                                        | service, reminder tests                           |
+| F1c | reminder not dropped when the check passes                           | service                                           |
+| F1d | `onStartup` not making the reminder due                              | rules                                             |
+| F9  | split: `shares_made` not recorded                                    | service                                           |
+| U1  | entry not wiped at a lock                                            | DOM                                               |
+| U2  | entry not wiped at pagehide                                          | DOM                                               |
+| U3  | the code handed over before the threshold                            | DOM                                               |
+| U4  | `want` not enforced                                                  | DOM                                               |
+| U5  | a plain text field                                                   | DOM                                               |
+| U6  | the same share twice not refused                                     | DOM                                               |
+| U7  | another set not refused before combining                             | DOM                                               |
+| F2  | test restore: a share of another set accepted while typed            | DOM                                               |
+| W1  | Switch before the test restore                                       | DOM                                               |
+| W2  | every share on the paper and in the file                             | DOM                                               |
+| W3  | the next share without "kept"                                        | DOM                                               |
+| W4  | the rebuilt code not handed over as typed symbols                    | DOM                                               |
+| F2b | the switch's errors in the page's words ("could not read")           | DOM                                               |
+| F5  | the done screen keeping the shares                                   | rules                                             |
+| P1  | the side panel's wipe not seeing held shares                         | e2e (side panel)                                  |
+| P2  | the popup not saying a set is stale                                  | e2e (split)                                       |
+| P3  | the print view printing the page with the share                      | e2e (replace)                                     |
+| P4  | the popup not showing the due reminder                               | e2e (restart)                                     |
+| B1  | check-dist: the shares' text not held to its limit                   | shares-check-dist                                 |
+| B2  | check-dist: a shares key of the full catalog allowed                 | shares-check-dist                                 |
+| B3  | check-dist: the shares' chunks allowed in a static graph             | shares-check-dist                                 |
+| B4  | check-dist: the wizard allowed in the popup                          | shares-check-dist                                 |
+| B5  | messages.py: a shares key of another catalog allowed                 | shares-check-dist                                 |
+| B6  | messages.py: the shares' budget ten times larger                     | shares-check-dist, budget-split                   |
+| B7  | check-dist: the page with the shares not held to 15 KB               | shares-check-dist                                 |
 
 The review's other survivors are left as they are: R8 (the members' draw without rejection sampling: a bias under 1/256
 on which members are asked for, which is public), R13 (the entry not comparing thresholds after the first share: only the
@@ -468,33 +474,33 @@ The follow-up (§13), after the review's FU-1 fix: **25 mutants, 25 killed** (`p
 of FU-1's four rules and the switch's id, FU-2's, and four of revision 2's again on the save's conditions, which moved
 into one function checked before the reminder and again in the save:
 
-| | Mutant | Killed by |
-| --- | --- | --- |
-| N1a | `checked`: a pass drops a reminder not yet due | service (N1), reminder tests |
-| N1b | a pass before the restart reported plain "current" | service (N1) |
-| N1c | the wizard without "check once more after the restart" | DOM |
-| N2 | a new vault keeps the reminder of the vault before | service (N2: all four ways) |
-| N3 | `key-ops.ts`: the wizard's words ignored (the review's B3) | DOM, through the real `useKeyOps` |
-| N5 | the shares fold not opened at the unlock after `#shares` | `short-settings-dom` |
-| N7a | the reminder set after the commit (revision 2's order) | crash test ("committed without its reminder"), service |
-| N7b | a refused save leaves the reminder set | service (N7) |
-| N7e | the commit's cleanup drops the switch's own reminder | service, crash test |
-| N7f | a failed check after the restart never says the switch may be lost | service, crash test ("not told") |
-| N7g | no check before the reminder: a refused switch writes the record | service (N7) |
-| U1 | rule 1 gone (the review's U10): a reminder not known to be written taken back | service (FU-1 rule 1) |
-| U2 | rule 2 gone: the keys unreadable, the reminder taken back | service (FU-1 rule 2) |
-| U3 | rule 3 gone (the review's U9): a save that landed has its reminder taken back | service (landed and stayed) |
-| U4 | rule 4 without the compare: put back over another switch's reminder | service (two switches at once), reminder tests |
-| U5 | rule 4 drops instead of restoring (the first follow-up's "null" branch) | service (the password-change race) |
-| U6 | the switch's id a constant | service (two switches at once) |
-| U7 | the switch's id from the time | service (two switches at once, one millisecond) |
-| S1 | "the switch was lost" for shares of any set | service (FU-2) |
-| S2 | the wizard does not say which set the shares are of | DOM |
-| S3 | the switch's reminder without the set's id | service, crash test |
-| R5 | LANDED checked after the base compare | service |
-| R6 | `noSync` dropped from the save's conditions | service, m3-keys |
-| V4 | the keyring the set was made against not compared | service |
-| V5 | the save written while locked | service |
+|     | Mutant                                                                        | Killed by                                              |
+| --- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| N1a | `checked`: a pass drops a reminder not yet due                                | service (N1), reminder tests                           |
+| N1b | a pass before the restart reported plain "current"                            | service (N1)                                           |
+| N1c | the wizard without "check once more after the restart"                        | DOM                                                    |
+| N2  | a new vault keeps the reminder of the vault before                            | service (N2: all four ways)                            |
+| N3  | `key-ops.ts`: the wizard's words ignored (the review's B3)                    | DOM, through the real `useKeyOps`                      |
+| N5  | the shares fold not opened at the unlock after `#shares`                      | `short-settings-dom`                                   |
+| N7a | the reminder set after the commit (revision 2's order)                        | crash test ("committed without its reminder"), service |
+| N7b | a refused save leaves the reminder set                                        | service (N7)                                           |
+| N7e | the commit's cleanup drops the switch's own reminder                          | service, crash test                                    |
+| N7f | a failed check after the restart never says the switch may be lost            | service, crash test ("not told")                       |
+| N7g | no check before the reminder: a refused switch writes the record              | service (N7)                                           |
+| U1  | rule 1 gone (the review's U10): a reminder not known to be written taken back | service (FU-1 rule 1)                                  |
+| U2  | rule 2 gone: the keys unreadable, the reminder taken back                     | service (FU-1 rule 2)                                  |
+| U3  | rule 3 gone (the review's U9): a save that landed has its reminder taken back | service (landed and stayed)                            |
+| U4  | rule 4 without the compare: put back over another switch's reminder           | service (two switches at once), reminder tests         |
+| U5  | rule 4 drops instead of restoring (the first follow-up's "null" branch)       | service (the password-change race)                     |
+| U6  | the switch's id a constant                                                    | service (two switches at once)                         |
+| U7  | the switch's id from the time                                                 | service (two switches at once, one millisecond)        |
+| S1  | "the switch was lost" for shares of any set                                   | service (FU-2)                                         |
+| S2  | the wizard does not say which set the shares are of                           | DOM                                                    |
+| S3  | the switch's reminder without the set's id                                    | service, crash test                                    |
+| R5  | LANDED checked after the base compare                                         | service                                                |
+| R6  | `noSync` dropped from the save's conditions                                   | service, m3-keys                                       |
+| V4  | the keyring the set was made against not compared                             | service                                                |
+| V5  | the save written while locked                                                 | service                                                |
 
 In the first follow-up round, N7d (rule 3's first form) survived once: its test made every write fail after the save,
 the reminder's too; it now fails only the vault's (U3 is that test).
@@ -526,7 +532,7 @@ the reminder's too; it now fails only the vault's (U3 is that test).
    work and could be offered once the Sync section manages the recovery key itself. The lock screen's and the reset's
    "I have shares instead" work with sync on (they only rebuild the code). Sync is behind the release gate.
 10. **The stale message never says "destroy them"** (§3.7's `sharesStale` did): shares that do not open this vault may be
-   another vault's (§3.5 says so itself).
+    another vault's (§3.5 says so itself).
 
 ## 10. Questions for the owner
 
@@ -547,37 +553,37 @@ until a check passes, the settings page that unlocks first).
 
 ## 12. Revision 2: the review's findings
 
-| Finding | Done |
-| --- | --- |
-| F1: the done screen said to destroy the old code at once | it says to keep it until "Check my shares" passes after the next browser restart; the reminder from the next start until a check passes (§4); local-vault.md and checklist item 29 aligned |
-| F2: a paper of another set at the test restore was "could not read its data" | the entry is bound to the set at the test and refuses another set's share as it is typed; the switch's errors in the shares' words, mapped in the wizard for `key-ops.ts` (not in `ui/errors.ts`): no diagnostics line |
-| F3: "belong to an old recovery code ... destroy them" (earlier name) for another vault's shares too | "may belong to an older recovery code, or to another Sixkey vault (set …)"; no screen says to destroy shares |
-| F4: split's done screen said the old shares stop working | split's done screen says the recovery code paper still works; "Lost a share?" names "Make a new recovery code" (earlier name) |
-| F5: the done screen kept the whole set | it keeps the mode, the threshold, the count (a rule test) |
-| F6: the check caught a typo with probability 1 − 2⁻²⁰ | a CRC-20 that guarantees every single substitution, every swap of neighbours and every pair of substitutions (§2), proved by exhaustive and structural tests |
-| F7: 8 of the 12 invalid vectors were refused by the test's own helper | the member level goes through Sixkey's `combineShares`; 8 apply and are refused by it, 4 are group-level only and do not apply (§2) |
-| F8: the release checklist's licence list; the generator said to be MIT | MIT added to RELEASING-THE-TREE.md (one fixture, never shipped); only the JSON of official vectors is MIT; the cross-check moved to `shares-cross.json` under the extension's licence |
-| F9: a split left no trace | `shares_made` in the security record |
-| F10: the proposal's header contradicted itself | the second line now covers Features A and C only |
-| F11: the Sync section's fields do not pass `stale` | left, noted in §5 (behind the release gate) |
-| F12: no `contract/py` port | §9 item 1, a follow-up before release |
-| F13: the test restore can be typed from the screen | a design note: it proves the shares can be typed, not that a paper exists; the person's choice, the master password remains |
-| F14: R1, R4, R5, R6 survived | tests for each; all four now killed (§8.2) |
-| Naming (OWNER-DECISIONS/16 C pending) | "恢复码分片 / Recovery code shares" in the fold, the paper and every text (the earlier name; renamed "恢复密钥分片 / Recovery key shares" on 2026-10-23, §10) |
-| Budget (owner question 2, decided) | lazy catalog outside 12,288; the page with it at most 15,360 B, enforced and tested; every part has about 194 B left |
+| Finding                                                                                             | Done                                                                                                                                                                                                                   |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1: the done screen said to destroy the old code at once                                            | it says to keep it until "Check my shares" passes after the next browser restart; the reminder from the next start until a check passes (§4); local-vault.md and checklist item 29 aligned                             |
+| F2: a paper of another set at the test restore was "could not read its data"                        | the entry is bound to the set at the test and refuses another set's share as it is typed; the switch's errors in the shares' words, mapped in the wizard for `key-ops.ts` (not in `ui/errors.ts`): no diagnostics line |
+| F3: "belong to an old recovery code ... destroy them" (earlier name) for another vault's shares too | "may belong to an older recovery code, or to another Sixkey vault (set …)"; no screen says to destroy shares                                                                                                           |
+| F4: split's done screen said the old shares stop working                                            | split's done screen says the recovery code paper still works; "Lost a share?" names "Make a new recovery code" (earlier name)                                                                                          |
+| F5: the done screen kept the whole set                                                              | it keeps the mode, the threshold, the count (a rule test)                                                                                                                                                              |
+| F6: the check caught a typo with probability 1 − 2⁻²⁰                                               | a CRC-20 that guarantees every single substitution, every swap of neighbours and every pair of substitutions (§2), proved by exhaustive and structural tests                                                           |
+| F7: 8 of the 12 invalid vectors were refused by the test's own helper                               | the member level goes through Sixkey's `combineShares`; 8 apply and are refused by it, 4 are group-level only and do not apply (§2)                                                                                    |
+| F8: the release checklist's licence list; the generator said to be MIT                              | MIT added to RELEASING-THE-TREE.md (one fixture, never shipped); only the JSON of official vectors is MIT; the cross-check moved to `shares-cross.json` under the extension's licence                                  |
+| F9: a split left no trace                                                                           | `shares_made` in the security record                                                                                                                                                                                   |
+| F10: the proposal's header contradicted itself                                                      | the second line now covers Features A and C only                                                                                                                                                                       |
+| F11: the Sync section's fields do not pass `stale`                                                  | left, noted in §5 (behind the release gate)                                                                                                                                                                            |
+| F12: no `contract/py` port                                                                          | §9 item 1, a follow-up before release                                                                                                                                                                                  |
+| F13: the test restore can be typed from the screen                                                  | a design note: it proves the shares can be typed, not that a paper exists; the person's choice, the master password remains                                                                                            |
+| F14: R1, R4, R5, R6 survived                                                                        | tests for each; all four now killed (§8.2)                                                                                                                                                                             |
+| Naming (OWNER-DECISIONS/16 C pending)                                                               | "恢复码分片 / Recovery code shares" in the fold, the paper and every text (the earlier name; renamed "恢复密钥分片 / Recovery key shares" on 2026-10-23, §10)                                                          |
+| Budget (owner question 2, decided)                                                                  | lazy catalog outside 12,288; the page with it at most 15,360 B, enforced and tested; every part has about 194 B left                                                                                                   |
 
 ## 13. Follow-up (SHAMIR-FU): the review's r2.7 and FU findings
 
-| Finding | Done |
-| --- | --- |
-| N1: a check that passed before the restart dropped the reminder | `SecurityLog.checked`: a pass drops only a due reminder; before the restart the check says "current_before_restart" and the wizard asks for one more check after the restart (the reviewer's repro is the first N1 test) |
-| N2: a new vault left a reminder that could never go | `makeVault` (a first vault, a backup restored, Start over) drops it; the record's entries stay |
-| N3: B3 survived (a fake `KeyOps`) | a test through the real `useKeyOps` with the wizard's `sharesWords` |
-| N4: "once" | the reminder shows after every unlock until a check passes: the notes, local-vault.md, the checklist, the comments and the test names say so |
-| N5: from the reminder to a page that unlocks first, the fold stayed closed | `#shares` is kept until the fold has been open unlocked: it opens at that unlock, once |
-| N6: log names | the follow-up's logs are `fu-*` |
-| N7: the reminder was the switch's last write | written before the save (§3, §4), after the save's conditions are checked once, so a switch refused before the save writes nothing; put back as it was when the save is refused; the crash test holds the order at every write, and a reminder left by a switch that did not land makes its check say so ("stale_after_switch") |
+| Finding                                                                                       | Done                                                                                                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N1: a check that passed before the restart dropped the reminder                               | `SecurityLog.checked`: a pass drops only a due reminder; before the restart the check says "current_before_restart" and the wizard asks for one more check after the restart (the reviewer's repro is the first N1 test)                                                                                                                                        |
+| N2: a new vault left a reminder that could never go                                           | `makeVault` (a first vault, a backup restored, Start over) drops it; the record's entries stay                                                                                                                                                                                                                                                                  |
+| N3: B3 survived (a fake `KeyOps`)                                                             | a test through the real `useKeyOps` with the wizard's `sharesWords`                                                                                                                                                                                                                                                                                             |
+| N4: "once"                                                                                    | the reminder shows after every unlock until a check passes: the notes, local-vault.md, the checklist, the comments and the test names say so                                                                                                                                                                                                                    |
+| N5: from the reminder to a page that unlocks first, the fold stayed closed                    | `#shares` is kept until the fold has been open unlocked: it opens at that unlock, once                                                                                                                                                                                                                                                                          |
+| N6: log names                                                                                 | the follow-up's logs are `fu-*`                                                                                                                                                                                                                                                                                                                                 |
+| N7: the reminder was the switch's last write                                                  | written before the save (§3, §4), after the save's conditions are checked once, so a switch refused before the save writes nothing; put back as it was when the save is refused; the crash test holds the order at every write, and a reminder left by a switch that did not land makes its check say so ("stale_after_switch")                                 |
 | FU-1: under two pages at once, a refused switch's put-back could drop a reminder still needed | `unremind`'s four rules (§3): nothing when the reminder was not known to be written; kept when the keys cannot be read or the save landed; else put back under the security record's own lock only while it is still this switch's (a random id, as two switches can share a millisecond). The reviewer's two races are tests; mutants for each rule and the id |
-| FU-2: "that switch did not complete" for shares of any set | the reminder holds the switched set's id (printed on every share; local-vault.md and PRIVACY.md say so); the wizard passes the typed set's id; only that set's shares get the line |
-| FU-3: keys adopted through sync do not end a reminder | noted (§4), behind the release gate |
-| FU-4: a reminder that cannot be written does not hold the switch back | noted (§4): intended |
+| FU-2: "that switch did not complete" for shares of any set                                    | the reminder holds the switched set's id (printed on every share; local-vault.md and PRIVACY.md say so); the wizard passes the typed set's id; only that set's shares get the line                                                                                                                                                                              |
+| FU-3: keys adopted through sync do not end a reminder                                         | noted (§4), behind the release gate                                                                                                                                                                                                                                                                                                                             |
+| FU-4: a reminder that cannot be written does not hold the switch back                         | noted (§4): intended                                                                                                                                                                                                                                                                                                                                            |

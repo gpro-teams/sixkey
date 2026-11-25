@@ -41,7 +41,7 @@ export type PageLock = {
   /** A wrong secret on this screen. */
   wrong(): void;
   /** The nonce to hand on with an unlock by a typed secret (read before the unlock is awaited); the entry is used up. */
-  handOn(shown: string | undefined, fromShares?: boolean): string | undefined;
+  handOn(shown: string | undefined): string | undefined;
   /** The nonce to hand on with an unlock by the device button, at its press. */
   device(shown: string | undefined): string | undefined;
 };
@@ -91,10 +91,10 @@ export function usePageLock(req: FillReq | null): PageLock {
       return "ok";
     },
     wrong: () => on && setWrongOnce(true),
-    handOn(shown, fromShares = false) {
+    handOn(shown) {
       const e = entry.current;
       entry.current = null;
-      return !fromShares && e?.handOn && e.nonce === shown ? e.nonce : undefined;
+      return e?.handOn && e.nonce === shown ? e.nonce : undefined;
     },
     device: (shown) => (pageDelay.pressOk() && settled(performance.now()) ? shown : undefined),
   };
