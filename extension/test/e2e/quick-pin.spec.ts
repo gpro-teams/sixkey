@@ -299,3 +299,36 @@ test("Delete forever asks again (it cannot be undone): the PIN since 2026-11-24,
   await expect(row).toHaveCount(0);
   await expect(opt.locator("#trash-pw-pin")).toHaveCount(0); // nothing left in the trash: no field
 });
+
+test("first run's PIN step (2026-11-25): set right after the recovery key, without the master password, and the lock screen takes it", async () => {
+  await startFresh(p, { pin: PIN });
+  const pop = await openPopup(p);
+  await expect(pop.locator("#q")).toBeVisible();
+  await pop.locator("#lock-now").click();
+  const pin = pop.locator("#pin");
+  await expect(pin).toBeVisible();
+  await pin.fill(PIN);
+  await expect(pop.locator("#q")).toBeVisible();
+});
+
+test("first run's PIN step: a lock while it is open empties the fields, and the PIN is left to Settings", async () => {
+  const pop = await openPopup(p);
+  const [opt] = await Promise.all([p.ctx.waitForEvent("page"), pop.locator("#start-secure").click()]);
+  await opt.waitForLoadState();
+  await opt.locator("#fr-pw").fill(STRONG);
+  await opt.locator("#fr-pw2").fill(STRONG);
+  await opt.locator("#fr-next").click();
+  await opt.locator("#recovery-saved").check();
+  await opt.locator("#recovery-done").click();
+  await opt.locator("#fr-solo").check();
+  await opt.locator("#fr-csb").setChecked(false);
+  await opt.locator("#fr-finish").click();
+  await opt.locator("#fr-pin-new").fill(PIN);
+  const lock = await openPopup(p);
+  await lock.locator("#lock-now").click();
+  await expect(opt.locator("#fr-pin-later")).toBeVisible();
+  await expect(opt.locator("#fr-pin-new")).toHaveCount(0);
+  await expect(opt.locator("#fr-pin-set")).toHaveCount(0);
+  await opt.locator("#fr-pin-skip").click(); // Continue: the page, locked, at its unlock bar
+  await expect(opt.locator("#unlock-pw")).toBeVisible();
+});

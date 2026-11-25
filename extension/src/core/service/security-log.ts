@@ -24,7 +24,7 @@
 //     reads it once (src/popup/notice.ts; measured on its own in read-budget.test.ts, allowed in perf.spec.ts "in all").
 //   - Adding to it never fails what is being recorded: a write that fails is reported to the diagnostics log and dropped.
 //
-// On disk, under sk_security_log:  { v: 2, entries: [{ at, kind }], ackAt?, failed?, remind? }
+// On disk, under sk_security_log:  { v: 2, entries: [{ at, kind }], ackAt?, failed? }
 //   - v: 2 (SYNC-DESIGN §0.0i req. 15 R8): the one version bump for the kinds Phase 1 added, so a client that knows v: 1
 //     stops adding entries once, not twice (it reads v > 1 as "newer"). A v: 1 record is read as before, and the next
 //     write makes it v: 2. Since revision 25 a new kind needs no bump: every version keeps the entries of kinds it does
@@ -38,17 +38,9 @@
 //     key change (each half keeps at least its newest 25), and the reverse.
 //   - failed: wrong guesses since the last ack() (or since the log began), counted as they are added, so the count does
 //     not depend on the wall clock and is not capped by the 50 entries. ackAt: when ack() last ran, for display.
-//   - remind: { kind: "shares", at, due, id, set } (docs/design/notes/SHAMIR-NOTES.md §4): after a recovery code was
-//     replaced by shares, the popup says after every unlock, from the next browser start on, to check the shares before
-//     destroying the old code, until a check passes (a commit can be rolled back by a power loss; only a check after a
-//     restart shows it was not). Set by the service just before that commit (due: false), so a power loss that drops
-//     the commit's last writes never keeps the commit and drops the reminder; put back as it was if the commit is
-//     refused (putBack), but only while it is still that switch's own (`id`, random: two pages switching at once each
-//     know their own); made due at the next start of the browser or the extension (browserStarted); dropped when "Check
-//     my shares" passes once it is due (a pass before the restart proves nothing about the commit: checked), by a new
-//     vault and by any other recovery code change. `set`: the switched set's id, as printed on every share, so a check
-//     that fails can tell that set's shares from any other. No secret: a time, a random id, and the set's id. An older
-//     version keeps it as a field it does not know.
+//   - remind: the recovery code shares' reminder, which 0.1.4 and earlier wrote (the shares were removed on 2026-11-25,
+//     OWNER-DECISIONS/27): nothing reads it any more; it is kept, as a field this version does not know, until the
+//     record is cleared.
 //   - Damaged or of an unknown shape: read() says "damaged" (no entries, so a page does not show a clean zero), and the
 //     next entry replaces it. Written by a newer version (v > 2): read() says "newer", and it is left alone (a version
 //     that adds a kind writes v: 3), so entries are not added here; each one skipped goes to the diagnostics log. A read
@@ -82,34 +74,12 @@ export type SecurityLogView = {
   entries: SecurityEntry[];
   failed: number;
   ackAt: number | null;
-  /** A reminder that is due (`remind` above): "shares", from the first browser start after the switch until a check. */
-  remind?: "shares";
 };
 
 /** What the service needs: add an entry (never fails), and empty the log (only behind the master password). */
 export interface SecurityRecorder {
   append(kind: SecurityKind): Promise<void>;
   clear(): Promise<void>;
-  /**
-   * The shares reminder set, not yet due, for a switch (`id`: the switch's own random id, `set`: the set's id), or
-   * dropped (null). Resolves to the reminder there before (null: none), or undefined when it was not read or not
-   * written. Never rejects. Optional: a recorder without one has none.
-   */
-  remind?(to: { id: string; set: string } | null): Promise<SharesReminder | null | undefined>;
-  /**
-   * A refused switch takes its reminder back: if the reminder there is still the one with this `id`, `before` (null:
-   * none) replaces it, in one read and one write under this log's lock; any other reminder, or none, is left alone (it
-   * is another switch's, or a later change already dealt with it). Never rejects.
-   */
-  putBack?(id: string, before: SharesReminder | null): Promise<void>;
-  /** The browser or the extension has started: a reminder set before becomes due. Never rejects. */
-  started?(): Promise<void>;
-  /**
-   * Shares were checked: `pass`, they rebuild the code in force. A due reminder is dropped by a pass; one not yet due
-   * stays (a check before the restart proves nothing about the commit). Resolves to the reminder's state before: "none",
-   * "set" (not yet due) or "due" ("none" when unreadable), and its set's id. Never rejects.
-   */
-  checked?(pass: boolean): Promise<{ state: "none" | "set" | "due"; set?: string }>;
 }
 
 /** What the pages get (createRuntime's `security`): reading, and the popup notice's ack. Not clear(). */
@@ -124,44 +94,14 @@ export type SecurityReader = Pick<SecurityLog, "read" | "failuresSinceAck" | "re
  */
 type StoredEntry = { at: number; kind: string; [field: string]: unknown };
 /** The record; `extra`: the fields a newer version added beside these, kept as they are when it is rewritten. */
-/** The shares reminder as stored (`remind` in the header). */
-export type SharesReminder = { kind: "shares"; at: number; due: boolean; id?: string; set?: string };
-const REMIND_ID = /^[0-9a-f]{16}$/;
-const SET_ID = /^[0-9A-F]{4}$/;
 type StoredLog = {
   v: typeof SECURITY_LOG_VERSION;
   entries: StoredEntry[];
   ackAt?: number;
   failed?: number;
-  remind?: SharesReminder;
   extra?: Record<string, unknown>;
 };
-const OWN_FIELDS = new Set(["v", "entries", "ackAt", "failed", "remind"]);
-/** A reminder as stored, or undefined for anything else (a damaged one is dropped, never guessed at). */
-const remindOf = (x: unknown): SharesReminder | undefined => {
-  const r = x as SharesReminder | null;
-  if (typeof r !== "object" || r === null || r.kind !== "shares" || !isTime(r.at) || typeof r.due !== "boolean")
-    return undefined;
-  // an id or a set that is not one is left out (an older one had neither): it never matches a switch's own
-  return {
-    kind: "shares",
-    at: r.at,
-    due: r.due,
-    ...(typeof r.id === "string" && REMIND_ID.test(r.id) ? { id: r.id } : {}),
-    ...(typeof r.set === "string" && SET_ID.test(r.set) ? { set: r.set } : {}),
-  };
-};
-
-/** The record with this reminder (none: undefined or null), or null when that changes nothing (no write). */
-function withRemind(cur: StoredLog, r: SharesReminder | null | undefined): StoredLog | null {
-  if (!r) {
-    if (!cur.remind) return null;
-    const { remind: _drop, ...rest } = cur;
-    return rest;
-  }
-  return { ...cur, remind: r };
-}
-
+const OWN_FIELDS = new Set(["v", "entries", "ackAt", "failed"]);
 const isFailure = (e: { kind: string }) => (FAILURES as readonly string[]).includes(e.kind);
 /**
  * A kind's form (security-kinds.ts's names all have it; test/unit/security-log.test.ts holds them, and the form, to it): a
@@ -201,13 +141,11 @@ export function parseSecurityLog(x: unknown): StoredLog | "newer" | null {
     ? o.failed
     : entries.filter((e) => isFailure(e) && (ackAt === undefined || e.at > ackAt)).length;
   const extra = Object.fromEntries(Object.entries(o).filter(([k]) => !OWN_FIELDS.has(k)));
-  const remind = remindOf(o.remind);
   return {
     v: SECURITY_LOG_VERSION,
     entries,
     ...(ackAt !== undefined ? { ackAt } : {}),
     failed,
-    ...(remind ? { remind } : {}),
     ...(Object.keys(extra).length ? { extra } : {}),
   };
 }
@@ -282,7 +220,6 @@ export class SecurityLog implements SecurityRecorder {
           entries: trim([...base.entries, entry]),
           ...(base.ackAt !== undefined ? { ackAt: base.ackAt } : {}),
           failed: (base.failed ?? 0) + (isFailure(entry) ? 1 : 0),
-          ...(base.remind ? { remind: base.remind } : {}),
           ...(base.extra ? { extra: base.extra } : {}),
         };
         await this.kv.set({ [SECURITY_LOG_KEY]: stored(next) });
@@ -311,7 +248,6 @@ export class SecurityLog implements SecurityRecorder {
       entries: shown.reverse(),
       failed: cur.failed ?? 0,
       ackAt: cur.ackAt ?? null,
-      ...(cur.remind?.due ? { remind: cur.remind.kind } : {}),
     };
   }
 
@@ -341,63 +277,6 @@ export class SecurityLog implements SecurityRecorder {
         [SECURITY_LOG_KEY]: stored({ ...cur, ackAt: this.now(), failed: Math.max(0, cur.failed - seen) }),
       });
     });
-  }
-
-  /**
-   * The shares reminder (`remind` in the header): set, not yet due, for a switch, or dropped (null). One read and at
-   * most one write, under this log's lock; nothing is written over a newer version's log or when nothing changes.
-   * Resolves to the reminder before (null: none); undefined when it was not read or not written. Never rejects.
-   */
-  async remind(to: { id: string; set: string } | null): Promise<SharesReminder | null | undefined> {
-    let before: SharesReminder | null | undefined;
-    const done = await this.change((cur) => {
-      before = cur.remind ?? null;
-      return withRemind(cur, to && remindOf({ kind: "shares", at: this.now(), due: false, id: to.id, set: to.set }));
-    });
-    return done ? before : undefined;
-  }
-
-  /** A refused switch's reminder taken back (`SecurityRecorder.putBack`): only while it is still that switch's own. */
-  async putBack(id: string, before: SharesReminder | null): Promise<void> {
-    await this.change((cur) => (cur.remind?.id === id ? withRemind(cur, before && remindOf(before)) : null));
-  }
-
-  /** Shares were checked (`SecurityRecorder.checked`): a pass drops a due reminder and keeps one not yet due. */
-  async checked(pass: boolean): Promise<{ state: "none" | "set" | "due"; set?: string }> {
-    let found: { state: "none" | "set" | "due"; set?: string } = { state: "none" };
-    await this.change((cur) => {
-      const r = cur.remind;
-      found = { state: !r ? "none" : r.due ? "due" : "set", ...(r?.set ? { set: r.set } : {}) };
-      return pass && found.state === "due" ? withRemind(cur, undefined) : null;
-    });
-    return found;
-  }
-
-  /** The browser or the extension started (the service worker's onStartup, onInstalled): a set reminder becomes due. */
-  async started(): Promise<void> {
-    await this.change((cur) =>
-      cur.remind && !cur.remind.due ? { ...cur, remind: { ...cur.remind, due: true } } : null,
-    );
-  }
-
-  /**
-   * A change of the record's own fields: the function given returns the new record, or null for none. Resolves true when
-   * the record was read and the change (if any) written; false for a newer version's record or a failure. Never rejects.
-   */
-  private async change(edit: (cur: StoredLog) => StoredLog | null): Promise<boolean> {
-    try {
-      return await this.lock(async () => {
-        const raw = await this.raw();
-        const cur = parseSecurityLog(raw);
-        if (cur === "newer") return false;
-        const next = edit(cur ?? { v: SECURITY_LOG_VERSION, entries: [], failed: 0 });
-        if (next) await this.kv.set({ [SECURITY_LOG_KEY]: stored(next) });
-        return true;
-      });
-    } catch (e) {
-      this.diag("security log reminder not written", e);
-      return false;
-    }
   }
 
   /**

@@ -30,10 +30,6 @@ Everything is stored on your computer, in this browser profile, in the extension
 - in the extension pages' own local storage, outside the vault and outside every backup: your language and theme choice,
   the answer of the last install-source check (store builds only), and how many times each account's code was copied or
   filled in this browser (account IDs and counts only, so that on a site the accounts you use most come first);
-- recovery key shares are never stored: Sixkey shows or prints each one, or saves it as a file only when you ask, and
-  keeps no record of a share set, except that after you switch to shares, until they pass a check after the next
-  browser restart (or the recovery key changes again, or you make a new vault), the security record holds a reminder
-  with that set's 4-character id (printed on every share);
 - while Sixkey is unlocked: the opened key, in the browser's memory-only session storage (cleared when the browser
   restarts or the extension updates), except in "lock every time" mode, where it stays only in the memory of the page
   you unlocked. The same session storage holds a counter that tells every page about a lock;
@@ -109,11 +105,11 @@ Settings › Backup turns that backup on as it opens); in `localStorage` `sk_lan
 
 - It lists, with the time only: wrong master passwords and recovery keys, recovery keys that were accepted, exports
   (by kind), changes to your keys (master password turned on, changed or reset, new recovery key, key replaced),
-  recovery key shares made of the current key, the PIN set or removed and wrong PINs, Touch ID or Windows Hello added,
+  the PIN set or removed and wrong PINs, Touch ID or Windows Hello added,
   removed or failed, and when the record was cleared. At most 50 entries.
-- After you switch your recovery key to shares, it also holds one reminder, until the shares pass a check after the next
-  browser restart: its time, a random number that tells this switch apart from another, and the share set's
-  4-character id. The popup shows it after each unlock.
+- Version 0.1.4 and earlier could also split the recovery key into shares, and recorded each set made, and a reminder
+  to check them (its time, a random number and the set's 4-character id). Those stay in the record, unread and not
+  shown, until you clear it.
 - It stays in this browser profile. Sixkey never sends it, never copies it into its IndexedDB copy, backups, exports or
   the diagnostics file. A browser that syncs, clones or exports whole profiles carries it along with everything else.
 - After you unlock in the popup, Sixkey tells you how many wrong attempts there were since you last saw this. Settings ›

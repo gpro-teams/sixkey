@@ -19,14 +19,11 @@ CSB_ZH = {
 }
 
 # The owner's report of 2026-11-18: resetting the master password with the recovery key issued a new recovery key too.
-# It keeps the recovery key now, so the page says so, and the note about the new key's screen is gone. The shares link
-# says what shares are, for someone who never made any.
+# It keeps the recovery key now, so the page says so, and the note about the new key's screen is gone.
 OVERRIDE_EN = {
     "resetLead": "Set a new master password with your recovery key. The recovery key stays the same and keeps working.",
-    "sharesInsteadLink": "I split my recovery key into shares",
 }
 OVERRIDE_ZH = {
     "resetLead": "用恢复密钥设置新的主密码。恢复密钥不变，继续有效。",
-    "sharesInsteadLink": "我把恢复密钥分成了几份（分片）",
 }
 REMOVE = ["resetCodeNote"]

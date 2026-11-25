@@ -177,9 +177,6 @@ function AskForm({
   return (
     <>
       <p class="muted">{t(kind === "code" ? "newCodeBody" : "rotateBody")}</p>
-      <p class="muted" id={`${kind}-shares-note`}>
-        {t("sharesStopWarn")}
-      </p>
       {kind === "code" ? (
         <ConfirmField c={confirm} id="code-pw" label={t("passwordLabel")} rt={rt} />
       ) : (
@@ -197,26 +194,6 @@ function AskForm({
       </div>
     </>
   );
-}
-
-/**
- * Recovery key shares (docs/design/notes/SHAMIR-NOTES.md §5): the wizard and its text are a lazy chunk, loaded when the
- * fold opens, so this leaf carries only the fold's title. Closing the fold unmounts it, and the wizard with it.
- */
-const shareWizard = () => import("./ShareWizard");
-function SharesFold({ keys, rt, check }: { keys: KeyOps; rt: Ctx["rt"]; check: boolean }) {
-  const [Wizard, setWizard] = useState<Awaited<ReturnType<typeof shareWizard>>["ShareWizard"] | null>(null);
-  useEffect(() => {
-    let live = true;
-    void shareWizard().then(
-      (m) => live && setWizard(() => m.ShareWizard),
-      (e) => logError("settings shares wizard", e),
-    );
-    return () => {
-      live = false;
-    };
-  }, []);
-  return Wizard ? <Wizard rt={rt} keys={keys} {...(check ? { start: "check" as const } : {})} /> : null;
 }
 
 /**
@@ -287,49 +264,20 @@ export function Security({ rt, status, vault, reload, keys }: Props) {
   );
 }
 
-// The address asks for the shares fold (the popup's reminder opens #shares); no address in a document without one.
-const atShares = () => globalThis.location?.hash === "#shares";
-
 /** Settings › Security › Password and recovery: the master password, a new recovery code, a new key. */
 export function SecurityKeys({ rt, status, vault, reload, keys }: Props) {
   const unlocked = status.state === "unlocked";
   const isProtected = status.state === "unlocked" && status.passwordProtected;
   // One form open at a time. Its fields are its own: closing it unmounts them.
-  // #shares (the popup's reminder): the shares fold, at "Check my shares"; on opening and whenever the address says so
-  const [fold, setFold] = useState<"change" | "code" | "rotate" | "shares" | null>(() =>
-    atShares() ? "shares" : null,
-  );
-  const [checkFirst, setCheckFirst] = useState(atShares);
-  // the address's ask, until the fold has been open with the vault unlocked: a page opened from the reminder while
-  // Sixkey is locked (locking every time) opens the fold at the unlock that follows
-  const wantShares = useRef(atShares());
-  useEffect(() => {
-    const onHash = () => {
-      if (!atShares()) return;
-      wantShares.current = true;
-      setCheckFirst(true);
-      setFold("shares");
-    };
-    addEventListener("hashchange", onHash);
-    return () => removeEventListener("hashchange", onHash);
-  }, []);
-  const opens = (k: "change" | "code" | "rotate" | "shares") => (on: boolean) => {
+  const [fold, setFold] = useState<"change" | "code" | "rotate" | null>(null);
+  const opens = (k: "change" | "code" | "rotate") => (on: boolean) => {
     keys.clear();
-    wantShares.current = false;
-    setCheckFirst(false);
     setFold(on ? k : null);
   };
   // a lock, or a hidden tab: nothing typed waits for whoever sits down next
   useEffect(() => {
     if (!unlocked) setFold(null);
-    else if (wantShares.current) {
-      setCheckFirst(true);
-      setFold("shares");
-    }
   }, [unlocked]);
-  useEffect(() => {
-    if (unlocked && fold === "shares") wantShares.current = false; // answered
-  }, [unlocked, fold]);
   useEffect(() => {
     const hidden = () => {
       if (document.visibilityState === "hidden") setFold(null);
@@ -378,15 +326,6 @@ export function SecurityKeys({ rt, status, vault, reload, keys }: Props) {
             onToggle={opens("rotate")}
           >
             <AskForm kind="rotate" keys={keys} rt={rt} onDone={() => setFold(null)} />
-          </Fold>
-          <Fold
-            id="fold-shares"
-            icon="key"
-            title={t("sharesFoldTitle")}
-            open={fold === "shares"}
-            onToggle={opens("shares")}
-          >
-            <SharesFold keys={keys} rt={rt} check={checkFirst} />
           </Fold>
         </>
       )}

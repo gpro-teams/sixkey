@@ -37,12 +37,15 @@ const edit = (dir: string, f: string, fn: (t: string) => string) =>
   writeFileSync(join(dir, f), fn(readFileSync(join(dir, f), "utf8")));
 const entry = (dir: string, page: string) =>
   readFileSync(join(dir, page), "utf8").match(/<script[^>]*src="\.\.\/assets\/([^"]+\.js)"/)![1]!;
-/** A catalog chunk of `entries` messages of 40 CJK characters each: incompressible enough to weigh what it says. */
-const noise = (entries: number, keys: string[]) =>
+/**
+ * A catalog chunk of `entries` messages of 40 CJK characters each: incompressible enough to weigh what it says. `from`:
+ * where its messages start, so that two chunks counted in one gzip stream do not repeat each other's text.
+ */
+const noise = (entries: number, keys: string[], from = 0) =>
   `var e={${keys.map((k) => `${k}:{message:\`x\`}`).join(",")},${Array.from(
     { length: entries },
     (_, i) =>
-      `zz${i}:{message:\`${Array.from({ length: 40 }, (_, j) => String.fromCharCode(0x4e00 + ((i * 131 + j * 7919) % 20000))).join("")}\`}`,
+      `zz${i}:{message:\`${Array.from({ length: 40 }, (_, j) => String.fromCharCode(0x4e00 + (((i + from) * 131 + j * 7919) % 20000))).join("")}\`}`,
   ).join(",")}};export{e as default};`;
 
 beforeAll(() => {
@@ -70,11 +73,12 @@ describe("check-dist and the PIN record's chunks", () => {
     ],
     [
       // (with the plugin platform's text gone, the PIN record's alone, within its limit, no longer takes the page over:
-      // the autofill switch's text, within its own, is padded too)
+      // the autofill switch's text, within its own, is padded too, with text of its own since the recovery code
+      // shares' catalog, which the page counted too, went on 2026-11-25)
       "its text within its limit, but a vault's page with every lazy catalog over 15,360 B",
       (d) => {
         writeFileSync(join(d, "assets", asset(d, /^restart-locale-zh_CN-/)), noise(18, ["rsCost"]));
-        writeFileSync(join(d, "assets", asset(d, /^plugins-locale-zh_CN-/)), noise(26, ["pxAfName"]));
+        writeFileSync(join(d, "assets", asset(d, /^plugins-locale-zh_CN-/)), noise(26, ["pxAfName"], 100));
       },
       /a vault's page with the plugins' text and every other lazy catalog in \(zh_CN\) is \d+ B gz, over 15360 B/,
     ],

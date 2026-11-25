@@ -8,7 +8,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { close, launch, openFold, openOptions, openPopup, type Profile } from "./harness";
+import { close, launch, openFold, openOptions, openPopup, type Profile, skipFirstPin } from "./harness";
 
 let p: Profile;
 test.beforeEach(async () => {
@@ -36,6 +36,7 @@ async function firstRunGenerated(opt: Page, words = false): Promise<string> {
   await opt.locator("#recovery-done").click();
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toBeVisible();
   return pw;
 }

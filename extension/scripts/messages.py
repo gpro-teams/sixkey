@@ -20,8 +20,8 @@
 #   - the autofill switch's text (Settings › Security › Autofill: the switch and its recent requests) is a catalog of its
 #     own, catalogs/plugins-<lang>.json (src/ui/plugins/text.ts; the name is the removed plugin platform's, whose
 #     settings-page catalog it was), loaded with the switch's lazy chunk and counted in none of the settings page's
-#     up-front budgets or views, as the shares' is; what a vault's page holds with it in (PLUGINS_VIEW) is held to
-#     SHARES_PAGE_LIMIT. Its keys are disjoint from every other catalog's.
+#     up-front budgets or views; what a vault's page holds with it in (PLUGINS_VIEW) is held to
+#     LAZY_PAGE_LIMIT. Its keys are disjoint from every other catalog's.
 #   - the settings page's Sync section and its two catalogs (catalogs/sync-<lang>.json, catalogs/sync-manage-<lang>.json)
 #     are gone from every build (OWNER-DECISIONS/25): no fragment may add to them, and a leftover file of theirs is
 #     deleted (below).
@@ -29,25 +29,22 @@
 #     button's lazy chunk (src/popup/main/Fill.tsx, src/popup/main/fill-text.ts) and never counted in the popup's catalog:
 #     the popup has no room for it. Its keys are disjoint from the full catalogs'. What the service worker shows for the
 #     `fill` shortcut (the toolbar title) and the shortcut's description are keys of the full catalogs, for Chrome.
-#   - the recovery code shares' text (docs/design/notes/SHAMIR-NOTES.md §6) is a catalog of its own,
-#     catalogs/shares-<lang>.json, loaded with the shares' lazy chunks (src/ui/share-text.ts: the share entry, the wizard,
-#     the printed share) by the popup, the side panel and the settings page, and counted in none of their up-front budgets
-#     or the settings page's views (AGGREGATES): it has a budget of its own, and what a vault's page holds with it open is
-#     printed beside the views (SHARES_VIEW). Its keys are disjoint from the full catalogs' and the others'.
+#   - the recovery code shares' text had a catalog of its own (catalogs/shares-<lang>.json) until the shares were
+#     removed (2026-11-25); a leftover file of it is deleted (below).
 #   - the device unlock's text (Touch ID / Windows Hello, QUICK-UNLOCK Stage 2; docs/design/notes/PRF-NOTES.md) is a
 #     catalog of its own, catalogs/device-<lang>.json, loaded with the device unlock's lazy chunks (src/ui/device-text.ts:
 #     the lock screen's button in the popup, the side panel and the settings page's unlock bar; Settings › Security's box)
-#     and counted in none of their up-front budgets, as the shares' is. Held to a budget of its own, and what a vault's
-#     page holds with every lazy catalog in (DEVICE_VIEW, the shares' with it) to SHARES_PAGE_LIMIT. Disjoint keys.
+#     and counted in none of their up-front budgets. Held to a budget of its own, and what a vault's page holds with
+#     every lazy catalog in (DEVICE_VIEW) to LAZY_PAGE_LIMIT. Disjoint keys.
 #   - the PIN record's text (OWNER-DECISIONS/20; docs/design/notes/PIN-RESTART-NOTES.md §8, §18) is a catalog of its own,
 #     catalogs/restart-<lang>.json (src/ui/restart-text.ts: what the PIN costs, in Settings › Security's PIN box and its
 #     inventory line), one of the lazy catalogs a vault's page can hold together (PLUGINS_VIEW, held to
-#     SHARES_PAGE_LIMIT), with a budget of its own, loaded with its lazy chunk. Disjoint keys. (Its lock screen's catalog,
+#     LAZY_PAGE_LIMIT), with a budget of its own, loaded with its lazy chunk. Disjoint keys. (Its lock screen's catalog,
 #     restart-popup, went with the "Also after a restart" switch on 2026-10-30.)
 #   - the backup in Chrome's sync storage's text (catalogs/csb-<lang>.json, src/ui/csb-text.ts: Settings › Backup's card,
 #     first run's box, the restore from Chrome Sync, what a restore found, "Choose file" opening a downloaded copy of the
 #     backup) is a catalog of its own, loaded with that lazy chunk (src/options/csb/), with a budget of its own, and held
-#     with a vault's view (CSB_VIEW) and with first run's (CSB_FIRSTRUN_VIEW) to SHARES_PAGE_LIMIT, as the Google Drive
+#     with a vault's view (CSB_VIEW) and with first run's (CSB_FIRSTRUN_VIEW) to LAZY_PAGE_LIMIT, as the Google Drive
 #     backup's was (its catalogs went with its code). Disjoint keys.
 #     Its popup's (catalogs/csb-popup-<lang>.json, src/ui/csb-popup-text.ts: the popup's and the side panel's header pill,
 #     the footer's words and the welcome's copy found) is loaded with their lazy chunks, with a budget of its own, and is
@@ -75,7 +72,6 @@
 #                             key, also one that a part or the popup's catalog has; each listed once)
 #   PLUGINS_EN, PLUGINS_ZH    new keys of the autofill switch's catalog (above); both languages, the same keys
 #   AUTOFILL_EN, AUTOFILL_ZH  new keys of the Fill button's catalog (below); the same rules
-#   SHARES_EN, SHARES_ZH      new keys of the recovery code shares' catalog (below); the same rules
 #   DEVICE_EN, DEVICE_ZH      new keys of the device unlock's catalog (below); the same rules
 #   RESTART_EN, RESTART_ZH    new keys of the PIN record's settings-page catalog (below); the same rules
 #   RULES_EN, RULES_ZH        new keys of the site rules' updater's catalog (above); the same rules
@@ -104,8 +100,6 @@ FRAGMENT_NAMES = {
     "PLUGINS_ZH",
     "AUTOFILL_EN",
     "AUTOFILL_ZH",
-    "SHARES_EN",
-    "SHARES_ZH",
     "DEVICE_EN",
     "DEVICE_ZH",
     "RESTART_EN",
@@ -136,8 +130,6 @@ BUDGETS = {
     # of it
     "plugins": 3072,
     "autofill": 4096,
-    # 1,5xx B (zh_CN) when it was introduced, plus at least 1.5 KB, rounded up to 512 B (docs/design/notes/SHAMIR-NOTES.md §6)
-    "shares": 3072,
     # the maintainers' allowance (2026-10-23): 1,500 B (zh_CN), 1,487 B when it was introduced; raised to 1,600 B (of the
     # 1,700 allowed) with OWNER-DECISIONS/17's texts (PRF-NOTES.md §9)
     "device": 1600,
@@ -172,11 +164,12 @@ AGGREGATES = {
     ],
     "settings page, every part": ["settings-" + p for p in SETTINGS_PARTS],
 }
-# The most a vault's page can hold with the shares' text in: its view and the shares' catalog. Not held to VIEW_LIMIT:
-# the shares' catalog is lazy and has a budget of its own, like the Fill button's in the popup (the owner's decision,
-# 2026-10-23: SHAMIR-NOTES.md §6). Held instead to SHARES_PAGE_LIMIT, VIEW_LIMIT + BUDGETS["shares"] = 15 KB.
-SHARES_PAGE_LIMIT = 15360
-SHARES_VIEW = [
+# The most a vault's page can hold with lazy text in: its view and the lazy catalogs it loads on first use. Not held to
+# VIEW_LIMIT: the lazy catalogs have budgets of their own, like the Fill button's in the popup. Held instead to
+# LAZY_PAGE_LIMIT, 15 KB: VIEW_LIMIT plus the 3 KB the recovery code shares' catalog had when it was set (the owner's
+# decision, 2026-10-23: SHAMIR-NOTES.md §6); the shares went on 2026-11-25, the limit stayed.
+LAZY_PAGE_LIMIT = 15360
+VAULT_VIEW = [
     "settings-core",
     "settings-security",
     "settings-accounts",
@@ -184,24 +177,23 @@ SHARES_VIEW = [
     "settings-misc",
     "settings-general",
     "settings-unlock",
-    "shares",
 ]
 # The same page with the device unlock's lazy text in as well (Settings › Security's box, the unlock bar's button). Held
-# to SHARES_PAGE_LIMIT too (docs/design/notes/PRF-NOTES.md).
-DEVICE_VIEW = SHARES_VIEW + ["device"]
+# to LAZY_PAGE_LIMIT too (docs/design/notes/PRF-NOTES.md).
+DEVICE_VIEW = VAULT_VIEW + ["device"]
 # The same page with the autofill switch's lazy text in as well (Settings › Security › Autofill): every lazy catalog the
-# settings page can load, held to SHARES_PAGE_LIMIT too.
+# settings page can load, held to LAZY_PAGE_LIMIT too.
 # The PIN record's (Settings › Security's PIN box: what the PIN costs) is one (PIN-RESTART-NOTES.md §8).
-# What this holds to SHARES_PAGE_LIMIT is a vault's view (SHARES_VIEW's parts) with these four lazy catalogs: an extension
+# What this holds to LAZY_PAGE_LIMIT is a vault's view (VAULT_VIEW's parts) with these three lazy catalogs: an extension
 # of the owner's rule for the shares' (SHAMIR-NOTES.md §6), not the most one page can hold. A vault's page can also draw
 # the first-run wizard (Backup's restore, Advanced › Start over), which loads the firstrun part; with it, it holds about
 # 520 B more (15,783 B zh_CN at 539e9f6), which no limit holds (docs/design/notes/BUDGET3-NOTES.md §2, §6).
 PLUGINS_VIEW = DEVICE_VIEW + ["plugins", "restart"]
 # The backup in Chrome's sync storage's: a vault's view with its card's text in (Settings › Backup), and first run's
 # with its box's and its restore's (the wizard's catalog and its own). Each a lazy catalog's page, held to
-# SHARES_PAGE_LIMIT as the shares' is; neither added to PLUGINS_VIEW (a vault's page shows the card or the autofill
+# LAZY_PAGE_LIMIT as the others are; neither added to PLUGINS_VIEW (a vault's page shows the card or the autofill
 # page, the rule the Google Drive backup's catalog had).
-CSB_VIEW = SHARES_VIEW[:-1] + ["csb"]
+CSB_VIEW = VAULT_VIEW + ["csb"]
 CSB_FIRSTRUN_VIEW = ["settings-core", "settings-firstrun", "csb"]
 # The sizes are measured with Node's gzip (the one check-dist uses), on the text of each chunk exactly as the build emits
 # it. Without node, Python's zlib estimates them; it compresses a little differently (up to 3.1% smaller, on short Chinese
@@ -241,8 +233,6 @@ def read(path, allowed):
             "PLUGINS_ZH",
             "AUTOFILL_EN",
             "AUTOFILL_ZH",
-            "SHARES_EN",
-            "SHARES_ZH",
             "DEVICE_EN",
             "DEVICE_ZH",
             "RESTART_EN",
@@ -344,7 +334,7 @@ for where, f in fragments:
         AUTOFILL[0][k], AUTOFILL[1][k] = en[k], zh[k]
 
 # 4b'. The autofill switch's catalog: new keys only, both languages, none of them a key of any other catalog (the
-#      shares' are checked against them below, in 4c's turn, through plugins_by).
+#      later catalogs are checked against them below, through plugins_by).
 PLUGIN_TABLES = {
     "PLUGINS_": ({}, {}),
 }
@@ -363,21 +353,6 @@ for where, f in fragments:
             table[0][k], table[1][k] = en[k], zh[k]
 PLUGINS = PLUGIN_TABLES["PLUGINS_"]
 
-# 4c. The recovery code shares' catalog: new keys only, both languages, none of them a key of any other catalog.
-SHARES = ({}, {})
-shares_by = {}
-for where, f in fragments:
-    en, zh = f["SHARES_EN"], f["SHARES_ZH"]
-    if en.keys() != zh.keys():
-        fail(f"{where}: SHARES_EN and SHARES_ZH add different keys: {sorted(en.keys() ^ zh.keys())}")
-    for k in en:
-        if k in shares_by:
-            fail(f"{where}: shares key {k!r} is also added by {shares_by[k]}")
-        if k in EN or k in added_by or k in removed_by or k in autofill_by or k in plugins_by:
-            fail(f"{where}: shares key {k!r} is also a key of another catalog (the sets are disjoint)")
-        shares_by[k] = where
-        SHARES[0][k], SHARES[1][k] = en[k], zh[k]
-
 # 4d. The device unlock's catalog: new keys only, both languages, none of them a key of any other catalog.
 DEVICE = ({}, {})
 device_by = {}
@@ -388,7 +363,7 @@ for where, f in fragments:
     for k in en:
         if k in device_by:
             fail(f"{where}: device key {k!r} is also added by {device_by[k]}")
-        if k in EN or k in added_by or k in removed_by or k in autofill_by or k in shares_by:
+        if k in EN or k in added_by or k in removed_by or k in autofill_by:
             fail(f"{where}: device key {k!r} is also a key of another catalog (the sets are disjoint)")
         device_by[k] = where
         DEVICE[0][k], DEVICE[1][k] = en[k], zh[k]
@@ -404,15 +379,7 @@ for where, f in fragments:
         for k in en:
             if k in restart_by:
                 fail(f"{where}: restart key {k!r} is also added by {restart_by[k]}")
-            if (
-                k in EN
-                or k in added_by
-                or k in removed_by
-                or k in autofill_by
-                or k in shares_by
-                or k in plugins_by
-                or k in device_by
-            ):
+            if k in EN or k in added_by or k in removed_by or k in autofill_by or k in plugins_by or k in device_by:
                 fail(f"{where}: restart key {k!r} is also a key of another catalog (the sets are disjoint)")
             restart_by[k] = where
             table[0][k], table[1][k] = en[k], zh[k]
@@ -433,7 +400,6 @@ for where, f in fragments:
             or k in added_by
             or k in removed_by
             or k in autofill_by
-            or k in shares_by
             or k in plugins_by
             or k in device_by
             or k in restart_by
@@ -460,7 +426,6 @@ for where, f in fragments:
                 or k in added_by
                 or k in removed_by
                 or k in autofill_by
-                or k in shares_by
                 or k in plugins_by
                 or k in device_by
                 or k in restart_by
@@ -551,7 +516,6 @@ for part in SETTINGS_PARTS:
 catalogs["view"] = ({k: EN[k] for k in EN if k in view_by}, {k: ZH[k] for k in ZH if k in view_by})
 catalogs["plugins"] = PLUGINS
 catalogs["autofill"] = AUTOFILL
-catalogs["shares"] = SHARES
 catalogs["device"] = DEVICE
 catalogs["restart"] = RESTART
 catalogs["rules"] = RULES
@@ -565,7 +529,6 @@ together = {
     (view, i): "".join(texts[(name, i)] for name in parts) for view, parts in AGGREGATES.items() for i in (0, 1)
 }
 together.update({("plugins view", i): "".join(texts[(name, i)] for name in PLUGINS_VIEW) for i in (0, 1)})
-together.update({("shares view", i): "".join(texts[(name, i)] for name in SHARES_VIEW) for i in (0, 1)})
 together.update({("device view", i): "".join(texts[(name, i)] for name in DEVICE_VIEW) for i in (0, 1)})
 together.update({("csb view", i): "".join(texts[(name, i)] for name in CSB_VIEW) for i in (0, 1)})
 together.update({("csb first run", i): "".join(texts[(name, i)] for name in CSB_FIRSTRUN_VIEW) for i in (0, 1)})
@@ -594,23 +557,22 @@ for view in AGGREGATES:
         )
 
 for view, what in (
-    ("shares view", "the shares' text"),
     ("device view", "every lazy catalog"),
     ("csb view", "the backup in Chrome sync's text"),
     ("csb first run", "the backup in Chrome sync's text (first run)"),
 ):
     lazy_page = max(size[(view, 0)], size[(view, 1)])
-    if lazy_page > (SHARES_PAGE_LIMIT if exact else int(SHARES_PAGE_LIMIT * (1 - ESTIMATE_MARGIN))):
+    if lazy_page > (LAZY_PAGE_LIMIT if exact else int(LAZY_PAGE_LIMIT * (1 - ESTIMATE_MARGIN))):
         fail(
             f"a vault's page with {what} in is {'' if exact else 'about '}{lazy_page} B gzipped, over the "
-            f"{SHARES_PAGE_LIMIT} B a page with a lazy catalog may hold (SHAMIR-NOTES.md §6); nothing was written"
+            f"{LAZY_PAGE_LIMIT} B a page with a lazy catalog may hold (SHAMIR-NOTES.md §6); nothing was written"
         )
 
 plugins_page = max(size[("plugins view", 0)], size[("plugins view", 1)])
-if plugins_page > (SHARES_PAGE_LIMIT if exact else int(SHARES_PAGE_LIMIT * (1 - ESTIMATE_MARGIN))):
+if plugins_page > (LAZY_PAGE_LIMIT if exact else int(LAZY_PAGE_LIMIT * (1 - ESTIMATE_MARGIN))):
     fail(
-        f"a vault's page with the plugins' and the shares' text in is {'' if exact else 'about '}{plugins_page} B "
-        f"gzipped, over the {SHARES_PAGE_LIMIT} B a page with lazy catalogs may hold (PLUGINS-W1A-NOTES.md §6); nothing "
+        f"a vault's page with the plugins' and the other lazy text in is {'' if exact else 'about '}{plugins_page} B "
+        f"gzipped, over the {LAZY_PAGE_LIMIT} B a page with lazy catalogs may hold (PLUGINS-W1A-NOTES.md §6); nothing "
         "was written"
     )
 
@@ -645,8 +607,6 @@ print(
     "in the popup's view part,",
     len(AUTOFILL[0]),
     "in the Fill button's,",
-    len(SHARES[0]),
-    "in the shares',",
     len(DEVICE[0]),
     "in the device unlock's,",
     len(RESTART[0]),
@@ -661,19 +621,18 @@ print(
 print(f"catalogs, gzipped ({'Node' if exact else 'estimated without node'}):", "; ".join(sizes))
 print("loaded together:", "; ".join(views))
 print(
-    f"a vault's page with the shares' text in (lazy, not held to {VIEW_LIMIT} B; SHAMIR-NOTES.md §6): "
-    f"{mark}{max(size[('shares view', 0)], size[('shares view', 1)])} of {SHARES_PAGE_LIMIT} B; "
-    f"with the device unlock's too: {mark}{max(size[('device view', 0)], size[('device view', 1)])} of "
-    f"{SHARES_PAGE_LIMIT} B"
+    f"a vault's page with the device unlock's text in (lazy, not held to {VIEW_LIMIT} B; SHAMIR-NOTES.md §6): "
+    f"{mark}{max(size[('device view', 0)], size[('device view', 1)])} of "
+    f"{LAZY_PAGE_LIMIT} B"
 )
 print(
     f"the autofill switch's text: {len(PLUGINS[0])} keys; a vault's page with it and every other lazy catalog in: "
-    f"{mark}{plugins_page} of {SHARES_PAGE_LIMIT} B"
+    f"{mark}{plugins_page} of {LAZY_PAGE_LIMIT} B"
 )
 print(
     f"the backup in Chrome sync's text (lazy): a vault's page with it in "
-    f"{mark}{max(size[('csb view', 0)], size[('csb view', 1)])} of {SHARES_PAGE_LIMIT} B; first run with it in "
-    f"{mark}{max(size[('csb first run', 0)], size[('csb first run', 1)])} of {SHARES_PAGE_LIMIT} B"
+    f"{mark}{max(size[('csb view', 0)], size[('csb view', 1)])} of {LAZY_PAGE_LIMIT} B; first run with it in "
+    f"{mark}{max(size[('csb first run', 0)], size[('csb first run', 1)])} of {LAZY_PAGE_LIMIT} B"
 )
 if fragments:
     print("fragments:", ", ".join(w for w, _ in fragments))

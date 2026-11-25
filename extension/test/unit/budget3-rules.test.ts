@@ -175,27 +175,23 @@ describe("4. what the 15,360 B check of a vault's page counts (the comments say 
   const py = readFileSync(join(EXT, "scripts/messages.py"), "utf8");
   const dist = readFileSync(join(EXT, "scripts/check-dist.mjs"), "utf8");
   const VAULT = ["core", "security", "accounts", "backup", "misc", "general", "unlock"];
-  it("messages.py: a vault's view (the core and six parts) with the four lazy catalogs, not the first-run part", () => {
-    const shares = py.slice(py.indexOf("SHARES_VIEW = ["), py.indexOf("]", py.indexOf("SHARES_VIEW = [")));
-    expect([...shares.matchAll(/"([a-z-]+)"/g)].map((m) => m[1])).toEqual([
-      ...VAULT.map((p) => `settings-${p}`),
-      "shares",
-    ]);
-    expect(py).toMatch(/^DEVICE_VIEW = SHARES_VIEW \+ \["device"\]$/m);
+  it("messages.py: a vault's view (the core and six parts) with the three lazy catalogs, not the first-run part", () => {
+    const vault = py.slice(py.indexOf("VAULT_VIEW = ["), py.indexOf("]", py.indexOf("VAULT_VIEW = [")));
+    expect([...vault.matchAll(/"([a-z-]+)"/g)].map((m) => m[1])).toEqual(VAULT.map((p) => `settings-${p}`));
+    expect(py).toMatch(/^DEVICE_VIEW = VAULT_VIEW \+ \["device"\]$/m);
     expect(py).toMatch(/^PLUGINS_VIEW = DEVICE_VIEW \+ \["plugins", "restart"\]$/m);
-    expect(py).toMatch(/^SHARES_PAGE_LIMIT = 15360$/m);
+    expect(py).toMatch(/^LAZY_PAGE_LIMIT = 15360$/m);
   });
   it("check-dist: the same catalogs, in the same order, held to the same 15,360 B", () => {
     const at = dist.indexOf("// a vault's page with the plugins' text and every other lazy catalog in, as one gzip");
     const block = dist.slice(at, dist.indexOf("if (names.some", at));
     expect(block).toContain(`...[${VAULT.map((p) => `"${p}"`).join(", ")}].map((part) =>`);
     expect([...block.matchAll(/`([a-z]+)-locale-\$\{loc\}-`/g)].map((m) => m[1])).toEqual([
-      "shares",
       "device",
       "plugins",
       "restart",
     ]);
     expect(code(block)).not.toContain("firstrun"); // its comment says so; its code counts none of it
-    expect(dist).toMatch(/^const SHARES_PAGE_GZ = 15 \* 1024;$/m);
+    expect(dist).toMatch(/^const LAZY_PAGE_GZ = 15 \* 1024;$/m);
   });
 });

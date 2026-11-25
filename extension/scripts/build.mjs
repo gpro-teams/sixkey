@@ -303,13 +303,10 @@ const buildCommon = { target: "chrome120", sourcemap: dev, minify: !dev, moduleP
 // The popup's View menu (src/popup/main/View.tsx) has a catalog of its own, catalogs/view-<lang>.json (scripts/messages.py
 // VIEW), loaded with the menu on its first use: assets/view-locale-<lang>-<hash>.js, which check-dist counts apart from
 // the popup's catalogs and refuses in any page's static graph.
-// The recovery code shares' catalog (catalogs/shares-<lang>.json, scripts/messages.py SHARES; src/ui/share-text.ts),
-// loaded with the shares' lazy chunks by the popup, the side panel and the settings page: assets/shares-locale-<lang>-
-// <hash>.js, which check-dist counts apart from every page's catalogs and refuses in any page's static graph
-// (docs/design/notes/SHAMIR-NOTES.md §6).
 // The device unlock's catalog (catalogs/device-<lang>.json, scripts/messages.py DEVICE; src/ui/device-text.ts), loaded with
-// the device unlock's lazy chunks by the popup, the side panel and the settings page, likewise: assets/device-locale-
-// <lang>-<hash>.js (docs/design/notes/PRF-NOTES.md).
+// the device unlock's lazy chunks by the popup, the side panel and the settings page: assets/device-locale-<lang>-
+// <hash>.js, which check-dist counts apart from every page's catalogs and refuses in any page's static graph
+// (docs/design/notes/PRF-NOTES.md).
 // The PIN record's catalog (scripts/messages.py RESTART; docs/design/notes/PIN-RESTART-NOTES.md §8): the settings page's
 // (catalogs/restart-<lang>.json, src/ui/restart-text.ts) is assets/restart-locale-<lang>-<hash>.js; check-dist holds the
 // settings page to it and keeps it from the popup's and the side panel's.
@@ -318,7 +315,6 @@ const buildCommon = { target: "chrome120", sourcemap: dev, minify: !dev, moduleP
 // it from the popup's and the side panel's.
 const LOCALE_MODULE = /[\\/]_locales[\\/]([A-Za-z_]+)[\\/]messages\.json(?:\?.*)?$/;
 const AUTOFILL_LOCALE_MODULE = /[\\/]catalogs[\\/]autofill-([A-Za-z_]+)\.json(?:\?.*)?$/;
-const SHARES_LOCALE_MODULE = /[\\/]catalogs[\\/]shares-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const DEVICE_LOCALE_MODULE = /[\\/]catalogs[\\/]device-([A-Za-z_]+)\.json(?:\?.*)?$/;
 const RESTART_LOCALE_MODULE = /[\\/]catalogs[\\/]restart-([A-Za-z_]+)\.json(?:\?.*)?$/;
 // The backup in Chrome's sync storage's (catalogs/csb-<lang>.json, src/ui/csb-text.ts): assets/csb-locale-<lang>-<hash>.js,
@@ -338,8 +334,6 @@ const chunkFileNames = (chunk) => {
   if (popupLang) return `assets/popup-locale-${popupLang}-[hash].js`;
   const fillLang = AUTOFILL_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
   if (fillLang) return `assets/autofill-locale-${fillLang}-[hash].js`;
-  const sharesLang = SHARES_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
-  if (sharesLang) return `assets/shares-locale-${sharesLang}-[hash].js`;
   const deviceLang = DEVICE_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];
   if (deviceLang) return `assets/device-locale-${deviceLang}-[hash].js`;
   const restartLang = RESTART_LOCALE_MODULE.exec(chunk.facadeModuleId ?? "")?.[1];

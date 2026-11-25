@@ -19,6 +19,7 @@ import {
   seedLegacyDeviceVault,
   showSection,
   STRONG,
+  skipFirstPin,
 } from "./harness";
 
 let p: Profile;
@@ -154,6 +155,7 @@ test("first run: one's own first, 'Generate for me' secondary, explained and kep
   await opt.locator("#recovery-done").click();
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toBeVisible();
   const dir = p.dir;
   await close(p, false);
@@ -324,6 +326,7 @@ test("a lock empties and hides a backup file's password", async () => {
   await opt.locator("#recovery-done").click();
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toBeVisible();
   await opt.goto(opt.url().replace(/#.*$/, "") + "#backup");
   await openFold(opt, "encrypted");

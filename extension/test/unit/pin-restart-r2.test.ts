@@ -42,7 +42,7 @@ import { pinKit, type PinKit } from "../../src/core/service/pin-kit";
 import { makeRestart } from "../../src/core/service/pin-restart-admin";
 import { restartOffer } from "../../src/core/service/pin-restart-count";
 import { notePassword as note, unlock as viaRecord } from "../../src/core/service/pin-restart-steps";
-import type { PreparedShares, VaultService } from "../../src/core/service/service";
+import type { VaultService } from "../../src/core/service/service";
 import { applyPreset } from "../../src/core/service/presets";
 import { TEST_KDF_ITERATIONS } from "../helpers/kdf";
 import { NO_PAGE, STRONG } from "../helpers/vaults";
@@ -841,17 +841,6 @@ describe("PINR-R2-05: the second review's survivors (REVIEW-r2-proposed.test.ts)
     const w = await onWorld();
     const page = w.ctx();
     await page.service.newRecoveryCode(STRONG, NO_PAGE);
-    expect(await page.restart.state()).toMatchObject({ state: "paused", byPin: true });
-  });
-
-  it("PINR-09: shares confirmed (the master password typed here) open it (kills M22e)", async () => {
-    const w = await onWorld();
-    const page = w.ctx();
-    const h: PreparedShares = await page.service.prepareShares({ password: STRONG }, { threshold: 2, count: 3 });
-    await page.service.confirmShares(
-      h,
-      h.test.map((i) => h.shares[i]!),
-    );
     expect(await page.restart.state()).toMatchObject({ state: "paused", byPin: true });
   });
 });

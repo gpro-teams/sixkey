@@ -157,7 +157,6 @@ describe("each page holds 'Use anyway' to the value it was pressed for", () => {
       change: async (o, pw, anyway) => (calls.push(["change", o, pw, anyway]), anyway),
       newCode: async () => true,
       rotate: async () => true,
-      confirmShares: async () => true,
       codeSaved: () => undefined,
     };
     const put = (status: ServiceStatus) =>

@@ -64,5 +64,23 @@
   },
   "frScanHint": {
     "message": "也可以在网站页面上点 Sixkey 图标，识别页面上的二维码。"
+  },
+  "frStepPin": {
+    "message": "PIN"
+  },
+  "frPinTitle": {
+    "message": "设置 PIN（推荐）"
+  },
+  "frPinBody": {
+    "message": "以后平时用 4 到 8 位数字的 PIN 解锁，浏览器重启后也能用，不用每次输主密码。连续输错 5 次，才需要输一次主密码。现在设置不用再输主密码。"
+  },
+  "frPinSkip": {
+    "message": "以后再说"
+  },
+  "frPinLater": {
+    "message": "这里没能设置 PIN。随时可以在 设置 › 安全 › PIN 快速解锁 里设置。"
+  },
+  "frSavedLead": {
+    "message": "保险库已建好。再完成这一步，就可以添加第一个账户。"
   }
 }

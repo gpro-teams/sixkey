@@ -3,7 +3,7 @@
 // generated file, within DEVICE_CATALOG_GZ, with keys of no other catalog; a vault's page with every lazy catalog within
 // 15,360 B; none of them, and no WebAuthn call, in a page's static graph; the box the settings page's only) and the dev
 // build's fixed extension ID (the manifest key: dev only, the expected ID). Each altered copy breaks one rule and must fail
-// with that rule's message, as shares-check-dist.test.ts does for the shares.
+// with that rule's message, as budget-check-dist.test.ts does for the parts.
 import { spawnSync } from "node:child_process";
 import { generateKeyPairSync } from "node:crypto";
 import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
@@ -202,7 +202,7 @@ describe("scripts/messages.py and the device unlock's catalog", () => {
     const r = run();
     expect(r.ok, r.out).toBe(true);
     expect(r.out).toMatch(/device \d+ keys, \d+ of 1600 B/);
-    expect(r.out).toMatch(/with the device unlock's too: \d+ of 15360 B/);
+    expect(r.out).toMatch(/a vault's page with the device unlock's text in \(lazy[^)]*\): \d+ of 15360 B/);
     for (const l of ["en", "zh_CN"])
       expect(readFileSync(join(r.dir, `catalogs/device-${l}.json`), "utf8")).toBe(
         readFileSync(join(EXT, `catalogs/device-${l}.json`), "utf8"),
@@ -213,11 +213,6 @@ describe("scripts/messages.py and the device unlock's catalog", () => {
       "a device key that is a key of the full catalogs",
       'DEVICE_EN = {"appName": "x"}\nDEVICE_ZH = {"appName": "x"}\n',
       /device key 'appName' is also a key of another catalog/,
-    ],
-    [
-      "a device key that is a shares key",
-      'DEVICE_EN = {"shEntryAdd": "x"}\nDEVICE_ZH = {"shEntryAdd": "x"}\n',
-      /device key 'shEntryAdd' is also a key of another catalog/,
     ],
     [
       "a device key added twice",

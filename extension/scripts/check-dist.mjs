@@ -137,22 +137,17 @@ const FILL_CHUNK_GZ = 12 * 1024;
 // The "same sign-in" chunk (assets/aliases-*.js, TOTP autofill Stage 3, AF3-4), gzipped: loaded after the first code on a
 // page no account is registered for, so held in view too; the reader it loads is the Fill chunk's (above).
 const ALIAS_CHUNK_GZ = 2 * 1024;
-// Recovery code shares (docs/design/notes/SHAMIR-NOTES.md §6, §7): the share entry (assets/ShareEntry-*.js, the popup's,
-// the side panel's and the settings page's), the settings page's wizard (assets/ShareWizard-*.js) and their text,
-// catalogs/shares-<lang>.json (scripts/messages.py SHARES), gzipped, the larger language: lazy chunks only, never in any
-// page's static graph (so in no page's counted bundle), the text with keys of no other catalog. Its budget is its
-// measured size plus at least 1.5 KB, rounded up to 512 B, as the settings parts' (messages.py BUDGETS["shares"]).
-const SHARES_CATALOG_GZ = 3072;
-// What a vault's page holds with the shares' text in (its view's parts and the shares' catalog, as one gzip stream): the
-// shares' catalog is outside FULL_CATALOG_GZ (lazy, as the popup's), and this holds the page with it to FULL_CATALOG_GZ +
-// SHARES_CATALOG_GZ, the owner's decision of 2026-10-23 (SHAMIR-NOTES.md §6; messages.py SHARES_PAGE_LIMIT).
-const SHARES_PAGE_GZ = 15 * 1024;
+// What a vault's page may hold with the lazy catalogs in (its view's parts and those catalogs, as one gzip stream): the
+// lazy catalogs are outside FULL_CATALOG_GZ (loaded on first use, as the popup's), and this holds the page with them to
+// 15 KB, FULL_CATALOG_GZ plus the 3 KB the recovery code shares' catalog had when the limit was set (2026-10-23; the
+// shares went on 2026-11-25, the limit stayed; messages.py LAZY_PAGE_LIMIT).
+const LAZY_PAGE_GZ = 15 * 1024;
 // The device unlock (Touch ID / Windows Hello, QUICK-UNLOCK Stage 2; docs/design/notes/PRF-NOTES.md): the lock screen's
 // button (assets/DeviceUnlock-*.js: the popup's, the side panel's and the settings page's unlock bar), the settings page's
 // box (assets/DeviceBox-*.js) and their text, catalogs/device-<lang>.json (scripts/messages.py DEVICE), gzipped, the larger
-// language: lazy chunks only, never in a page's static graph, as the shares' are. Its budget is the maintainers' allowance
+// language: lazy chunks only, never in a page's static graph. Its budget is the maintainers' allowance
 // of 2026-10-23: 1,500 B, 1,600 B since OWNER-DECISIONS/17's texts (messages.py BUDGETS["device"]; 1,487 B zh_CN when it
-// was introduced). A vault's page with every lazy catalog in (the shares' and this one) is held to SHARES_PAGE_GZ too. WebAuthn itself (navigator.credentials) is in
+// was introduced). A vault's page with every lazy catalog in is held to LAZY_PAGE_GZ too. WebAuthn itself (navigator.credentials) is in
 // no page's static graph.
 const DEVICE_CATALOG_GZ = 1600;
 // The PIN's record (OWNER-DECISIONS/20 and its 2026-10-30 notes; docs/design/notes/PIN-RESTART-NOTES.md §8, §18): the lock
@@ -161,13 +156,13 @@ const DEVICE_CATALOG_GZ = 1600;
 // screens), the settings page's PIN box's lazy part (assets/PinRestartBox-*.js), and its text, catalogs/restart-<lang>.json
 // (scripts/messages.py RESTART), gzipped, the larger language: lazy chunks only, never in a page's static graph. Its budget
 // is its measured size plus at least 1.5 KB, rounded up to 512 B (messages.py BUDGETS); it is one of the lazy catalogs a
-// vault's page holds with the autofill switch's (the check below holds that page to SHARES_PAGE_GZ), and the settings
+// vault's page holds with the autofill switch's (the check below holds that page to LAZY_PAGE_GZ), and the settings
 // page's only.
 const RESTART_CATALOG_GZ = 2048;
 // The backup in Chrome's sync storage's text (scripts/messages.py CSB, src/ui/csb-text.ts): catalogs/csb-<lang>.json,
 // gzipped, the larger language, lazy chunks only and the settings page's only, held to a budget of its own (messages.py
 // BUDGETS["csb"]: its measured size plus at least 1.5 KB, rounded up to 512 B), and a vault's page with it in (and first
-// run with it in) to SHARES_PAGE_GZ.
+// run with it in) to LAZY_PAGE_GZ.
 const CSB_CATALOG_GZ = 4096;
 // Its popup's and side panel's (scripts/messages.py CSB_POPUP, src/ui/csb-popup-text.ts): the pill's, the footer's and
 // the welcome's text, loaded with their lazy chunks, their own budget (messages.py BUDGETS["csb-popup"]), never the
@@ -182,8 +177,8 @@ const RESTART_TAG = "sixkey-pin-restart|1|";
 // The autofill switch's text (Settings › Security › Autofill: the switch and its recent requests; the plugin platform's
 // catalog until the platform was removed): catalogs/plugins-<lang>.json
 // (scripts/messages.py PLUGINS), gzipped, the larger language: lazy chunks only, never in a page's static graph, keys of
-// no other catalog; the budget it had (messages.py BUDGETS["plugins"]). What a vault's page holds with it and the shares'
-// text in is held to SHARES_PAGE_GZ (messages.py PLUGINS_VIEW).
+// no other catalog; the budget it had (messages.py BUDGETS["plugins"]). What a vault's page holds with it and the other lazy
+// catalogs in is held to LAZY_PAGE_GZ (messages.py PLUGINS_VIEW).
 const PLUGINS_CATALOG_GZ = 3072;
 // The defines of the removed plugin platform (__PLUGIN_CATALOG__, __PLUGIN_OWN_IDS__, __PLUGIN_TEST_ANSWERS__): no build
 // defines them any more, so a shipped file that still names one would read a global at run time. None may.
@@ -1883,113 +1878,10 @@ if (testBuild) {
   }
 }
 
-// Recovery code shares (SHARES_CATALOG_GZ above): exactly one entry chunk, one wizard chunk and one text chunk per language
-// (assets/shares-locale-<lang>-*.js, named in scripts/build.mjs), each text chunk exactly the generated file, within its
-// budget, with keys of no other catalog and the same keys in every language; none of them in any page's static graph;
-// the entry and the text reachable from the popup, the side panel and the settings page, the wizard from the settings
-// page only.
-{
-  const assetNames = readdirSync(resolve(dist, "assets"));
-  const js = assetNames.filter((n) => n.endsWith(".js"));
-  const one = (re, what) => {
-    const found = assetNames.filter((n) => re.test(n));
-    if (found.length !== 1) fail(`expected one ${what}, found ${found.length}`);
-    return found[0];
-  };
-  const entry = one(/^ShareEntry-[A-Za-z0-9_-]+\.js$/, "share entry chunk assets/ShareEntry-*.js");
-  const wizard = one(/^ShareWizard-[A-Za-z0-9_-]+\.js$/, "shares wizard chunk assets/ShareWizard-*.js");
-  const texts = [];
-  const keysOf = new Map();
-  for (const loc of readdirSync(resolve(dist, "_locales"))) {
-    const prefix = `shares-locale-${loc}-`;
-    const mine = assetNames.filter((n) => n.startsWith(prefix) && /^[A-Za-z0-9_-]+\.js$/.test(n.slice(prefix.length)));
-    if (mine.length !== 1) {
-      fail(`locale ${loc}: expected one shares text chunk assets/${prefix}*.js, found ${mine.length}`);
-      continue;
-    }
-    const file = resolve(dist, "assets", mine[0]);
-    texts.push(mine[0]);
-    const gz = gzipSync(readFileSync(file)).length;
-    console.log(`recovery code shares text ${loc}: ${gz} B gz (limit ${SHARES_CATALOG_GZ} B)`);
-    if (flavour !== "dev" && gz > SHARES_CATALOG_GZ)
-      fail(`shares text ${loc} is ${gz} B gz, over its limit of ${SHARES_CATALOG_GZ} B`);
-    let cat;
-    try {
-      cat = (await import(pathToFileURL(file).href)).default;
-    } catch (e) {
-      fail(`${mine[0]}: cannot be read as a catalog (${e})`);
-      continue;
-    }
-    const want = resolve(root, "catalogs", `shares-${loc}.json`);
-    if (!existsSync(want)) fail(`catalogs/shares-${loc}.json missing: run python3 scripts/messages.py`);
-    else if (JSON.stringify(cat) !== JSON.stringify(JSON.parse(readFileSync(want, "utf8"))))
-      fail(`${mine[0]} differs from catalogs/shares-${loc}.json`);
-    if (!Object.keys(cat).length) fail(`shares text ${loc} is empty`);
-    const full = msgsOf(loc);
-    for (const k of Object.keys(cat))
-      if (Object.hasOwn(full, k)) fail(`shares text ${loc}: ${k} is also a key of the full catalog`);
-    keysOf.set(loc, Object.keys(cat).sort().join(","));
-  }
-  if (new Set(keysOf.values()).size > 1) fail("the shares text chunks have different keys per language");
-  // a vault's page with the shares' text in, as one gzip stream, per language
-  const VAULT_PARTS = ["core", "security", "accounts", "backup", "misc", "general", "unlock"];
-  for (const loc of readdirSync(resolve(dist, "_locales"))) {
-    const names = [
-      ...VAULT_PARTS.map((part) => assetNames.find((n) => n.startsWith(`settings-locale-${part}-${loc}-`))),
-      assetNames.find((n) => n.startsWith(`shares-locale-${loc}-`)),
-    ];
-    if (names.some((n) => !n)) continue; // a missing chunk has failed above
-    const gz = gzipSync(Buffer.concat(names.map((n) => readFileSync(resolve(dist, "assets", n))))).length;
-    console.log(`a vault's page with the shares' text in (${loc}): ${gz} B gz (limit ${SHARES_PAGE_GZ} B)`);
-    if (flavour !== "dev" && gz > SHARES_PAGE_GZ)
-      fail(`a vault's page with the shares' text in (${loc}) is ${gz} B gz, over the ${SHARES_PAGE_GZ} B it may hold`);
-  }
-  /** A page's static closure (its HTML's scripts and what they import statically) and everything it can reach. */
-  const graphs = (page) => {
-    const html = resolve(dist, page);
-    if (!existsSync(html)) return null;
-    const refs = [...readFileSync(html, "utf8").matchAll(/<(?:script|link)[^>]*?(?:src|href)="([^"]+\.js)"/g)]
-      .map((x) => x[1])
-      .filter((u) => !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(u))
-      .map((u) => resolve(dirname(html), u));
-    const walk = (follow) => {
-      const seen = new Set();
-      const todo = [...refs];
-      while (todo.length) {
-        const f = todo.pop();
-        if (seen.has(f) || !existsSync(f)) continue;
-        seen.add(f);
-        todo.push(...follow(f, readFileSync(f, "utf8")));
-      }
-      return seen;
-    };
-    const statics = walk((f, text) =>
-      [...text.matchAll(/\b(?:import|export)\s*(?:[\w$*{][^"';]*?\s*from\s*)?["'](\.{1,2}\/[^"']+\.js)["']/g)].map(
-        (m) => resolve(dirname(f), m[1]),
-      ),
-    );
-    const reach = walk((_, text) => js.filter((n) => text.includes(n)).map((n) => resolve(dist, "assets", n)));
-    return { statics, reach };
-  };
-  const at = (n) => resolve(dist, "assets", n);
-  const lazy = [entry, wizard, ...texts].filter(Boolean);
-  for (const page of ["popup/index.html", "sidepanel/index.html", "options/index.html"]) {
-    const g = graphs(page);
-    if (!g) continue;
-    for (const n of lazy) if (g.statics.has(at(n))) fail(`${page} loads ${n} statically; it must load on first use`);
-    for (const n of [entry, ...texts].filter(Boolean))
-      if (!g.reach.has(at(n))) fail(`${page} cannot load ${n} (I have shares instead)`);
-    if (wizard && page !== "options/index.html" && g.reach.has(at(wizard)))
-      fail(`${page} can load the shares wizard ${wizard}; it is the settings page's`);
-    if (wizard && page === "options/index.html" && !g.reach.has(at(wizard)))
-      fail(`the settings page cannot load the shares wizard ${wizard}`);
-  }
-}
-
 // The autofill switch's text (PLUGINS_CATALOG_GZ above): one text chunk per language, named in scripts/build.mjs
 // (assets/plugins-locale-<lang>-*.js), exactly its generated file, within its budget, with keys of no other catalog and
 // the same keys in every language. The settings page reaches it, the popup and the side panel never do
-// (scripts/plugin-pages.mjs), so what is held to SHARES_PAGE_GZ below is a vault's view with it, the shares', the device
+// (scripts/plugin-pages.mjs), so what is held to LAZY_PAGE_GZ below is a vault's view with it, the device
 // unlock's and the PIN after a restart's text (messages.py PLUGINS_VIEW). Not the most one page can hold: the first-run
 // wizard, which a vault's page can draw too, adds the firstrun part, which is counted in "every part" (FULL_CATALOG_GZ)
 // but not here (budget work 3's notes say why).
@@ -2047,7 +1939,6 @@ if (testBuild) {
       ...["core", "security", "accounts", "backup", "misc", "general", "unlock"].map((part) =>
         assetNames.find((n) => n.startsWith(`settings-locale-${part}-${loc}-`)),
       ),
-      assetNames.find((n) => n.startsWith(`shares-locale-${loc}-`)),
       assetNames.find((n) => n.startsWith(`device-locale-${loc}-`)),
       assetNames.find((n) => n.startsWith(`plugins-locale-${loc}-`)),
       assetNames.find((n) => n.startsWith(`restart-locale-${loc}-`)),
@@ -2055,11 +1946,11 @@ if (testBuild) {
     if (names.some((n) => !n)) continue; // a missing chunk has failed above
     const gz = gzipSync(Buffer.concat(names.map((n) => readFileSync(resolve(dist, "assets", n))))).length;
     console.log(
-      `a vault's page with the plugins' text and every other lazy catalog in (${loc}): ${gz} B gz (limit ${SHARES_PAGE_GZ} B)`,
+      `a vault's page with the plugins' text and every other lazy catalog in (${loc}): ${gz} B gz (limit ${LAZY_PAGE_GZ} B)`,
     );
-    if (flavour !== "dev" && gz > SHARES_PAGE_GZ)
+    if (flavour !== "dev" && gz > LAZY_PAGE_GZ)
       fail(
-        `a vault's page with the plugins' text and every other lazy catalog in (${loc}) is ${gz} B gz, over ${SHARES_PAGE_GZ} B`,
+        `a vault's page with the plugins' text and every other lazy catalog in (${loc}) is ${gz} B gz, over ${LAZY_PAGE_GZ} B`,
       );
   }
   for (const problem of pluginPageProblems(dist, textsOf, kinds)) fail(problem);
@@ -2071,7 +1962,7 @@ if (testBuild) {
 // The device unlock (DEVICE_CATALOG_GZ above): exactly one lock-screen chunk, one box chunk and one text chunk per language
 // (assets/device-locale-<lang>-*.js, named in scripts/build.mjs), each text chunk exactly the generated file, within its
 // budget, with keys of no other catalog and the same keys in every language; a vault's page with every lazy catalog in
-// within SHARES_PAGE_GZ; none of them, and no WebAuthn call, in any page's static graph; the lock screen's chunk and the
+// within LAZY_PAGE_GZ; none of them, and no WebAuthn call, in any page's static graph; the lock screen's chunk and the
 // text reachable from the popup, the side panel and the settings page, the box from the settings page only.
 {
   const assetNames = readdirSync(resolve(dist, "assets"));
@@ -2116,21 +2007,18 @@ if (testBuild) {
     keysOf.set(loc, Object.keys(cat).sort().join(","));
   }
   if (new Set(keysOf.values()).size > 1) fail("the device unlock text chunks have different keys per language");
-  // a vault's page with every lazy catalog in (the shares' and the device unlock's), as one gzip stream, per language
+  // a vault's page with every lazy catalog in (the device unlock's), as one gzip stream, per language
   const VAULT_PARTS = ["core", "security", "accounts", "backup", "misc", "general", "unlock"];
   for (const loc of readdirSync(resolve(dist, "_locales"))) {
     const names = [
       ...VAULT_PARTS.map((part) => assetNames.find((n) => n.startsWith(`settings-locale-${part}-${loc}-`))),
-      assetNames.find((n) => n.startsWith(`shares-locale-${loc}-`)),
       assetNames.find((n) => n.startsWith(`device-locale-${loc}-`)),
     ];
     if (names.some((n) => !n)) continue; // a missing chunk has failed above
     const gz = gzipSync(Buffer.concat(names.map((n) => readFileSync(resolve(dist, "assets", n))))).length;
-    console.log(`a vault's page with every lazy catalog in (${loc}): ${gz} B gz (limit ${SHARES_PAGE_GZ} B)`);
-    if (flavour !== "dev" && gz > SHARES_PAGE_GZ)
-      fail(
-        `a vault's page with every lazy catalog in (${loc}) is ${gz} B gz, over the ${SHARES_PAGE_GZ} B it may hold`,
-      );
+    console.log(`a vault's page with every lazy catalog in (${loc}): ${gz} B gz (limit ${LAZY_PAGE_GZ} B)`);
+    if (flavour !== "dev" && gz > LAZY_PAGE_GZ)
+      fail(`a vault's page with every lazy catalog in (${loc}) is ${gz} B gz, over the ${LAZY_PAGE_GZ} B it may hold`);
   }
   const graphs = (page) => {
     const html = resolve(dist, page);
@@ -2273,7 +2161,7 @@ if (testBuild) {
 // The backup in Chrome's sync storage's text (CSB_CATALOG_GZ above): per language one chunk (assets/csb-locale-<lang>-
 // *.js; named in scripts/build.mjs), exactly the generated file, within its budget, with keys of no other catalog and
 // the same keys in every language; in no page's static graph; the settings page reaches it, the popup and the side panel
-// never do. A vault's page with it in, and first run with it in, as one gzip stream, within SHARES_PAGE_GZ. Its pages
+// never do. A vault's page with it in, and first run with it in, as one gzip stream, within LAZY_PAGE_GZ. Its pages
 // are one lazy chunk (assets/CsbPages-*.js: the card, first run's parts, the merges), which the settings page loads on
 // use and the popup and the side panel can never load: nothing of it is in their counted code.
 {
@@ -2318,9 +2206,9 @@ if (testBuild) {
       if (names.some((n) => !n)) continue; // a missing chunk fails elsewhere
       const all = [...names.map((n) => readFileSync(resolve(dist, "assets", n))), readFileSync(file)];
       const vgz = gzipSync(Buffer.concat(all)).length;
-      console.log(`${view} with the Chrome-sync backup's text in (${loc}): ${vgz} B gz (limit ${SHARES_PAGE_GZ} B)`);
-      if (flavour !== "dev" && vgz > SHARES_PAGE_GZ)
-        fail(`${view} with the Chrome-sync backup's text in (${loc}) is ${vgz} B gz, over ${SHARES_PAGE_GZ} B`);
+      console.log(`${view} with the Chrome-sync backup's text in (${loc}): ${vgz} B gz (limit ${LAZY_PAGE_GZ} B)`);
+      if (flavour !== "dev" && vgz > LAZY_PAGE_GZ)
+        fail(`${view} with the Chrome-sync backup's text in (${loc}) is ${vgz} B gz, over ${LAZY_PAGE_GZ} B`);
     }
   }
   if (new Set(keysOf.values()).size > 1) fail("the Chrome-sync backup text chunks have different keys per language");

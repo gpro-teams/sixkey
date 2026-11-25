@@ -38,9 +38,7 @@ and stays private, so no object of the private history can be reached from the p
    <https://developercertificate.org/>, with the page's copyright line and verbatim-copy notice.
 2. **REUSE.** `reuse lint` must report the repository compliant: every file has a copyright and a licence from
    `REUSE.toml`, the licences used are exactly `AGPL-3.0-or-later`, `Apache-2.0`, `CC-BY-4.0`, `CC0-1.0`,
-   `LicenseRef-DCO`, `MIT` and `MPL-2.0`, and none is missing from or unused in `LICENSES/`. `MIT` covers a test
-   fixture, `extension/test/fixtures/shares-slip39.json` (values derived from SLIP-39's official test vectors), which
-   is never shipped with the extension; Apple's files kept verbatim in `rules/upstream/apple/`; and, with
+   `LicenseRef-DCO`, `MIT` and `MPL-2.0`, and none is missing from or unused in `LICENSES/`. `MIT` covers Apple's files kept verbatim in `rules/upstream/apple/`; and, with
    `AGPL-3.0-or-later`, the site rules' bundle `rules/build/baseline.json`, which every build carries. CI runs the same
    check (`ci.yml`, "licensing").
 3. **The whole verification**, as in `CONTRIBUTING.md`: in `extension/`, `npm ci`, `npm run format:check`,

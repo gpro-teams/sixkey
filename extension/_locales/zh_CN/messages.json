@@ -1343,6 +1343,24 @@
   "httpSite": {
     "message": "$1 使用 http：在这里输入的验证码可能在传输途中被读取。"
   },
+  "frStepPin": {
+    "message": "PIN"
+  },
+  "frPinTitle": {
+    "message": "设置 PIN（推荐）"
+  },
+  "frPinBody": {
+    "message": "以后平时用 4 到 8 位数字的 PIN 解锁，浏览器重启后也能用，不用每次输主密码。连续输错 5 次，才需要输一次主密码。现在设置不用再输主密码。"
+  },
+  "frPinSkip": {
+    "message": "以后再说"
+  },
+  "frPinLater": {
+    "message": "这里没能设置 PIN。随时可以在 设置 › 安全 › PIN 快速解锁 里设置。"
+  },
+  "frSavedLead": {
+    "message": "保险库已建好。再完成这一步，就可以添加第一个账户。"
+  },
   "welcomeStartAlone": {
     "message": "不恢复，新建一个独立的保险库"
   },
@@ -1726,27 +1744,6 @@
   },
   "fieldNoteHint": {
     "message": "用来和同名账户区分，比如「商户A」"
-  },
-  "sharesInsteadLink": {
-    "message": "我把恢复密钥分成了几份（分片）"
-  },
-  "sharesFoldTitle": {
-    "message": "恢复密钥分片"
-  },
-  "sharesStopWarn": {
-    "message": "用当前恢复密钥做的分片也会一起失效。"
-  },
-  "sharesSwitched": {
-    "message": "已换成分片。请保留旧的恢复密钥，直到浏览器重启后“核对我的分片”通过。"
-  },
-  "secKSharesMade": {
-    "message": "生成了恢复密钥分片"
-  },
-  "sharesRemind": {
-    "message": "请核对一次恢复密钥分片，通过后再销毁旧的恢复密钥。"
-  },
-  "sharesRemindGo": {
-    "message": "核对我的分片"
   },
   "shiftBack": {
     "message": "上一个验证码"

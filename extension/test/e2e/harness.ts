@@ -146,7 +146,7 @@ export type Risk = "solo" | "shared";
  */
 export async function finishWizard(
   opt: Page,
-  o: { risk?: Risk; password?: string; csb?: boolean } = {},
+  o: { risk?: Risk; password?: string; csb?: boolean; pin?: string } = {},
 ): Promise<string> {
   const pw = o.password ?? STRONG;
   await opt.locator("#fr-pw").fill(pw);
@@ -160,15 +160,32 @@ export async function finishWizard(
   await opt.locator("#fr-csb").setChecked(o.csb ?? false);
   await opt.locator("#fr-finish").click();
   if (o.risk === "shared") await opt.locator("#fr-clip-next").click();
-  await expect(opt.locator("#fr-hint")).toBeVisible(); // step 4: the page, at "Add accounts"
+  else if (o.pin) {
+    // the PIN step: the PIN twice, and nothing else (no master password: it was typed on this page a moment ago)
+    await expect(opt.locator("#fr-pin input")).toHaveCount(2);
+    await opt.locator("#fr-pin-new").fill(o.pin);
+    await opt.locator("#fr-pin-new2").fill(o.pin);
+    await opt.locator("#fr-pin-set").click();
+  } else await skipFirstPin(opt);
+  await expect(opt.locator("#fr-hint")).toBeVisible(); // the last step: the page, at "Add accounts"
   return code;
+}
+
+/**
+ * First run's PIN step ("only me", once the vault is written; 2026-11-25): passed over with "Not now" when it shows. A
+ * restore that typed no master password (the recovery key, keeping the backup's) has none, and goes on to the page.
+ */
+export async function skipFirstPin(opt: Page): Promise<void> {
+  const skip = opt.locator("#fr-pin-skip");
+  await expect(skip.or(opt.locator("#fr-hint"))).toBeVisible({ timeout: 30_000 });
+  if (await skip.isVisible()) await skip.click();
 }
 
 /**
  * Welcome screen -> Start: the settings tab it opens runs the first run with a master password (there is no other way to
  * start). Ends where the old "Start" did: on the list in the popup, or, for a shared profile, on its lock screen.
  */
-export async function startFresh(p: Profile, o: { risk?: Risk } = {}): Promise<{ recoveryCode: string }> {
+export async function startFresh(p: Profile, o: { risk?: Risk; pin?: string } = {}): Promise<{ recoveryCode: string }> {
   const pop = await openPopup(p);
   const [opt] = await Promise.all([p.ctx.waitForEvent("page"), pop.locator("#start-secure").click()]);
   await opt.waitForLoadState();

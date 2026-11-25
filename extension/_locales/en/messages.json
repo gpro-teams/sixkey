@@ -1343,6 +1343,24 @@
   "httpSite": {
     "message": "$1 uses http: a code typed here can be read on the way."
   },
+  "frStepPin": {
+    "message": "PIN"
+  },
+  "frPinTitle": {
+    "message": "Set a PIN (recommended)"
+  },
+  "frPinBody": {
+    "message": "Unlock with a PIN of 4 to 8 digits every day, also after the browser restarts, instead of typing the master password. After 5 wrong PINs in a row, the master password is needed once. No need to type the master password again now."
+  },
+  "frPinSkip": {
+    "message": "Not now"
+  },
+  "frPinLater": {
+    "message": "The PIN was not set here. You can set it any time in Settings › Security › PIN quick unlock."
+  },
+  "frSavedLead": {
+    "message": "Your vault is saved. One more step, then your first account."
+  },
   "welcomeStartAlone": {
     "message": "Don't restore: make a separate vault"
   },
@@ -1726,27 +1744,6 @@
   },
   "fieldNoteHint": {
     "message": "To tell it from an account of the same name, e.g. Shop A"
-  },
-  "sharesInsteadLink": {
-    "message": "I split my recovery key into shares"
-  },
-  "sharesFoldTitle": {
-    "message": "Recovery key shares"
-  },
-  "sharesStopWarn": {
-    "message": "Shares made of the current recovery key stop working too."
-  },
-  "sharesSwitched": {
-    "message": "Switched to your shares. Keep the old recovery key until “Check my shares” passes after a browser restart."
-  },
-  "secKSharesMade": {
-    "message": "Recovery key shares made"
-  },
-  "sharesRemind": {
-    "message": "Check your recovery key shares once now. When they pass, destroy the old recovery key."
-  },
-  "sharesRemindGo": {
-    "message": "Check my shares"
   },
   "shiftBack": {
     "message": "Previous code"

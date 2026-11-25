@@ -22,8 +22,6 @@ import {
 import { PBKDF2_PASSWORD_WRAP_ITERATIONS } from "../crypto/kdf";
 import { checkPasswordPolicy } from "../crypto/password-policy";
 import { quickLive, wrapsTag } from "../crypto/pin";
-import { formatRecoveryCode, parseRecoveryCode } from "../crypto/recovery-code";
-import { MAX_SHARES, makeShareSet, parseShare, recoveryCodeFromShares, setIdText, type Share } from "../crypto/shares";
 import { generateVk, type Vk } from "../crypto/vk";
 import type { Generation } from "../storage/format";
 import { StorageError, type TransactInfo } from "../storage/store";
@@ -37,10 +35,10 @@ import type { StorageEvent } from "../storage/format";
 import { applyPreset, type PresetId } from "./presets";
 import { updatePrf } from "./prf-write";
 import { formatRecord, type PwFormatRecord } from "./pw-format";
-import type { ExportKind, SecurityKind, SharesReminder } from "./security-log";
+import type { ExportKind, SecurityKind } from "./security-log";
 import { ServiceError } from "./service-error";
 import { removeRestart, RestartAdmin, setAsideRestart, type PinConfirm } from "./pin-restart-admin";
-import { rewrappedHere, rotatedHere } from "./rotated";
+import { madeHere, rewrappedHere, rotatedHere } from "./rotated";
 import { hasDevice, isSessionExpired, ServiceCore } from "./service-core";
 import { profileOf, type Settings } from "./types";
 
@@ -98,43 +96,12 @@ const preparedResets = new WeakMap<
  * The handle is opaque: the key and keyring stay in this module and are dropped once a write with them has committed.
  */
 export type PreparedKeys = { readonly vaultId: string; readonly recoveryCode: string };
-// `format`: the input hint for the new password (pw-format.ts; not the password), written once makeVault has committed
-const preparedKeys = new WeakMap<PreparedKeys, { keyring: Keyring; vk: Vk; format: PwFormatRecord | null }>();
-
-/**
- * What the shares wizard asks for (docs/design/notes/SHAMIR-NOTES.md): 2 of 3 by default, or 3 of 5; the format allows
- * any 2 <= threshold <= count <= 16.
- */
-export type ShareSetup = { threshold: number; count: number };
-
-/**
- * A share set made in memory by prepareShares (ADVANCED-RECOVERY-AND-TIERS §3.1, §3.6), nothing written. `shares[i]` is
- * member i's text (the page shows it as share i + 1); `test` are the members, chosen at random, that the person types
- * back before confirmShares accepts the set. `mode`:
- *   - "replace": the shares are of a NEW recovery code, which is not committed until confirmShares: until then the old
- *     code (and its shares) open the vault and these open nothing. The new code is never shown as one code;
- *   - "split": the shares are of the current recovery code, typed by the person; nothing is ever written for them.
- * The handle is opaque; the new keyring and the vault key stay in this module and are dropped once it is confirmed.
- */
-export type PreparedShares = {
-  readonly mode: "replace" | "split";
-  readonly setId: string;
-  readonly threshold: number;
-  readonly count: number;
-  readonly shares: readonly string[];
-  readonly test: readonly number[];
-};
-// `base`: the keyring as it was when the set was made (canonical JSON); `next`: the keyring with the new recovery wrap
-// and its vault key ("replace" only)
-const preparedShares = new WeakMap<PreparedShares, { base: string; next: { keyring: Keyring; vk: Vk } | null }>();
-
-/** The key events that make a new recovery code: each ends a pending shares reminder (committed). */
-const RECOVERY_CHANGES: readonly SecurityKind[] = [
-  "recovery_code_new",
-  "key_rotated",
-  "password_reset",
-  "password_enabled",
-];
+// `format`: the input hint for the new password (pw-format.ts; not the password), written once makeVault has committed;
+// `typed`: a master password was typed in this page for these keys (not a recovery-key restore that kept the copy's)
+const preparedKeys = new WeakMap<
+  PreparedKeys,
+  { keyring: Keyring; vk: Vk; format: PwFormatRecord | null; typed: boolean }
+>();
 
 /** What the first-run question decided (H5): a preset, saved together with the new vault. */
 export type FirstRunChoice = { preset?: PresetId };
@@ -269,7 +236,7 @@ export class VaultService extends ServiceCore {
     const { keyring, recoveryCode } = await setRecovery(await setPassword(base, vk, password, this.ctx), vk, this.ctx);
     validateKeyring(keyring); // a malformed vault id fails here, before a recovery code is ever shown
     const handle: PreparedKeys = Object.freeze({ vaultId: keyring.vaultId, recoveryCode });
-    preparedKeys.set(handle, { keyring, vk, format: formatRecord(keyring, password) });
+    preparedKeys.set(handle, { keyring, vk, format: formatRecord(keyring, password), typed: true });
     return handle;
   }
 
@@ -297,7 +264,7 @@ export class VaultService extends ServiceCore {
     // nothing was typed, so the input hint of a generated password is not known here (the loose spellings still open it)
     const pw = "newPassword" in password ? password.newPassword : "typed" in password ? password.typed : null;
     const handle: PreparedKeys = Object.freeze({ vaultId: k.vaultId, recoveryCode: "" });
-    preparedKeys.set(handle, { keyring: k, vk, format: pw === null ? null : formatRecord(k, pw) });
+    preparedKeys.set(handle, { keyring: k, vk, format: pw === null ? null : formatRecord(k, pw), typed: pw !== null });
     return handle;
   }
 
@@ -326,7 +293,7 @@ export class VaultService extends ServiceCore {
     );
   }
 
-  private keysOf(keys: PreparedKeys): { keyring: Keyring; vk: Vk; format: PwFormatRecord | null } {
+  private keysOf(keys: PreparedKeys): { keyring: Keyring; vk: Vk; format: PwFormatRecord | null; typed: boolean } {
     const k = preparedKeys.get(keys);
     if (!k) throw new ServiceError("bad_state", "keys already used or not from prepareKeys");
     return k;
@@ -360,7 +327,7 @@ export class VaultService extends ServiceCore {
     first: (keyring: Keyring, vk: Vk) => Promise<EncryptedVault>,
     after?: (gen: Generation) => void,
   ): Promise<void> {
-    const { keyring, vk, format } = this.keysOf(keys);
+    const { keyring, vk, format, typed } = this.keysOf(keys);
     const ours = (g: Generation) => canonicalJson(g.keyring) === canonicalJson(keyring);
     const cur = await this.store.load();
     let landed = cur.status === "ok" && ours(cur.gen);
@@ -388,11 +355,12 @@ export class VaultService extends ServiceCore {
       }
     }
     if (landed) await this.saveChoice(choice); // saved with the write already; this keeps an answer changed since
-    // a new vault (a first one, a backup restored, Start over): a reminder to check shares of the vault before is moot,
-    // and its shares can never pass here (the security record outlives the vault). Never rejects.
-    await this.security?.remind?.(null);
     await this.endQuickQuietly(); // a new vault key: no session quick unlock from before it (QUICK-UNLOCK §5.5)
     await this.startSession(vk);
+    // first run's PIN step, right after, without the master password typed again (rotated.ts madeHere): only when it
+    // was typed in this page for these keys
+    if (typed) madeHere.set(this, { vkId: keyring.vkId, wraps: wrapsTag(keyring), at: this.now() });
+    else madeHere.delete(this);
     preparedKeys.delete(keys); // dropped from memory only now, so a failed session write above can be retried
     await this.dropStalePin(keyring);
     await this.dropStalePrf(keyring);
@@ -711,7 +679,7 @@ export class VaultService extends ServiceCore {
    *      to the new keyring (GM2-3: also after a new password or recovery code of the same key, whose old wrap still
    *      opens the data there); a failure is logged and the marker finishes it at the next open or unlock.
    * Every caller is a key event of this page's own, its secret just typed here (a new or changed master password, a
-   * reset, a new recovery key, a rotation, shares confirmed): it opens the PIN record's "the PIN alone turns it back on"
+   * reset, a new recovery key, a rotation): it opens the PIN record's "the PIN alone turns it back on"
    * for a while (rotated.ts rewrappedHere). (The server sync's adoptions and joins, which typed nothing here and recorded
    * no kind or another, came through here too, until its client went: DV-0b.)
    */
@@ -723,8 +691,6 @@ export class VaultService extends ServiceCore {
       code?: string;
       deliver?: CodeDelivery;
       session?: boolean;
-      /** confirmShares: the reminder of this very switch was set just before its commit, and stays. */
-      keepRemind?: boolean;
     } = {},
   ): Promise<void> {
     if (o.code !== undefined && o.deliver) {
@@ -735,11 +701,9 @@ export class VaultService extends ServiceCore {
       }
     }
     await this.record(kind);
-    // a new recovery code by any way: a reminder to check shares of the one before is moot (confirmShares sets its own)
-    if (RECOVERY_CHANGES.includes(kind) && !o.keepRemind) await this.security?.remind?.(null);
     const held = [o.oldVk ?? vk];
     // A hard lock for the gate's arming (QUICK-UNLOCK §5.5): every key event (a new password, a reset, a new recovery
-    // code, a rotation, shares confirmed). The next master password arms it again; sk_pin itself moves to a new key with
+    // code, a rotation). The next master password arms it again; sk_pin itself moves to a new key with
     // the cleanup (pin-store.ts).
     await this.endQuickQuietly();
     if (o.session !== false) {
@@ -869,239 +833,6 @@ export class VaultService extends ServiceCore {
     });
     // Already unlocked with this key: no session to write.
     await this.committed("recovery_code_new", vk, { code: recoveryCode, deliver, session: false });
-  }
-
-  // ---- recovery code shares (docs/design/notes/SHAMIR-NOTES.md) --------------------------------------------------
-
-  /**
-   * Make a share set (ADVANCED-RECOVERY-AND-TIERS §3.1, §3.7), in memory; nothing of the vault is written.
-   *   - `{password}`, "replace" (the recommended way): a new recovery code, shown only as shares. As newRecoveryCode, it
-   *     needs an unlocked vault AND the master password (a recovery code resets the master password). The password's
-   *     answers are verifyPassword's (a wrong one refused with wrong_secret and recorded as unlock_failed;
-   *     "" is a typo). The new keyring is made here and kept in this module; confirmShares commits it.
-   *   - `{recoveryCode}`, "split": the shares are of the current code, which must open the vault now (a stale or wrong
-   *     code would give shares that open nothing). Needs an unlocked vault; a wrong code is refused (wrong_secret) and
-   *     recorded as recovery_failed, as everywhere a recovery code is typed; a malformed one is a typo (recovery_*),
-   *     not recorded. It writes nothing.
-   * A vault without a recovery wrap (a Phase 0 device-key vault) has nothing to share: not_protected. The code is taken
-   * by recoveryKeyFrom, the one way to it. The random members to type back are drawn here (`test`), uniformly. The secret
-   * itself is zeroed once the shares are made.
-   */
-  async prepareShares(
-    from: { password: string } | { pin: string } | { recoveryCode: string },
-    setup: ShareSetup,
-  ): Promise<PreparedShares> {
-    const { threshold, count } = setup;
-    if (
-      !Number.isInteger(threshold) ||
-      !Number.isInteger(count) ||
-      threshold < 2 ||
-      threshold > count ||
-      count > MAX_SHARES
-    )
-      throw new RangeError("a share set is 2 <= threshold <= count <= 16");
-    const { code, keyring, next } = await this.recoveryKeyFrom(from);
-    const replace = next !== null;
-    const secret = await parseRecoveryCode(code);
-    let set;
-    try {
-      set = await makeShareSet(secret, threshold, count, this.rng);
-    } finally {
-      secret.fill(0);
-    }
-    const handle: PreparedShares = Object.freeze({
-      mode: replace ? "replace" : "split",
-      setId: setIdText(set.setId),
-      threshold,
-      count,
-      shares: Object.freeze(set.shares),
-      test: Object.freeze(pickMembers(threshold, count, this.rng)),
-    });
-    preparedShares.set(handle, { base: canonicalJson(keyring), next });
-    // shares of the current code are on screen now, and it is not otherwise recorded (as an export is: §3, H6)
-    if (!replace) await this.record("shares_made");
-    return handle;
-  }
-
-  /**
-   * The recovery code in hand (ADVANCED-RECOVERY-AND-TIERS §0.3, §5.1: "enter your recovery key, two shares, or make a new
-   * one", built once; docs/design/notes/SHAMIR-NOTES.md §3). The shares take it through here, and so are protected
-   * accounts and the inheritance kit to, never a second way:
-   *   - `{recoveryCode}`: the current code, typed or rebuilt from shares, which must open the current recovery wrap (a
-   *     wrong one is refused with wrong_secret and recorded as recovery_failed; a malformed one is a typo, not recorded);
-   *   - `{password}`: a new recovery code, made in memory (the master password first, verifyPassword's answers and
-   *     records); the keyring with its wrap is returned, nothing is written.
-   * Needs an unlocked vault (locked) with a recovery wrap (not_protected for a Phase 0 device-key vault). Returns the
-   * code's text, the keyring it was taken against, and for a new code the new keyring and its vault key.
-   */
-  private async recoveryKeyFrom(
-    from: { password: string } | { pin: string } | { recoveryCode: string },
-  ): Promise<{ code: string; keyring: Keyring; next: { keyring: Keyring; vk: Vk } | null }> {
-    const fresh = !("recoveryCode" in from);
-    if ("password" in from) await this.verifyPassword(from.password);
-    else if ("pin" in from) await this.confirmSecret({ pin: from.pin }); // since 2026-11-24 (OWNER-DECISIONS/26)
-    const r = await this.store.load();
-    if (r.status !== "ok") throw new ServiceError("bad_state", r.status);
-    const keyring = r.gen.keyring;
-    const vk = await this.requireVk(keyring);
-    if (hasDevice(keyring) || !keyring.wraps.some((w) => w.method === "recovery"))
-      throw new ServiceError("not_protected");
-    if (fresh) {
-      const made = await setRecovery(keyring, vk, this.ctx);
-      validateKeyring(made.keyring);
-      return { code: made.recoveryCode, keyring, next: { keyring: made.keyring, vk } };
-    }
-    try {
-      await unlockWithRecoveryCode(keyring, from.recoveryCode);
-    } catch (e) {
-      if (e instanceof CryptoError && e.code === "unwrap_failed") {
-        await this.record("recovery_failed");
-        throw new ServiceError("wrong_secret");
-      }
-      throw e;
-    }
-    return { code: from.recoveryCode, keyring, next: null };
-  }
-
-  /**
-   * The test restore (§3.6): `typed` are the shares the person typed back, exactly the members `prepared.test` asks for,
-   * of this set (else shares_mixed, or bad_state for the wrong members); they must rebuild the set's recovery code.
-   *   - "replace": that code must open the NEW keyring's recovery wrap (so what is committed is what the shares rebuild),
-   *     and only then is the keyring written, in one locked save, the same as newRecoveryCode's: the old recovery code
-   *     works until that save commits (an interrupted one is rolled back at the next start, Interrupted key changes), and
-   *     every share of it stops working with it. Refused, writing nothing, with bad_state if the keys changed since the
-   *     set was made (a new code, a reset or a rotation in another page: these shares would never work), and with locked
-   *     if Sixkey locked. A save that landed although it reported an error
-   *     counts as done when tried again with the same handle. After it: recorded as recovery_code_new, the PIN's
-   *     session ended, the cleanup (`committed`), as for a new recovery code. The shares reminder is set just before the
-   *     save (SHAMIR-NOTES.md §4), so no lost write can keep the commit and lose it; a refused save puts it back as it was
-   *     while it is still this switch's own (`unremind`; unless the save landed after all, or that cannot be told: then
-   *     it stays, and the page has said the switch failed; a check of these shares after the restart says the switch
-   *     did not complete).
-   *   - "split": nothing is written; the code must open the vault now (wrong_secret: it changed meanwhile).
-   * The handle is spent once confirmed.
-   */
-  async confirmShares(prepared: PreparedShares, typed: readonly string[]): Promise<void> {
-    const p = preparedShares.get(prepared);
-    if (!p) throw new ServiceError("bad_state", "share set already used");
-    const parsed: Share[] = [];
-    try {
-      for (const t of typed) parsed.push(await parseShare(t));
-      if (parsed.some((s) => setIdText(s.setId) !== prepared.setId || s.threshold !== prepared.threshold))
-        throw new CryptoError("shares_mixed");
-      const members = parsed.map((s) => s.index).sort((a, b) => a - b);
-      if (members.join() !== prepared.test.join()) throw new ServiceError("bad_state", "not the shares asked for");
-    } finally {
-      for (const s of parsed) s.value.fill(0);
-    }
-    const code = await recoveryCodeFromShares(typed, formatRecoveryCode);
-    if (!p.next) {
-      const r = await this.store.load();
-      if (r.status !== "ok") throw new ServiceError("bad_state", r.status);
-      await this.requireVk(r.gen.keyring);
-      try {
-        await unlockWithRecoveryCode(r.gen.keyring, code);
-      } catch (e) {
-        if (e instanceof CryptoError && e.code === "unwrap_failed") throw new ServiceError("wrong_secret");
-        throw e;
-      }
-      preparedShares.delete(prepared);
-      return;
-    }
-    const next = p.next;
-    if ((await unlockWithRecoveryCode(next.keyring, code).catch(() => null))?.id !== next.vk.id)
-      throw new ServiceError("bad_state", "the shares do not rebuild the new code");
-    const mine = canonicalJson(next.keyring);
-    /** The save's conditions, on the keyring there: true when it is this very set's (an attempt that reported an error). */
-    const landed = async (k: Keyring | undefined): Promise<boolean> => {
-      if (!k) throw new ServiceError("bad_state", "no vault");
-      const now = canonicalJson(k);
-      if (now === mine) return true;
-      if (now !== p.base) throw new ServiceError("bad_state", "keys changed meanwhile");
-      await this.requireVk(k);
-      return false;
-    };
-    const r = await this.store.load();
-    await landed(r.status === "ok" ? r.gen.keyring : undefined); // refused here, nothing is written
-    // From the next browser start on: check the shares before destroying the old code. The commit can still be rolled
-    // back by a power loss (Interrupted key changes); a check after a restart shows it was not (SHAMIR-NOTES.md §4). Set
-    // before the save: writes are lost newest first, so a loss can drop the commit and keep the reminder, never the reverse.
-    const id = Array.from(this.rng(8), (b) => b.toString(16).padStart(2, "0")).join(""); // this switch's own
-    const before = await this.security?.remind?.({ id, set: prepared.setId });
-    try {
-      await this.store.transact(async (cur) => {
-        if (await landed(cur?.keyring)) throw LANDED; // again under the store's lock: another page may have been first
-        return { envelope: cur!.envelope, keyring: next.keyring };
-      });
-    } catch (e) {
-      if (e !== LANDED) {
-        await this.unremind(id, before, mine);
-        throw e;
-      }
-    }
-    preparedShares.delete(prepared);
-    // Already unlocked with this key: no session to write. No code to deliver: the shares were shown before the commit.
-    await this.committed("recovery_code_new", next.vk, { session: false, keepRemind: true });
-  }
-
-  /**
-   * A switch to shares was refused (review FU-1): its reminder, set before the save (`id`), is taken back to `before`.
-   *   1. `before` undefined: the reminder was not written, or not known to be: nothing is taken back;
-   *   2. the keys cannot be read: it stays;
-   *   3. the keys are this switch's (the save landed after all): it stays;
-   *   4. else `before` replaces it, under the security record's own lock, only while the reminder there is still this
-   *      switch's: one written since (another page's switch, at the same time) or a drop (a recovery code change since)
-   *      is left alone.
-   * A reminder for a switch that did not land is the safe side: the page said the switch failed, and a check of its
-   * shares after the restart says so (checkRecoveryCode).
-   */
-  private async unremind(id: string, before: SharesReminder | null | undefined, mine: string): Promise<void> {
-    if (before === undefined) return;
-    const r = await this.store.load().catch(() => null);
-    if (r?.status !== "ok") return;
-    if (canonicalJson(r.gen.keyring) === mine) return;
-    await this.security?.putBack?.(id, before);
-  }
-
-  /**
-   * The browser or the extension has started (the service worker's onStartup and onInstalled): a shares reminder set by a
-   * switch before it becomes due, for the popup to show after every unlock until a check passes (security-log.ts
-   * `remind`). Never rejects.
-   */
-  async browserStarted(): Promise<void> {
-    await this.security?.started?.();
-  }
-
-  /**
-   * "Check my shares" (§3.6), and anywhere a recovery code is to be checked without using it: does `code` open the vault
-   * now ("current"), or not ("stale": shares that rebuild a valid code which does not open this vault belong to an older
-   * recovery code, or to another vault)? Writes nothing of the vault and records nothing: it needs an unlocked vault
-   * (locked), so it is no oracle for someone at a locked page, where every recovery code typed is recorded. With a
-   * switch to shares not yet checked after a browser restart (the security record's `remind`, SHAMIR-NOTES.md §4):
-   *   - "current_before_restart": the code opens the vault, but the browser has not restarted since the switch, which a
-   *     power loss could still roll back: the reminder stays; check again after a restart;
-   *   - "current", the reminder due: the switch survived a restart; the reminder goes (the one thing this writes);
-   *   - "stale_after_switch", the reminder due and `set` (the id of the set the shares are of) the switched set's: the
-   *     switch did not complete (or was rolled back): the old code is still in force. The reminder stays.
-   * A malformed code: recovery_*.
-   */
-  async checkRecoveryCode(
-    code: string,
-    set?: string,
-  ): Promise<"current" | "current_before_restart" | "stale" | "stale_after_switch"> {
-    const r = await this.store.load();
-    if (r.status !== "ok") throw new ServiceError("bad_state", r.status);
-    await this.requireVk(r.gen.keyring);
-    try {
-      await unlockWithRecoveryCode(r.gen.keyring, code);
-    } catch (e) {
-      if (e instanceof CryptoError && e.code === "unwrap_failed") {
-        const c = await this.security?.checked?.(false);
-        return c?.state === "due" && set !== undefined && c.set === set ? "stale_after_switch" : "stale";
-      }
-      throw e;
-    }
-    return (await this.security?.checked?.(true))?.state === "set" ? "current_before_restart" : "current";
   }
 
   // ---- restoring and importing ---------------------------------------------------------------
@@ -1239,20 +970,3 @@ export class VaultService extends ServiceCore {
 }
 
 export { StorageError };
-
-/**
- * `t` of the members 0 .. n - 1, uniformly at random (a partial Fisher-Yates shuffle, each draw by rejection sampling
- * from one random byte), in order: the shares the test restore asks for (§3.6).
- */
-function pickMembers(t: number, n: number, rng: (k: number) => Uint8Array): number[] {
-  const all = [...Array(n).keys()];
-  for (let i = n - 1; i >= n - t; i--) {
-    const bound = 256 - (256 % (i + 1)); // bytes at or above it would favour the low values
-    let b: number;
-    do b = rng(1)[0]!;
-    while (b >= bound);
-    const j = b % (i + 1);
-    [all[i], all[j]] = [all[j]!, all[i]!];
-  }
-  return all.slice(n - t).sort((a, b) => a - b);
-}

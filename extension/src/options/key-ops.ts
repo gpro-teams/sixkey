@@ -5,7 +5,7 @@
 // is a vault that cannot be recovered. App draws the code above every section (RecoveryCodeBox) until the person has
 // saved it; the forms hold only what is typed, and hand it over when they submit.
 import { useCallback, useRef, useState } from "preact/hooks";
-import { ServiceError, type PreparedShares, type Secret } from "../core/service/service";
+import { ServiceError, type Secret } from "../core/service/service";
 import type { Runtime } from "../platform/runtime";
 import { t } from "../ui/i18n";
 import { masterAccepts, measure } from "../ui/strength";
@@ -29,20 +29,6 @@ export type KeyOps = {
   /** The PIN or the master password (a Secret, OWNER-DECISIONS/26); `say`: the PIN's own refusals (useConfirm). */
   newCode: (secret: Secret, say?: (e: unknown) => string | null) => Promise<boolean>;
   rotate: (pw: string) => Promise<boolean>;
-  /**
-   * The shares wizard's switch (ShareWizard.tsx; docs/design/notes/SHAMIR-NOTES.md §4): the test restore's shares, and
-   * the new recovery code they rebuild committed. No code to show (the shares were shown before); its outcome is the
-   * page's, so a person who left the leaf meanwhile is told, and the page asks before it is closed while it runs.
-   */
-  confirmShares: (
-    prepared: PreparedShares,
-    typed: readonly string[],
-    /**
-     * The wizard's words for an error of the shares themselves (another set, a typo: SHAMIR-NOTES.md §5), or null for
-     * any other, which the page says as it says every error. Its text is the shares' own (lazy) catalog's.
-     */
-    say?: (e: unknown) => string | null,
-  ) => Promise<boolean>;
   /** The code was saved: it leaves the screen. */
   codeSaved: () => void;
   /**
@@ -119,14 +105,6 @@ export function useKeyOps(rt: Runtime, reload: () => Promise<void>): KeyOps {
         await rt.service.rotateKey(pw, { onCode: setCode });
         setRotated(true);
       }),
-    confirmShares: (prepared, typed, say) =>
-      run(
-        async () => {
-          await rt.service.confirmShares(prepared, typed);
-        },
-        t("sharesSwitched"),
-        say,
-      ),
     codeSaved: () => setCode(null),
   };
 }

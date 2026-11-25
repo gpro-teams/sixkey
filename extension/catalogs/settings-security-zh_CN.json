@@ -197,21 +197,6 @@
   "pinNeedsPassword": {
     "message": "请先设置主密码。"
   },
-  "pinNew": {
-    "message": "新 PIN"
-  },
-  "pinAgain": {
-    "message": "再次输入新 PIN"
-  },
-  "pinWeak": {
-    "message": "太容易被猜到。请避开重复数字、1234 这样的连续数字和常见 PIN。"
-  },
-  "pinDiffer": {
-    "message": "两次输入的 PIN 不一致。"
-  },
-  "pinSet": {
-    "message": "设置 PIN"
-  },
   "pinChange": {
     "message": "更改 PIN"
   },
@@ -244,11 +229,5 @@
   },
   "secKQuickEnded": {
     "message": "PIN 快速解锁已结束"
-  },
-  "sharesFoldTitle": {
-    "message": "恢复密钥分片"
-  },
-  "secKSharesMade": {
-    "message": "生成了恢复密钥分片"
   }
 }

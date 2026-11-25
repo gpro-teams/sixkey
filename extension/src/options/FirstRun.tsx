@@ -4,7 +4,9 @@
 //   1. master password   prepareKeys: the keys exist in this page's memory only
 //   2. recovery code     shown, copied or saved as a file, confirmed
 //   3. one question      the security preset (ux-study §2.8)
-//   4. first account     the normal page, at "Add accounts" (App, with SetupReady)
+//   4. a PIN             "only me" only, once the vault is written: recommended, skippable, without the master password
+//                        typed again (2026-11-25; FirstPin.tsx, a lazy chunk)
+//   5. first account     the normal page, at "Add accounts" (App, with SetupReady)
 // The vault is written once, when step 3 is finished, together with the answer. Closing the tab before that leaves nothing
 // behind. Everything uses the page's one runtime and the page is never reloaded: in "lock every time" mode the unlocked
 // key exists only in this page's memory.
@@ -36,9 +38,11 @@ export type SetupStart =
 /** What the wizard hands the page at its end (SetupReady): accounts restored, what a restore opened, the backup. */
 export type SetupDone = { restored?: number; opened?: CsbOpened; backup?: BackupOutcome };
 
-type Step = "file" | "csb" | "password" | "code" | "risk" | "clipboard";
+type Step = "file" | "csb" | "password" | "code" | "risk" | "pin" | "clipboard";
 /** The backup in Chrome's sync storage's parts (the found copy, its restore step, the last step's box), one lazy chunk. */
 const csbPages = () => import("./csb/CsbPages");
+/** The PIN step, loaded once the vault is written. */
+const firstPin = () => import("./FirstPin");
 const CLIP: chrome.permissions.Permissions = { permissions: ["clipboardRead", "clipboardWrite"] };
 const live = (v: Vault) => v.entries.filter((e) => e.secret !== "").length;
 
@@ -69,6 +73,7 @@ export function FirstRun({
     start.mode === "csb" ? "csb" : start.mode === "restore" && !start.backup ? "file" : "password",
   );
   const [opened, setOpened] = useState<CsbOpened | null>(null);
+  const [Pin, setPin] = useState<Awaited<ReturnType<typeof firstPin>>["FirstPinStep"] | null>(null);
   const [Csb, setCsb] = useState<Awaited<ReturnType<typeof csbPages>> | null>(null);
   // the last step's box: ticked for "only me", not for a shared profile, unless the person ticked or cleared it
   const [csbPick, setCsbPick] = useState<boolean | null>(null);
@@ -227,8 +232,16 @@ export function FirstRun({
       }
       setKeys(null);
       setOutcome(b);
-      if (risk === "shared") setStep("clipboard");
-      else done(b);
+      // the vault is written: the rail shows it now, with the last steps still on screen
+      await onRefresh().catch(() => undefined);
+      if (risk === "shared") return setStep("clipboard");
+      // "only me": the PIN, recommended, while it can be set without the master password (FirstPin.tsx); a chunk that
+      // does not load, or a PIN it may not set, leaves it to Settings
+      const m = await firstPin().catch(() => null);
+      if (m && (await m.firstPinOpen(rt))) {
+        setPin(() => m.FirstPinStep);
+        setStep("pin");
+      } else done(b);
     }, true);
   const done = (b = outcome) =>
     onDone({
@@ -240,6 +253,9 @@ export function FirstRun({
       ...(b ? { backup: b } : {}),
     });
 
+  // the PIN's step for "only me" (none for a shared profile); passed over when the PIN cannot be set there without the
+  // master password (firstPinOpen: a recovery-key restore that kept the copy's master password typed none)
+  const pinStep = risk !== "shared" ? ["frStepPin"] : [];
   // the restore from Chrome Sync's first step stands where a file's would, named by the backup's own text (null here: it
   // is no key of the page's catalog); a downloaded copy's is a file's, and named as one
   const steps: (string | null)[] =
@@ -248,6 +264,7 @@ export function FirstRun({
           start.opened ? "frStepFile" : null,
           ...(opened?.restore.needsPassword || opened?.restore.keepsPassword ? ["stepPassword"] : []),
           "frStepProfile",
+          ...pinStep,
           "frStepAccount",
         ]
       : [
@@ -255,6 +272,7 @@ export function FirstRun({
           "stepPassword",
           "stepRecovery",
           "frStepProfile",
+          ...pinStep,
           "frStepAccount",
         ];
   const at = steps.indexOf(
@@ -264,20 +282,23 @@ export function FirstRun({
       password: "stepPassword",
       code: "stepRecovery",
       risk: "frStepProfile",
+      pin: "frStepPin",
       clipboard: "frStepAccount",
     }[step],
   );
   const lead =
-    start.mode === "restore" || start.mode === "csb"
-      ? t("frRestoreLead")
-      : start.mode === "startOver"
-        ? t("frStartOverLead")
-        : t("emptyOptions");
+    step === "pin" || step === "clipboard"
+      ? t("frSavedLead") // written by now: no "no vault yet" any more
+      : start.mode === "restore" || start.mode === "csb"
+        ? t("frRestoreLead")
+        : start.mode === "startOver"
+          ? t("frStartOverLead")
+          : t("emptyOptions");
   const canPassword = !busy && pw.length > 0 && pw === pw2 && masterAccepts(strength, anyway === pw);
   // Leaving is always safe before the vault is written; switching what to start with only before keys exist, and never
   // at the clipboard step, which comes after the vault was written (its keys are gone from here by then).
-  const canSwitch = !!onSwitch && !keys && !changed && !busy && step !== "clipboard";
-  const canCancel = !onSwitch && !changed && step !== "clipboard" && !busy; // not while Finish is writing
+  const canSwitch = !!onSwitch && !keys && !changed && !busy && step !== "clipboard" && step !== "pin";
+  const canCancel = !onSwitch && !changed && step !== "clipboard" && step !== "pin" && !busy; // not while Finish writes
 
   return (
     <Panel id="setup" icon="shieldCheck" title={t("frTitle")} lead={lead}>
@@ -389,13 +410,6 @@ export function FirstRun({
                 <Icon name="info" size={16} />
                 <span>{t("frCodeNote")}</span>
               </p>
-              {/* a vault that existed is replaced (start over, or a restore over unreadable data): shares of its recovery
-                  code stop working with it (docs/design/notes/SHAMIR-NOTES.md §1) */}
-              {(start.mode === "startOver" || (start.mode === "restore" && !onSwitch)) && (
-                <p class="muted" id="fr-shares-note">
-                  {t("sharesStopWarn")}
-                </p>
-              )}
               <RecoveryCodeBox code={keys.recoveryCode} onDone={() => setStep("risk")} />
               <div class="row2">
                 <button type="button" class="btn ghost" id="fr-back-password" disabled={busy} onClick={backToPassword}>
@@ -455,6 +469,7 @@ export function FirstRun({
             </div>
           )}
 
+          {step === "pin" && Pin && <Pin rt={rt} onDone={() => done()} />}
           {step === "clipboard" && <ClipboardStep onNext={() => done()} />}
         </div>
       )}

@@ -273,7 +273,6 @@ describe("Security › change the master password, through key-ops", () => {
       change: async (o, pw, anyway) => (calls.push([o, pw, anyway]), true),
       newCode: async () => true,
       rotate: async () => true,
-      confirmShares: async () => true,
       codeSaved: () => undefined,
     };
     const status = { state: "unlocked", passwordProtected: true, events: [] } as unknown as ServiceStatus;

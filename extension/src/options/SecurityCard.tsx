@@ -45,7 +45,6 @@ const KIND_LABEL: Record<SecurityKind, string> = {
   pin_removed: "secKPinRemoved",
   pin_failed: "secKPinFailed",
   quick_ended: "secKQuickEnded",
-  shares_made: "secKSharesMade", // recovery code shares of the current code (scripts/i18n/shares.py)
 };
 /** An entry this page has a label for (an own property of KIND_LABEL: never one of Object's, such as "constructor"). */
 const listed = (e: SecurityEntry): e is { at: number; kind: SecurityKind } => Object.hasOwn(KIND_LABEL, e.kind);

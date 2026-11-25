@@ -21,6 +21,7 @@ import {
   setAsideRestart,
   writeRestart,
 } from "./pin-restart-admin";
+import { madeBy, madeHere } from "./rotated";
 import type { Secret, VaultService } from "./service";
 import { ServiceError } from "./service-error";
 import { profileOf } from "./types";
@@ -41,6 +42,9 @@ export type QuickState = {
   gate?: { armed: boolean };
   restart?: { state: RestartState; triesLeft: number };
 };
+
+/** How long after a vault was made here first run's PIN step may set the PIN without the master password. */
+export const FIRST_PIN_MS = 10 * 60_000;
 
 const hasDevice = (k: Keyring) => k.wraps.some((w) => w.method === "device") && k.deviceKey !== undefined;
 const protectedBy = (k: Keyring) => !hasDevice(k) && k.wraps.some((w) => w.method === "password");
@@ -99,8 +103,9 @@ export class PinAdmin {
   /**
    * Set the PIN, or change it. Needs Sixkey unlocked here, a master password (not a Phase 0 device-key vault:
    * not_protected), a solo profile (quick_off), a PIN of 4 to 8 digits (bad_pin: checked first, before the password is;
-   * one that is too easy to guess is taken, the box says so: OWNER-DECISIONS/20, 2026-10-30), and the master password
-   * typed again (wrong_secret, recorded). The new record's derivation (sealNewRestart: PBKDF2 at the master password's
+   * one that is too easy to guess is taken, the box says so: OWNER-DECISIONS/20, 2026-10-30), and the master password,
+   * or the PIN in force, typed again (wrong_secret, recorded; OWNER-DECISIONS/26). First run sets the first PIN without
+   * either (setFirstPin). The new record's derivation (sealNewRestart: PBKDF2 at the master password's
    * count, the slow part) comes first, before any write, so a page closed during it leaves the old PIN as it was. Then
    * the writes, in this order, so that a page closed between any two of them never leaves an old PIN working:
    *   1. the PIN's record, when there is one (sk_pin_restart, made from the old PIN), deleted: closed here, the change has
@@ -119,10 +124,60 @@ export class PinAdmin {
     if (profileOf(await this.s["settings"].get()) === "shared") throw new ServiceError("quick_off");
     const keyring = await this.target();
     const vk = await this.passwordVk(keyring, password);
-    const kdf = newPinKdf(this.s["rng"], this.s["iterations"]);
-    const pinKek = await derivePinKek(check.pin, kdf);
+    await this.write(keyring, vk, check.pin);
+    await this.record("pin_set");
+  }
+
+  /**
+   * First run's PIN step (2026-11-25): whether it may set the PIN now without the master password (setFirstPin). Only
+   * right after this page made the vault from a master password typed in it (rotated.ts madeHere, these very keys, at
+   * most FIRST_PIN_MS ago), unlocked here, in a solo profile, before any PIN is set up. False for anything else.
+   */
+  async firstPinOpen(): Promise<boolean> {
     try {
-      const rec = await sealPinRecord(vk, keyring.vaultId, pinKek, { digits: check.pin.length, kdf }, this.s["rng"]);
+      return (await this.firstTarget()) !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * The PIN set on first run, without the master password typed again: it was typed in this page for the vault just
+   * made (firstPinOpen's conditions; else bad_state, and the step says the PIN can be set in Settings). The PIN's rules
+   * and writes are setPin's; the grant is spent once the PIN is set, so it sets one PIN, once.
+   */
+  async setFirstPin(input: string): Promise<void> {
+    const check = checkPinPolicy(input);
+    if (!check.ok) throw new ServiceError("bad_pin");
+    const t = await this.firstTarget();
+    if (!t) throw new ServiceError("bad_state", "the first run's PIN is not open");
+    await this.write(t.keyring, t.vk, check.pin);
+    madeHere.delete(this.s);
+    await this.record("pin_set");
+  }
+
+  /** The vault and key first run's PIN step sets the PIN for, or null when it may not (firstPinOpen). */
+  private async firstTarget(): Promise<{ keyring: Keyring; vk: Vk } | null> {
+    const made = madeBy(this.s);
+    if (!made || !this.pins) return null;
+    const age = this.s["now"]() - made.at;
+    if (age < 0 || age > FIRST_PIN_MS) return null;
+    if (profileOf(await this.s["settings"].get()) === "shared") return null;
+    const keyring = await this.target();
+    if (made.vkId !== keyring.vkId || made.wraps !== wrapsTag(keyring)) return null;
+    if ((await this.pins.read()) !== null) return null; // a PIN set up already (or a damaged one): Settings' to change
+    return { keyring, vk: await this.s["requireVk"](keyring) };
+  }
+
+  /**
+   * setPin's writes, for this vault and key: the new record's derivation (sealNewRestart: PBKDF2 at the master password's
+   * count, the slow part) first, before any write, then the writes in setPin's order.
+   */
+  private async write(keyring: Keyring, vk: Vk, pin: string): Promise<void> {
+    const kdf = newPinKdf(this.s["rng"], this.s["iterations"]);
+    const pinKek = await derivePinKek(pin, kdf);
+    try {
+      const rec = await sealPinRecord(vk, keyring.vaultId, pinKek, { digits: pin.length, kdf }, this.s["rng"]);
       // the record's derivation first, before anything is written (a page closed while it runs leaves the old PIN)
       const made = await sealNewRestart(this.s, vk, keyring, rec, pinKek, this.s["now"]());
       await removeRestart(this.pins!);
@@ -132,7 +187,6 @@ export class PinAdmin {
     } finally {
       pinKek.fill(0);
     }
-    await this.record("pin_set");
   }
 
   /**

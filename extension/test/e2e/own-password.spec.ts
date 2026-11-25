@@ -16,6 +16,7 @@ import {
   showSection,
   startFresh,
   STRONG,
+  skipFirstPin,
 } from "./harness";
 
 const OWN = "JennyLovesTea"; // 13 characters, about 34 bits: the owner's case
@@ -137,6 +138,7 @@ test("first run with a password of one's own below 50 bits: the warning, 'Use an
   await opt.locator("#recovery-done").click();
   await opt.locator("#fr-solo").check();
   await opt.locator("#fr-finish").click();
+  await skipFirstPin(opt);
   await expect(opt.locator("#fr-hint")).toBeVisible();
   expect(await wrapCount(opt)).toBe(2_000_000);
 

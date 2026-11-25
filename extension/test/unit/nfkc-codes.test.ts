@@ -1,7 +1,7 @@
 // A code typed in a Chinese IME's full-width mode (全角: ＡＢＣ１２３, the hyphen －, the ideographic space) reads as the
 // same code (core/crypto/crockford.ts normalizeCrockford: NFKC first, as pin.ts reads a PIN). Every way a code is typed
 // goes through it, and each is here: the recovery key to unlock, to reset the master password, to restore a cloud
-// backup, to make shares from; recovery code shares; and the settings page's code fields, which show what was typed the
+// backup; and the settings page's code fields, which show what was typed the
 // way it is read. (The sync flows' recovery proof and the pairing code went with the server sync's client: DV-0b.) A TOTP secret typed by hand reads the same way
 // (core/totp/base32.ts cleanBase32). For both readings, every code point that read before reads the same after
 // (REVIEW-P5P6-r4, D3 and D4: the reviewer's per-code-point check).
@@ -11,7 +11,6 @@ import { openCloudBackups } from "../../src/core/cloud/restore";
 import { CROCKFORD, normalizeCrockford } from "../../src/core/crypto/crockford";
 import { unlockWithRecoveryCode } from "../../src/core/crypto/keyring";
 import { formatRecoveryCode, generateRecoveryCode, parseRecoveryCode } from "../../src/core/crypto/recovery-code";
-import { makeShareSet, parseShare, recoveryCodeFromShares } from "../../src/core/crypto/shares";
 import { VaultService } from "../../src/core/service/service";
 import { KvSettingsStore, MemorySession } from "../../src/core/service/types";
 import { createMutex, MemoryKV } from "../../src/core/storage/kv";
@@ -140,21 +139,6 @@ describe("the recovery key, typed full-width", () => {
   it("the settings page's code fields read it as the code (codeSymbols)", async () => {
     const { text } = await generateRecoveryCode();
     expect(codeSymbols(fullWidth(text))).toBe(codeSymbols(text));
-  });
-});
-
-describe("recovery code shares, typed full-width", () => {
-  it("each share parses as typed half-width, and the shares rebuild the recovery key", async () => {
-    const { secret, text } = await generateRecoveryCode();
-    const set = await makeShareSet(secret.slice(), 2, 3);
-    const share = set.shares[1]!;
-    const a = await parseShare(share);
-    expect(await outcome(parseShare(fullWidth(share)))).toBe("ok");
-    const b = await parseShare(fullWidth(share));
-    expect({ ...b, value: [...b.value] }).toEqual({ ...a, value: [...a.value] });
-    const rebuilt = recoveryCodeFromShares([fullWidth(set.shares[0]!), fullWidth(set.shares[2]!)], formatRecoveryCode);
-    expect(await outcome(rebuilt)).toBe("ok");
-    expect(await rebuilt).toBe(text);
   });
 });
 
