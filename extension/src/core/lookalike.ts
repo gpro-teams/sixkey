@@ -3,6 +3,11 @@
 // that account's code there, and never guesses such a page as the account's ("Possibly related"). Pure, and only a
 // warning: a page the user tells Sixkey is the account's (Remember) is that account's site from then on.
 //
+// Never a page under the same registered domain as a remembered site: on "admin.acmepay.com" for "dealer.acmepay.com",
+// both are acmepay.com's, which only its owner can make (the owner's report of 2026-11-26). Without the public suffix
+// list (site-domains.ts says why) the registered domain is the name and its suffix as split() reads them, so two sites
+// of one hosting platform's shared suffix ("alice.github.io", "bob.github.io") are taken as one owner's too: that gap
+// is a missed warning, never a false one.
 // What looks like a site, for an account with remembered sites (each compared by its name: the label before its suffix):
 //   - the same name on another domain, as a label of the page ("github.com.evil.ru", "github.evil.com", "github.io");
 //   - the name as one part of a hyphenated label ("github-login.com", "secure-github.net");
@@ -73,6 +78,12 @@ export function lookalikeOf(e: Pick<Entry, "issuer" | "domains">, host: string |
   if (!page) return null;
   const sites = (e.domains ?? []).map(usableDomain).filter((d): d is string => d !== null && !isIpHost(d));
   if (sites.some((d) => coveredBy(host, d))) return null; // the account's own site
+  // under the same registered domain as any of its sites: that site's owner's, whatever another site of it looks like
+  const sameOwner = (d: string) => {
+    const s = split(d);
+    return !!s && s.name === page.name && s.suffix === page.suffix;
+  };
+  if (sites.some(sameOwner)) return null;
   for (const d of sites) {
     const s = split(d);
     if (!s || s.name.length < 4) continue;

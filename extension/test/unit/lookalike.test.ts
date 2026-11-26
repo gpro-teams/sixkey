@@ -36,6 +36,20 @@ describe("a page that looks like an account's site", () => {
     expect(lookalikeOf(cs, "admin.csIink.vip")).toBe("cslink.vip");
     expect(lookalikeOf(cs, "cs1ink.vip")).toBe("cslink.vip");
   });
+  it("another subdomain of the remembered site's registered domain is its owner's, not a fake (the owner's report of 2026-11-26)", () => {
+    const ep = { issuer: "acmepay", domains: ["dealer.acmepay.com"] };
+    expect(lookalikeOf(ep, "admin.acmepay.com")).toBeNull();
+    expect(lookalikeOf(ep, "acmepay.com")).toBeNull();
+    expect(lookalikeOf({ issuer: "Shop", domains: ["shop.example.co.uk"] }, "admin.example.co.uk")).toBeNull();
+    // another registered domain is still compared: the name on another domain, a near miss
+    expect(lookalikeOf(ep, "admin.acmepay.com.evil.ru")).toBe("dealer.acmepay.com");
+    expect(lookalikeOf(ep, "admin.acmepay.net")).toBe("dealer.acmepay.com");
+    expect(lookalikeOf(ep, "admin.acmepey.com")).toBe("dealer.acmepay.com");
+    // with another site whose name the page also has, listed first: still the owner's
+    expect(
+      lookalikeOf({ issuer: "acmepay", domains: ["acmepay.net", "dealer.acmepay.com"] }, "admin.acmepay.com"),
+    ).toBeNull();
+  });
   it("an account with no remembered site: only near misses of its name, never a page that has the name itself", () => {
     const bare = { issuer: "Sharelife" };
     expect(lookalikeOf(bare, "admin.sharelife.com")).toBeNull();
